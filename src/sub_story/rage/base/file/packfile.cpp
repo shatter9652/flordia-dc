@@ -114,34 +114,37 @@ struct fiDevice {
 // archive tools can use them without linking the whole recovered object graph.
 
 
-// The block that ReadHeader actually returns is longer than those 16 bytes: it
-// is the header followed by the entry table, and the index builder reads three
-// fields out of it well past the magic block. FUN_14087aec0 proves:
-//   +0x22  u16  entry count
-//   +0x24  u32  data offset of the entry array
-//   +0x2C  u8   flags byte handed to the index reader (FUN_14087b0f0)
-// Nothing in the recovered bodies tests `fiPackHeader9::encryption` at +0x0C;
-// the +0x2C byte is the one that reaches a consumer, so it is the better
-// candidate for the encryption/compression selector. That stays a hypothesis.
+// The block ReadHeader returns is the 64-byte header plus the entry records:
+// `[0, namesOffset)` on a full read, `[0, tocEnd)` when the name records travel
+// in the same buffer. FUN_141fb2600 is exact about both shapes, and the second
+// is what makes FUN_14087aec0's kind-0 base work: it computes
+// `block + *(u32*)(block + 8)`, i.e. block + namesOffset, which only lands on
+// the name records when they are inside that block.
+//
+// Three fields of the header are read by the index builder, all now named in
+// fiPackHeader9: entryCount at +0x24, mode at +0x2C and field22 at +0x22. The
+// recovered walk (FUN_14087b0f0) takes them as (count, stride, align) and
+// returns `{align_up(base, align), align8(begin + count*stride*align),
+// align16(...)}`; what that run counts is not established (see the note in
+// src/sub_story/game/Core/FUN_14087b0f0).
 struct fiPackBlock {
-    fiPackHeader9 header;                  // +0x00
-    uint8_t       unknown10[0x12];         // +0x10
-    uint16_t      entryCount;              // +0x22
-    uint32_t      dataOffset;              // +0x24
-    uint8_t       unknown28[4];            // +0x28
-    uint8_t       flags;                   // +0x2C
+    fiPackHeader9 header;   // +0x00..+0x3F
+    // entry records follow at +0x40, up to header.namesOffset
 };
-static_assert(offsetof(fiPackBlock, entryCount) == 0x22, "entryCount is at +0x22");
-static_assert(offsetof(fiPackBlock, flags) == 0x2C, "flags is at +0x2C");
+static_assert(sizeof(fiPackBlock) == 0x40, "the block starts with the header");
 
 // ---------------------------------------------------------------------------
 // fiPackIndex -- the entry index the packfile builds (FUN_141fb2780)
 // ---------------------------------------------------------------------------
 
-// `kind` selects how entries are located, and FUN_14087aec0 branches on it:
-//   0 -- entries live in the block at `dataOffset`, count from `entryCount`
-//   1 -- the name blob is walked first, count from entryCount
+// `kind` selects where the record run starts, and FUN_14087aec0 branches on
+// it:
+//   0 -- the records live inside the block, at `block + namesOffset`
+//   1 -- the records are the separately-read name buffer
 //   2 -- no header was supplied, so the index is empty
+// Kind is the reader's `full` flag: a full read splits the TOC into the
+// header+entry block and a second name allocation, a plain read keeps one
+// buffer for all of it.
 struct fiPackIndex {
     uint32_t kind;             // +0x00  0, 1 or 2
     uint32_t pad04;            // +0x04
@@ -216,6 +219,15 @@ void  fiPackfile_BuildIndex(void* out, uint32_t flags,
 bool  fiPackfile_Validate(void* index, fiFile* file);
 void  fiPackfile_AttachIndex(fiPackfile* pack, uint32_t flags,
                              fiPackBlock* header, void* names);
+
+// The recovered TOC geometry walk (game/Core/FUN_14087b0f0).
+struct fiPackRun {
+    uint64_t begin;
+    uint64_t dataEnd;
+    uint64_t end;
+};
+fiPackRun fiPack_ComputeRun(uint64_t base, uint32_t count, uint32_t stride,
+                            uint32_t align);
 
 // ---------------------------------------------------------------------------
 // FUN_140fc2240 -- fiFile::Initialise
@@ -427,9 +439,13 @@ bool fiPackfile_ReadHeader_Impl(uint32_t** outHeader, void** outNames,
         return false;
     }
 
-    const uint32_t tableBytes = full ? header->headerSize : header->namesEnd;
-    const uint32_t namesOffset = header->headerSize;
-    const uint32_t namesEnd = header->namesEnd;
+    // The TOC is [0x40, tocEnd). A full read loads only the header and the
+    // entry records, [0, namesOffset); the name records are a second
+    // allocation at namesOffset. A plain read takes [0, tocEnd) in one buffer,
+    // which keeps the name records inside the block.
+    const uint32_t tableBytes = full ? header->namesOffset : header->tocEnd;
+    const uint32_t namesOffset = header->namesOffset;
+    const uint32_t namesEnd = header->tocEnd;
 
     auto* raw = static_cast<uint8_t*>(::operator new(tableBytes));
     if (raw == nullptr) {
@@ -565,19 +581,24 @@ void fiPackIndex_Build(fiPackIndex* self, uint32_t flags, fiPackBlock* block,
 
     const void* entries = nullptr;
     if (self->kind == 0) {
-        entries = reinterpret_cast<const uint8_t*>(block) + block->dataOffset;
+        // `block + *(u32*)(block + 8)`, exactly as the recovered body does it.
+        entries = reinterpret_cast<const uint8_t*>(block) +
+                  block->header.namesOffset;
     } else if (self->kind == 1) {
         entries = names;
     } else {
         return;
     }
 
-    // FUN_14087b0f0(&out, entries, block->entryCount, block->dataOffset,
-    //               block->flags) -- the entry walk itself is not recovered yet,
-    // but its four inputs are, and `flags` at +0x2C is the only byte of the
-    // block that reaches a consumer.
-    self->entryArray = reinterpret_cast<uint64_t>(entries);
-    self->entryArrayEnd = reinterpret_cast<uint64_t>(entries) + block->entryCount;
+    // FUN_14087b0f0(&out, entries, block->header.field22,
+    //               block->header.entryCount, block->header.mode) -- the run
+    // arithmetic is recovered (game/Core/FUN_14087b0f0), the meaning of the
+    // run is not, so the two ends are stored and nothing is derived from them.
+    const fiPackRun run = fiPack_ComputeRun(
+        reinterpret_cast<uint64_t>(entries), block->header.field22,
+        block->header.entryCount, block->header.mode);
+    self->entryArray = run.begin;
+    self->entryArrayEnd = run.dataEnd;
 }
 
 }  // namespace rage

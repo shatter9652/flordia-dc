@@ -1,40 +1,105 @@
-# RPF9 TOC encryption
+# RPF9 header and TOC encryption
 
 Objective 1 needs the archive table of contents, and the table of contents is
-the encrypted part of an RPF. This page records the block that does it, where
-it is in the image, how it is reconstructed, what was measured, and the two
-things still missing before a retail archive can be listed.
+the encrypted part of an RPF. This page records the header it sits behind, the
+block that ciphers it, where that block is in the image, what was measured, and
+the two things still missing before a retail archive can be listed.
 
 Code: `src/sub_story/rage/base/data/aes.{h,cpp}` (the cipher),
-`src/sub_story/rage/base/file/packfile_crypt.h` (the TOC call),
+`src/sub_story/rage/base/file/packfile_crypt.h` (the header and the TOC call),
 `tools/rpf9crypt.cpp` (the command and its self-test).
 Reference: `MiscRef/GTAVSRC/src/dev_ng/rage/base/src/data/aes.cpp`,
 `.../tools/cli/rekey_rpf/rekey_rpf.cpp`.
 
+## The header is 64 bytes
+
+Measured on the four archives in the dump. Every field is either read by a
+recovered body or has the same value in all four.
+
+| Offset | Field | Values | Evidence |
+|---|---|---|---|
+| `+0x00` | `magic` | `0x52504639` (`"9FPR"`) | compared before anything else in `FUN_141fb2600` |
+| `+0x04` | `tocEnd` | `0x360`, `0x9580`, `0x260`, `0x11060` | the geometry below is exact against it |
+| `+0x08` | `namesOffset` | `0x340`, `0x8520`, `0x240`, `0xF510` | `FUN_14087aec0` kind 0 computes `block + *(u32*)(block + 8)` |
+| `+0x0C` | `field0C` | `0x40`, `0x3A10`, `0x80`, `0x5870` | 6RE names it `names_size`; it is not `tocEnd - namesOffset`, so the name is not used |
+| `+0x10` | `tocHash` | per archive | 6RE reads it big-endian; it differs between archives that agree on everything else, so it is not a key id |
+| `+0x18` | `field18` | `0x47A00` in all four | constant |
+| `+0x1C` | `field1C` | `0x150` in all four | constant |
+| `+0x20` | `field20` | `3`, `6`, `6`, `7` | per archive |
+| `+0x22` | `field22` | `1` in all four | passed to the geometry walk |
+| `+0x24` | `entryCount` | `2`, `418`, `2`, `699` | the count the name geometry is exact against |
+| `+0x28` | `field28` | per archive | 6RE calls it the key id; equal in `appdata0`/`common`, different in `script`/`data`, so a key selector is not proven |
+| `+0x2C` | `mode` | `1` or `2` | a name record is `8 + mode` bytes |
+| `+0x2D` | `field2D` | `0x0F` in all four | constant |
+| `+0x2E` | `field2E` | `0x09` in all four | constant |
+| `+0x30` | `alignment` | `0x10` in all four | constant |
+
+The offsets are **absolute offsets from the start of the header**, not
+TOC-relative. In `appdata0`, `namesOffset` is `0x340` and `tocEnd` is `0x360`; a
+TOC-relative reading would put the name records at `0x3A0`, past the end of the
+table.
+
+What fixes the length at `0x40` is the byte-exact geometry of the name region:
+
+```
+tocEnd - namesOffset  ==  align16(entryCount * (8 + mode))
+```
+
+| Archive | `entryCount` | `mode` | record | names bytes | `tocEnd - namesOffset` |
+|---|---|---|---|---|---|
+| `appdata0` | 2 | 1 | 9 | `align16(0x12) = 0x20` | `0x20` |
+| `common` | 418 | 2 | 10 | `align16(0x1054) = 0x1060` | `0x1060` |
+| `script` | 2 | 1 | 9 | `0x20` | `0x20` |
+| `data` | 699 | 2 | 10 | `align16(0x1B4E) = 0x1B50` | `0x1B50` |
+
+Four archives, no slack, and a different record size in each mode. That is what
+`rpf9crypt info` prints as `names bytes ... match`, and it is checkable on a
+retail archive without a key.
+
+This corrects the first revision of this page, which read the header as 16 bytes
+and took `+0x04`/`+0x08` for `namesEnd`/`headerSize`. Three measurements settle
+it: the fields at `+0x18`..`+0x30` carry the same coherent small values across
+all four archives (a ciphertext would not), the name geometry above is exact
+against `tocEnd`, and 6RE's independent reader
+(`6RE/new/G6Recomp/common/include/g6/rpf9.h`) also reads 64 bytes.
+
+One disagreement is worth recording. 6RE calls `+0x04` the *size* of the table
+of contents and starts the data area `0x40` bytes later, at `0x3A0` in
+`appdata0` instead of `0x360`. Their own notes say the data area is checked only
+"loosely" and that the first file always starts later, often on a 4 KiB
+boundary — which is exactly how a `0x40` error in the data-area start would go
+unnoticed. The `tocEnd` reading above is the one the geometry and the recovered
+reader agree on.
+
 ## What the engine does
 
-RPF7/8's writer is in the GTA V tree and states the shape outright:
+GTA V's writer is in the reference tree and states the shape outright:
 
 ```cpp
 unsigned totalSize = (sizeof(fiPackEntry) * entryCount) + nameHeapSize;
-u8* buffer = buf + sizeof(fiPackHeader);          // 16-byte header is plaintext
+u8* buffer = buf + sizeof(fiPackHeader);          // the header is plaintext
 AES aes(source_key);
-aes.Decrypt(buffer, totalSize);                   // entries + name heap, in place
+aes.Decrypt(buffer, totalSize);                   // table + names, in place
 ...
 aes2.Encrypt(buffer, totalSize);
 ```
 
 `AES::Decrypt` ends in `rijndael_ecb_decrypt_mem`; there is **no IV anywhere in
-`data/aes.cpp`**. So the cipher stream is AES-256 in ECB mode, and each 16-byte
-block stands alone. The key comes from the key id in the header (`+0x0C` of an
-RPF7/8 header, `m_Encrypted`), through the `AES_KEY_ID_*` table.
+`data/aes.cpp`**. So the cipher stream is AES-256 in ECB mode, each 16-byte block
+standing alone.
 
-That prediction matches the bytes. Across the 193 headers the 6RE notes sample,
-`[0x40,0x50)` is the **same** 16 bytes in every archive, and the next block has
-only four variants. With ECB and one fixed key, identical plaintext gives
-identical ciphertext; with CBC every archive would differ from the first block
-on. The "not ECB" argument in those notes rests on finding no repeated 16-byte
-block in the *varying* part, which ECB does not promise.
+RPF9 keeps the same shape with a longer header: everything from `0x40` to
+`tocEnd` is ciphertext, and both ends are 16-aligned in every sampled archive
+(`tocEnd` is a multiple of `0x10` in all four). The 64-byte header stays
+plaintext because the magic, the TOC end and the name offset have to be readable
+before a key is chosen.
+
+The ECB prediction matches the bytes. Across the 193 headers the 6RE notes
+sample, `[0x40,0x50)` is the **same** 16 bytes in every archive, and the next
+block has only four variants — that is the first TOC block of a constant
+plaintext. With CBC every archive would differ from the first block on. The "not
+ECB" argument in those notes rests on finding no repeated 16-byte block in the
+*varying* part, which ECB does not promise.
 
 ## Where the block is in this image
 
@@ -87,21 +152,31 @@ deviations:
    `rpf9crypt selftest` checks against the standard AES-256 vector
    (`8ea2b7ca516745bfeafc49904b496089`).
 
-`fiPackCrypt` in `file/packfile_crypt.h` is the RPF9 call: the header's 16 bytes
-stay plaintext (the magic must be readable before any key is chosen), and the
-cipher covers `[0x10, namesEnd)` rounded down to whole blocks, in place,
-through `AES::Decrypt(keyId, 0, ...)` / `AES::Encrypt(keyId, 0, ...)`.
+`packfile_crypt.h` now carries the measured `fiPackHeader9` (64 bytes, fields
+above) and `fiPackCrypt`, which ciphers `[0x40, tocEnd)` rounded down to whole
+blocks, in place, through `AES::Decrypt(keyId, 0, ...)` /
+`AES::Encrypt(keyId, 0, ...)`. `LayoutMatches` re-checks the name geometry, so a
+caller can tell a real RPF9 header from a guess without a key.
 
 Two things are deliberately *not* asserted:
 
-- The key id is a parameter. `FUN_141fb2600` never reads `+0x0C`, so an RPF9
+- The key id is a parameter. `FUN_141fb2600` never reads `+0x28`, so an RPF9
   header does not tell us its own key id; taking it from that field would be
-  invention.
+  invention (and the field is not constant across archives anyway).
 - The call site. The recovered reader reads the table without calling AES, so in
   this Xbox Series X build the decryption may sit below the packfile — in a
   device layer — or the archives may be decrypted elsewhere. The block is
   reconstructed because the engine owns it and the tooling needs it; the
   recovered function is left exactly as decompiled.
+
+The geometry walk that fills the packfile index is also reconstructed now:
+`FUN_14087b0f0` (64 B) computes `{align_up(base, align), align8(begin +
+count * stride * align), align16(...)}` and both call sites store the first two
+into index `+0x38` / `+0x40`. It has **no `.pdata` record**, so Ghidra never
+defined it and the batch export skipped it; the disassembly and the exact
+arithmetic are in `src/sub_story/game/Core/FUN_14087b0f0/`. What the run counts
+is still open — it is not the name region, which the four archives fix at
+`align16(entryCount * (8 + mode))`.
 
 ## Measured
 
@@ -112,14 +187,38 @@ ok    FIPS-197 C.3 AES-256 encrypt
 ok    FIPS-197 C.3 AES-256 decrypt
 ok    4096-byte keyring round trip
 ok    unregistered key id refused
+ok    header geometry check accepts a valid one
 ok    RPF9 TOC encrypt/decrypt round trip
 ok    header untouched by the TOC cipher
 all passed (0 failures)
 ```
 
-Does a GTA V key open a VI archive? No. `appdata0.rpf` (8,880 B,
-`namesEnd 0x360`, 53 TOC blocks), decrypted with each key in
-`MiscRef/GTAVSRC/.../aes.cpp`:
+`rpf9crypt info` on the four archives, all four `match`:
+
+```
+== appdata0 ==
+tocEnd        0x360      namesOffset   0x340
+entryCount    2          mode          1 (name record 9 bytes)
+names bytes   0x20 (geometry wants 0x20) match
+TOC           [0x40, 0x360) = 0x320 bytes, 50 AES blocks
+== common ==
+tocEnd        0x9580     namesOffset   0x8520
+entryCount    418        mode          2 (name record 10 bytes)
+names bytes   0x1060 (geometry wants 0x1060) match
+TOC           [0x40, 0x9580) = 0x9540 bytes, 2388 AES blocks
+== script ==
+tocEnd        0x260      namesOffset   0x240
+entryCount    2          mode          1
+names bytes   0x20 (geometry wants 0x20) match
+== data ==
+tocEnd        0x11060    namesOffset   0xF510
+entryCount    699        mode          2
+names bytes   0x1B50 (geometry wants 0x1B50) match
+TOC           [0x40, 0x11060) = 0x11020 bytes, 4354 AES blocks
+```
+
+Does a GTA V key open a VI archive? No. `appdata0.rpf` decrypted with each key
+in `MiscRef/GTAVSRC/.../aes.cpp`:
 
 | Key | id | printable ASCII after | verdict |
 |---|---|---|---|
@@ -141,6 +240,7 @@ g++ -std=c++17 -O2 -o build/rpf9crypt tools/rpf9crypt.cpp \
     src/sub_story/rage/base/data/aes.cpp
 
 ./build/rpf9crypt selftest
+./build/rpf9crypt info common.rpf                 # header + geometry, no key
 ./build/rpf9crypt decrypt common.rpf common.clear.rpf --key keys/rpf9.key
 ./build/rpf9crypt decrypt common.rpf common.clear.rpf \
     --keyring keys/rpf9.keyring --key-id 0x0fffff00
@@ -161,11 +261,20 @@ and after, so a wrong key is visible immediately instead of silent.
 1. **The key.** 32 bytes that are not in the image's GTA V arrays and not in any
    public note. Nothing in `6RE/new` or `6RE/docs` supplies it: those projects
    carve payloads and explicitly do not decode the TOC.
-2. **The entry record layout.** Once the table decrypts, entries are 9 bytes
-   each in mode 1 (`A - B = align16(N * 9)`) and 12 in mode 2
-   (`align16(N * 12 + 8)`), with the name heap presumably between the table and
-   `namesEnd`. The fields inside those 9/12 bytes are not established, so
-   `list`/`extract` by name cannot be written yet even with a key.
+2. **The entry records.** The name records are settled — `entryCount` records of
+   `8 + mode` bytes, hash plus flags — but the entry records that precede them,
+   `[0x40, namesOffset)`, are *not* a fixed stride:
+
+   | Archive | entry bytes | / `entryCount` |
+   |---|---|---|
+   | `appdata0` | `0x300` = 768 | 384 |
+   | `common` | `0x84E0` = 34016 | 81.4 |
+   | `script` | `0x200` = 512 | 256 |
+   | `data` | `0xF4D0` = 62672 | 89.7 |
+
+   Three of the four are not even divisible by the count, so the region holds
+   variable-length records (offset lists, or a directory table plus records) and
+   the fields inside them cannot be placed without the decrypted bytes.
 
 Payload extraction does not need either: file bodies are plain zlib streams on
 16-byte boundaries, which is what `6RE/new/G6Recomp` and `6RE/docs/RPF9-tools`

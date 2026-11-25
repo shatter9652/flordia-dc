@@ -18,7 +18,8 @@ OUT      ?= build
 
 UNITS := \
 	$(OUT)/rage/base/file/packfile.obj \
-	$(OUT)/rage/base/data/aes.obj
+	$(OUT)/rage/base/data/aes.obj \
+	$(OUT)/game/Core/FUN_14087b0f0.obj
 
 .PHONY: all clean
 all: $(UNITS)
@@ -31,6 +32,11 @@ $(OUT)/rage/base/file/packfile.obj: src/sub_story/rage/base/file/packfile.cpp \
 
 $(OUT)/rage/base/data/aes.obj: src/sub_story/rage/base/data/aes.cpp \
 		src/sub_story/rage/base/data/aes.h
+	@mkdir -p $(dir $@)
+	$(CLANG_CL) $(CXXFLAGS) /Fo:$@ $<
+
+$(OUT)/game/Core/FUN_14087b0f0.obj: \
+		src/sub_story/game/Core/FUN_14087b0f0/FUN_14087b0f0.cpp
 	@mkdir -p $(dir $@)
 	$(CLANG_CL) $(CXXFLAGS) /Fo:$@ $<
 

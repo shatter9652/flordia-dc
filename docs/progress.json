@@ -1,9 +1,9 @@
 {
   "binary": "game_scarlett_master.exe",
   "function_starts": 299257,
-  "bodies_written": 4624,
+  "bodies_written": 4626,
   "named_from_evidence": 115,
   "bodies_with_shared_literal": 3,
   "matched_functions": 0,
-  "coverage": 0.015452
+  "coverage": 0.015458
 }

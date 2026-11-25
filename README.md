@@ -55,8 +55,8 @@ in two functions:
 
 `RPF0`, `RPF7` and `RPF8` appear zero times: this build reads RPF9 only. Those two bodies are objective 1's
 entry points, and they are already reconstructed with names in
-`src/sub_story/rage/base/file/packfile.cpp`: a 16-byte header (`magic`, `namesEnd`, `headerSize`,
-unused), a 0x60-byte file object (device `+0x10`, handle `+0x18`, size `+0x30`, path `+0x38`) and a
+`src/sub_story/rage/base/file/packfile.cpp`: a 64-byte header (`magic`, `tocEnd`, `namesOffset`,
+`entryCount`, `mode`, ...), a 0x60-byte file object (device `+0x10`, handle `+0x18`, size `+0x30`, path `+0x38`) and a
 0x80-byte packfile object (`file +0x08`, header `+0x18`, names `+0x20`), plus the full open chain
 `mount → open → Initialise → device/handle → ReadHeader` walked with `tools/callers.py`. `tools/anchors.py --all` regenerates the anchor table into `matches/objective_anchors.tsv`,
 and `tools/organize.py` files any body an anchor proves into its GTAVSRC directory.
@@ -70,7 +70,10 @@ and `BCryptGenRandom` and **no** `BCryptEncrypt`/`BCryptDecrypt`. The cipher cor
 is `FUN_0215f06c`, which is the only code that loads `TE0`/`TD0`/`rcon`;
 `FUN_021a8e3d` is the `AES::Decrypt(keyId, selector, data, size)` dispatcher.
 
-`docs/rpf-crypto.md` has the evidence and the two honest gaps. The reconstructed
+`docs/rpf-crypto.md` has the evidence and the two honest gaps. The cipher covers
+`[0x40, tocEnd)`: the header is 64 bytes, not 16, and the name region is
+`align16(entryCount * (8 + mode))` bytes -- exact on all four archives in the
+dump, which is what `rpf9crypt info` checks without a key. The reconstructed
 block is `src/sub_story/rage/base/data/aes.{h,cpp}` plus `fiPackCrypt` in
 `packfile_crypt.h`, and `tools/rpf9crypt.cpp` is the same block as a command with
 a self-test. Keys are never in the repo (`keys/`, `*.keyring` are ignored); the
@@ -121,10 +124,10 @@ evidence tiers are in `docs/layout.md`.
 | GTA V source → executable name transfer | 148,314 literals scanned, 295 found, **130 functions tied, 115 named in the tree** |
 | GDK / GTA V PS4 / RDR2 byte markers | 1,300 + 122,153 + 147,119 function ranges fingerprinted, **0 body matches** (`docs/byte-markers.md`) |
 | GTA V PS4 native hashes found in the image | **0 of 6,691** (`docs/objectives.md`) |
-| Exported bodies | **4,624** (one folder per function) under the recovered `src/sub_story` tree |
-| Hand-written readable code | **3 files** — `src/sub_story/rage/base/file/packfile.cpp` (RPF9 file + packfile objects, whole open path), `packfile_crypt.h` (header + TOC cipher), `src/sub_story/rage/base/data/aes.cpp` (the AES block), syntax-clean under `g++ -Wall -Wextra` |
-| Archive TOC encryption | block located at `FUN_0215f06c` (tables `TE0 0x5fc1b20`, `TD0 0x5fc2b50`, `rcon 0x5fc2b20`) and reconstructed; **the retail key is not one of the GTA V keys the image still carries** (`docs/rpf-crypto.md`) |
-| objdiff units | **4,625**, of which 2 have built clang-cl base objects (`packfile.obj`, `aes.obj`) and **0** have a retail target object |
+| Exported bodies | **4,626** (one folder per function) under the recovered `src/sub_story` tree |
+| Hand-written readable code | **4 files** — `src/sub_story/rage/base/file/packfile.cpp` (RPF9 file + packfile objects, whole open path), `packfile_crypt.h` (64-byte header + TOC cipher + geometry), `src/sub_story/rage/base/data/aes.cpp` (the AES block), `src/sub_story/game/Core/FUN_14087b0f0/FUN_14087b0f0.cpp` (the TOC geometry walk, hand-disassembled), syntax-clean under `g++ -Wall -Wextra` |
+| Archive TOC encryption | block located at `FUN_0215f06c` (tables `TE0 0x5fc1b20`, `TD0 0x5fc2b50`, `rcon 0x5fc2b20`) and reconstructed over `[0x40, tocEnd)`; header geometry matches byte-exactly on all 4 archives; **the retail key is not one of the GTA V keys the image still carries** (`docs/rpf-crypto.md`) |
+| objdiff units | **4,626**, of which 3 have built clang-cl base objects (`packfile.obj`, `aes.obj`, `FUN_14087b0f0.obj`) and **0** have a retail target object |
 | Byte-identical functions | **0** (no rebuild to diff yet) |
 
 The old project `ghidra_proj/game_scarlett_master` is superseded: it was built from `.pdata` only, so it
@@ -224,6 +227,7 @@ python3 gta6decomp/tools/byte_markers.py --corpus gdk,gtav,rdr2
 g++ -std=c++17 -O2 -o gta6decomp/build/rpf9crypt gta6decomp/tools/rpf9crypt.cpp \
     gta6decomp/src/sub_story/rage/base/data/aes.cpp
 ./gta6decomp/build/rpf9crypt selftest
+./gta6decomp/build/rpf9crypt info common.rpf        # header + geometry, no key
 ./gta6decomp/build/rpf9crypt decrypt common.rpf common.clear.rpf --key keys/rpf9.key
 ```
 
@@ -235,10 +239,11 @@ g++ -std=c++17 -O2 -o gta6decomp/build/rpf9crypt gta6decomp/tools/rpf9crypt.cpp 
   gameplay name pool in `.text` has no code cross-references. The `Crime*` block is the exception.
 - PS4 and RDR2 contribute function ranges and bytes, not names: those eboots are stripped and carry no
   symbol table, no MSVC RTTI and no Itanium vtable names.
-- Coverage is partial: 4,624 of 299,257 starts are written out. The machinery to export more is the same
+- Coverage is partial: 4,626 of 299,257 starts are written out. The machinery to export more is the same
   command with a longer address list.
 - The RPF9 TOC needs a key that is not in the image's GTA V key arrays, and the
-  entry record layout inside the decrypted table is not established either; see
-  `docs/rpf-crypto.md` for exactly which of the two blocks `list`/`extract`.
+  entry records inside the decrypted table are variable-length, so their fields
+  cannot be placed without it; see `docs/rpf-crypto.md` for exactly which of the
+  two blocks `list`/`extract`. The name records are settled.
 - Decompiled C is not original source. Locals keep Ghidra's `param_1` / `local_XX`; struct layouts are only
   known where a body reads a fixed offset.

@@ -1,9 +1,10 @@
 // rpf9crypt -- the recovered RAGE AES block as a command, for RPF9 archives.
 //
-// The archive's table of contents is AES-256 in ECB mode, keyed by an
-// AES key id (docs/rpf-crypto.md). This tool decrypts or encrypts that region
-// in place on a copy, so an archive can be inspected by an ordinary parser
-// afterwards, and a repacked archive can be written back.
+// The archive's table of contents -- [0x40, tocEnd) -- is AES-256 in ECB mode,
+// keyed by an AES key id (docs/rpf-crypto.md). This tool decrypts or encrypts
+// that region in place on a copy, so an archive can be inspected by an ordinary
+// parser afterwards, and a repacked archive can be written back. `info` prints
+// the header and checks its own geometry without needing a key at all.
 //
 // The key is never in the repository. Pass 32 raw bytes, or a keyring line:
 //
@@ -139,13 +140,20 @@ bool LoadRingKey(const char* path, uint32_t keyId, uint8_t out[32]) {
 }
 
 void PrintHeader(const rage::fiPackHeader9* header) {
-    std::printf("magic       %08x %s\n", header->magic,
+    const uint32_t toc = rage::fiPackCrypt::TocBytes(header);
+    const uint32_t names = rage::fiPackCrypt::NamesBytes(header);
+    const uint32_t expect = rage::fiPackCrypt::NamesBytesExpected(header);
+    std::printf("magic         %08x %s\n", header->magic,
                 header->magic == kRpfMagic9 ? "(RPF9)" : "(not RPF9)");
-    std::printf("namesEnd    %#x\nheaderSize  %#x\nfield +0x0C  %#x\n",
-                header->namesEnd, header->headerSize, header->encryption);
-    std::printf("TOC bytes   %#x (%u blocks)\n",
-                rage::fiPackCrypt::TocBytes(header),
-                rage::fiPackCrypt::TocBytes(header) / 16);
+    std::printf("tocEnd        %#x\nnamesOffset   %#x\nfield +0x0C   %#x\n",
+                header->tocEnd, header->namesOffset, header->field0C);
+    std::printf("entryCount    %u\nmode          %u (name record %u bytes)\n",
+                header->entryCount, header->mode,
+                rage::fiPackCrypt::NameRecordBytes(header));
+    std::printf("names bytes   %#x (geometry wants %#x) %s\n", names, expect,
+                names == expect ? "match" : "MISMATCH");
+    std::printf("TOC           [0x40, %#x) = %#x bytes, %u AES blocks\n",
+                header->tocEnd, toc, toc / 16);
 }
 
 // A cheap "does this look decrypted" measure: readable ASCII and zero bytes.
@@ -179,9 +187,9 @@ int ApplyCipher(const char* mode, const char* in_path, const char* out_path,
         std::fprintf(stderr, "not an RPF9 archive\n");
         return 1;
     }
-    if (header->namesEnd > bytes.size()) {
-        std::fprintf(stderr, "namesEnd %#x is past the end of the file\n",
-                     header->namesEnd);
+    if (header->tocEnd > bytes.size()) {
+        std::fprintf(stderr, "tocEnd %#x is past the end of the file\n",
+                     header->tocEnd);
         return 1;
     }
     const uint32_t toc = rage::fiPackCrypt::TocBytes(header);
@@ -271,13 +279,25 @@ int SelfTest() {
         std::printf("ok    unregistered key id refused\n");
     }
 
-    // 4. RPF9-shaped TOC: header then 0x400 cipher bytes, encrypt then decrypt.
-    std::vector<uint8_t> archive(0x10 + 0x400, 0xaa);
+    // 4. RPF9-shaped TOC: 0x40-byte header then 0x400 cipher bytes, encrypt
+    // then decrypt. The header's geometry is made self-consistent (2 records
+    // of 9 bytes is 0x20 aligned), so the same LayoutMatches the tool prints
+    // for a retail archive is exercised here.
+    std::vector<uint8_t> archive(rage::fiPackCrypt::kTocStart + 0x400, 0xaa);
     auto* header = reinterpret_cast<rage::fiPackHeader9*>(archive.data());
     header->magic = kRpfMagic9;
-    header->namesEnd = 0x10 + 0x400;
-    header->headerSize = 0x200;
-    header->encryption = 0;
+    header->tocEnd = rage::fiPackCrypt::kTocStart + 0x400;
+    header->namesOffset = header->tocEnd - 0x20;
+    header->field0C = 0;
+    header->entryCount = 2;
+    header->mode = 1;
+    header->alignment = 16;
+    if (!rage::fiPackCrypt::LayoutMatches(header)) {
+        std::printf("FAIL  self-test header geometry is inconsistent\n");
+        ++failures;
+    } else {
+        std::printf("ok    header geometry check accepts a valid one\n");
+    }
     const std::vector<uint8_t> clear = archive;
     rage::cryKeyRing::Clear();
     rage::cryKeyRing::Register(rage::AES_KEY_ID_GTA5_PC, key);
@@ -293,8 +313,10 @@ int SelfTest() {
         std::printf("ok    RPF9 TOC encrypt/decrypt round trip\n");
     }
 
-    // 5. The region is exactly [0x10, namesEnd): the header stays readable.
-    if (header->magic != kRpfMagic9 || header->namesEnd != 0x10 + 0x400) {
+    // 5. The region is exactly [0x40, tocEnd): the header stays readable.
+    if (header->magic != kRpfMagic9 ||
+        header->tocEnd != rage::fiPackCrypt::kTocStart + 0x400 ||
+        !rage::fiPackCrypt::LayoutMatches(header)) {
         std::printf("FAIL  header was modified by the TOC cipher\n");
         ++failures;
     } else {
@@ -310,6 +332,7 @@ void Usage() {
     std::fprintf(stderr,
                  "usage:\n"
                  "  rpf9crypt selftest\n"
+                 "  rpf9crypt info <in.rpf>\n"
                  "  rpf9crypt decrypt|encrypt <in.rpf> <out.rpf> "
                  "--key <32-byte file> [--key-id <hex>]\n"
                  "  rpf9crypt decrypt|encrypt <in.rpf> <out.rpf> "
@@ -324,6 +347,19 @@ int main(int argc, char** argv) {
         return 2;
     }
     if (std::strcmp(argv[1], "selftest") == 0) return SelfTest();
+
+    if (std::strcmp(argv[1], "info") == 0) {
+        std::vector<uint8_t> bytes;
+        if (argc < 3 || !ReadFile(argv[2], &bytes)) return 2;
+        if (bytes.size() < sizeof(rage::fiPackHeader9)) {
+            std::fprintf(stderr, "%s is smaller than an RPF9 header\n",
+                         argv[2]);
+            return 1;
+        }
+        auto* header = reinterpret_cast<rage::fiPackHeader9*>(bytes.data());
+        PrintHeader(header);
+        return header->magic == kRpfMagic9 ? 0 : 1;
+    }
 
     if (argc < 4) {
         Usage();

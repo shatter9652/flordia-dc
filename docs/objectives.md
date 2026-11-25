@@ -63,14 +63,14 @@ reconstructs both functions with names, and syntax-checks clean under
 | Item | Value | Evidence |
 |---|---|---|
 | archive magic | `0x52504639` (`"RPF9"`), little-endian | 3 immediates in `.text` |
-| header size | 16 bytes | 16-byte read, then `tableBytes - 16` |
+| header size | 64 bytes | `namesOffset + align16(entryCount * (8 + mode)) == tocEnd` exactly on all 4 archives |
 | `+0x00` | magic | compared before anything else |
-| `+0x04` | `namesEnd` — end of the name blob | `namesEnd - headerSize` is the name length |
-| `+0x08` | `headerSize` — end of the entry table | entry table size on the full read |
-| `+0x0C` | **not tested in any recovered body** | still a hypothesis field |
-| block `+0x22` | `entryCount` (u16) | `FUN_14087aec0` reads it for both kind 0 and 1 |
-| block `+0x24` | `dataOffset` (u32) | added to the block base to find the entry array |
-| block `+0x2C` | `flags` (u8) | the only byte of the block handed to a consumer (`FUN_14087b0f0`) |
+| `+0x04` | `tocEnd` — end of the TOC | the name geometry is exact against it; 6RE calls it the TOC size and so starts the data area `0x40` late |
+| `+0x08` | `namesOffset` — first name record; entry records are `[0x40, namesOffset)` | `FUN_14087aec0` kind 0 computes `block + *(u32*)(block + 8)` |
+| `+0x0C` | unnamed | 6RE calls it `names_size`; it is not `tocEnd - namesOffset` on any sampled archive |
+| `+0x20`/`+0x22` | `field20` (u16), `field22` (u16) | `3,6,6,7` and `1` in the four; `field22` is passed to the geometry walk |
+| `+0x24` | `entryCount` (u32) | the name region is exactly `align16(entryCount * (8 + mode))` |
+| `+0x2C` | `mode` (u8) | 1 or 2; a name record is `8 + mode` bytes |
 | file object | `0x60` bytes, vtable `0x1462fd890` | the allocation in `FUN_00fc21c0` |
 | packfile object | `0x80` bytes, vtable `0x1462fd480` | the allocation in `FUN_00fc2490` |
 | device | `+0x10` of the file object | `FUN_140fc2240` stores `FUN_140968480(path, 1)` |
@@ -83,14 +83,14 @@ reconstructs both functions with names, and syntax-checks clean under
 | device close | vtable slot `+0x90`, `Close(handle)` | the destructor |
 | mounted flag | `+0x08` bit 0 of the file object | `FUN_140fc2540` tests `*(uint8_t*)(file+8) & 1` and only then calls `FUN_1428ce230(file, pack)` |
 | index kind | packfile `+0x28`, initialised to 2 | the ctor's `*(uint32_t*)(pack+0x28) = 2`, which is "empty index" |
-| TOC cipher | AES-256, ECB, over `[0x10, namesEnd)` | rage `data/aes.cpp` + `tools/cli/rekey_rpf/rekey_rpf.cpp`; core `FUN_0215f06c`, tables `TE0 0x5fc1b20` / `TD0 0x5fc2b50` / `rcon 0x5fc2b20`, dispatcher `FUN_021a8e3d` |
+| TOC cipher | AES-256, ECB, over `[0x40, tocEnd)` | rage `data/aes.cpp` + `tools/cli/rekey_rpf/rekey_rpf.cpp`; core `FUN_0215f06c`, tables `TE0 0x5fc1b20` / `TD0 0x5fc2b50` / `rcon 0x5fc2b20`, dispatcher `FUN_021a8e3d` |
 | key source | `rage::cryKeyRing`, supplied at run time | the retail arrays are data, not source: `unique_key_gta5_xboxone` is still at RVA `0x65b5758` |
 
 The encryption half of the objective is written up separately in
-`docs/rpf-crypto.md`: the block, the two gaps (the RPF9 key is not in the image's
-GTA V arrays, and the entry-record layout inside the decrypted table is not
-established), and the measured negative result of trying all four GTA V keys on
-a 1.0.2.1 archive.
+`docs/rpf-crypto.md`: the block, the measured header, the two gaps (the RPF9 key
+is not in the image's GTA V arrays, and the entry records are variable-length, so
+their fields cannot be placed without it), and the measured negative result of
+trying all four GTA V keys on a 1.0.2.1 archive.
 
 Work order inside the objective:
 
@@ -131,10 +131,10 @@ Three more fields settled by the later bodies:
   and only then calls `FUN_1428ce230(file, pack)`, which caches the packfile at
   the file's `+0x58`. Bit 0 means "a packfile is already mounted here", and a
   freshly opened file starts clear.
-* **`encryption` at `+0x0C` is still untested.** The byte that actually reaches a
-  consumer is `+0x2C` of the header block, handed to `FUN_14087b0f0` along with
-  `entryCount` (`+0x22`) and `dataOffset` (`+0x24`). That makes `+0x2C` the better
-  encryption/compression candidate; `+0x0C` remains unknown.
+* **`+0x2C` is the mode, and it is measured now.** It is `1` or `2`, and a name
+  record is `8 + mode` bytes: the name region equals `align16(entryCount *
+  (8 + mode))` exactly in all four archives. The walk `FUN_14087b0f0` also takes
+  it as its alignment/multiplier argument. `+0x0C` still has no proven name.
 * **The path resolver is shared, not RPF-specific.** `FUN_14056eb30` walks the
   device mount table (count `+0xC04`, names `+0x300` at 0x100 each, default index
   `+0xC00`, skip index `+0xC08` with enable byte `+0xC0C`), formats the caller's
@@ -147,11 +147,11 @@ Work order from here:
 1. `FUN_14056eb30` — the formatter, to settle what the path actually looks like
    (the recovered argument points at `0x14678d1bb`, five bytes before `%llu`,
    so the exact literal needs its call-site decoded before it is trusted).
-2. `FUN_14087b0f0` — the entry walk itself. Its four inputs are known
-   (`entries`, `entryCount`, `dataOffset`, `flags`), so the remaining work is the
-   per-entry stride and name resolution, not the plumbing. GTA V's
-   `fiPackfile`/`fiPackEntry` shape is the reference for what it should produce
-   (`MiscRef/GTAVSRC/src/dev_ng/rage/base/src/file/packfile.cpp`).
+2. `FUN_14087b0f0` — **done**, hand-disassembled, because it has no `.pdata`
+   record and the batch export skipped it. It computes
+   `{align_up(base, align), align8(begin + count * stride * align), align16(...)}`
+   and both call sites store the first two into index `+0x38` / `+0x40`; see
+   `src/sub_story/game/Core/FUN_14087b0f0/`. What the run counts is open.
 3. Extraction, then the streaming/decompress path (`fiDeviceDirectStorage` is
    the only device literal in the image).
 
