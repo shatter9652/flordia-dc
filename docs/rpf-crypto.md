@@ -176,7 +176,7 @@ the conclusion, but it removes two of the open edges:
 
 | Question | Xbox Series X | PlayStation 5 |
 |---|---|---|
-| RPF magics in `.text` | `RPF9` only | `RPF9` only — `0x925092`, `0x9252f8`, `0x288943c`, plus 2 table slots |
+| RPF magics in `.text` | `RPF9` only | `RPF9` only — `0x8e0ac2`, `0x8e0d28`, `0x2844e6c`, plus 2 table slots |
 | Header read on the open path | `[device+0x60]` | `[device+0x68]`, 16 bytes at a time |
 | A cipher on the open path | none | none |
 | AES in the image | table-driven `FUN_0215f06c` | AES-NI: `aesenc` 559, `aesdec` 43, `aeskeygenassist` 31, all at `0x443d…` |

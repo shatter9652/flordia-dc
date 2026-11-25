@@ -63,11 +63,31 @@ headers, of which five are `PT_LOAD`:
 | data | `rw-` | `0x0a3f4000` | `0x0a3f0000` | `0x07ee4b6` | `0x43d54e8` |
 | `---` | `---` | `0x0abe54f0` | `0x0e7c54f0` | `0x0e48b58` | `0x0e48b58` |
 
-The image base is 0 — text starts at virtual address 0. For the first four
-segments the file offset is the VA plus `0x4000`; the fifth is mapped from a
-lower offset, so it does not follow that rule and `tools/ps5elf.py` reports the
-pair rather than deriving one from the other. Its flags are `---` while it still
-carries file bytes, which is what the container says and not a reading error.
+The image base is 0 — text starts at virtual address 0. The `p_offset` column is
+an *image* offset, not a file offset: the SELF repacks every segment into its own
+block, and the blocks are listed in the entry table right after the 0x20-byte
+header. For the text segment that is the difference between reading code and
+reading 280,016 bytes of zero padding:
+
+| Segment | `p_offset` | SELF block | delta |
+|---|---|---|---|
+| text | `0x00004000` | `0x000485d0` | `+0x445d0` |
+| rodata | `0x08f70000` | `0x08fb93b0` | `+0x493b0` |
+| data | `0x09ed0000` | `0x09f18b90` | `+0x48b90` |
+| data | `0x0a3f4000` | `0x0a43e4f0` | `+0x4a4f0` |
+| `---` | `0x0abe54f0` | `0x0ac33c10` | `+0x4e720` |
+
+Three measurements pin this down: bytes `0x4000..0x485d0` are entirely zero;
+the text block starts with `cc` padding and a function prologue at `+0x10`,
+which is where `_start` belongs; and `e_entry` (`0x4366790`) disassembles as a
+function entry only at file offset `0x43aed60`, i.e. `e_entry + 0x485d0`. The
+deltas differ per segment, so a single `VA - 0x4000` rule is wrong for every
+segment except by accident — and a cross-segment reference shifts by the
+difference of the two deltas. `tools/ps5elf.py` resolves segment to block by
+exact length and now prints both numbers; `va`/`off` convert between them.
+
+The fifth segment's flags are `---` while it still carries file bytes, which is
+what the container says and not a reading error.
 
 The remaining headers are SCE-specific — `PT_SCE_DYNLIBDATA`,
 `PT_SCE_LIBVERSION`, `PT_SCE_RELA` — alongside `PT_GNU_EH_FRAME`,
@@ -81,24 +101,27 @@ Ghidra only creates bodies from entry points and seeds. Pass `--entry`:
 
 ```sh
 python3 tools/ps5elf.py convert 6RE/DUMPS/PS5Dump/eboot/eboot.bin /tmp/fipack_open.elf \
-    --window 0x924e00:0x926000 --entry 0x924f60
+    --window 0x8e0800:0x8e1400 --entry 0x8e0990
 ```
 
-That produces a 4,728-byte ELF that Ghidra loads as x86-64 in a few seconds and
-decompiles `0x924f60` from.
+That produces a 3,192-byte ELF that Ghidra loads as x86-64 in a few seconds and
+decompiles `0x8e0990` from.
 
 ## What the eboot gave
 
 | Address | Size | Body |
 |---|---|---|
-| `0x00924f60` | 1878 B | `fiPackfile::Open` — allocate `0x80`, read header, derive layout, mount |
-| `0x009256d0` | 976 B | device selection; compares device-type strings |
-| `0x03588d60` | — | mount + directory listing, allocates `count * 0x108` |
-| `0x02889420` | 275 B | `fiFile::Open` — magic-gates the caller's header, destroys on `-1` |
-| `0x02889540` | — | `fiFile::Initialise` |
+| `0x008e0990` | 1878 B | `fiPackfile::Open` — allocate `0x80`, read header, derive layout, mount |
+| `0x008e1100` | 976 B | device selection; compares device-type strings |
+| `0x03544790` | — | mount + directory listing, allocates `count * 0x108` |
+| `0x02844e50` | 275 B | `fiFile::Open` — magic-gates the caller's header, destroys on `-1` |
+| `0x02844f70` | — | `fiFile::Initialise` |
 
-`RPF9` appears at `0x925092`, `0x9252f8`, `0x288943c` and twice in tables. `RPF0`
-appears zero times, exactly as on Xbox: this build reads RPF9 only.
+`RPF9` appears at `0x8e0ac2`, `0x8e0d28`, `0x2844e6c` and twice in tables
+(`0x8403ad0`, `0x8403b06`). `RPF0` appears zero times, exactly as on Xbox: this
+build reads RPF9 only. These are the corrected image addresses; the first pass
+of this page listed them `0x445d0` too high because it treated `p_offset` as a
+file offset (`docs/ps5-symbols.md` has the correction and the measurement).
 
 The field map is the one already reconstructed from the Xbox bodies, and the PS5
 body confirms it rather than correcting it — a `0x60`-byte file object (`device

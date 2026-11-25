@@ -30,14 +30,19 @@
 // PlayStation 5 cross-check (docs/ps5-build.md): the PS5 eboot carries the same
 // two objects, compiled with different inlining, and its bodies are inlined
 // enough to show the whole layout computation --
-//   0x02889420  fiFile::Open        -> 0x60 object, magic-gated, -1 = failure
-//   0x02889540  fiFile::Initialise  -> vtable, device +0x10, handle +0x18 = -1,
+//   0x02844e50  fiFile::Open        -> 0x60 object, magic-gated, -1 = failure
+//   0x02844f70  fiFile::Initialise  -> vtable, device +0x10, handle +0x18 = -1,
 //                                      size +0x30, atString path +0x38
-//   0x00924f60  fiPackfile::Open    -> 0x80 object, file +0x08, header +0x18,
+//   0x008e0990  fiPackfile::Open    -> 0x80 object, file +0x08, header +0x18,
 //                                      names +0x20, index kind +0x28, block
 //                                      +0x30, derived layout +0x38..+0x68
-//   0x009256d0  device selection    -> compares device-type strings
-//   0x03588d60  mount + directory listing (count * 0x108 records)
+//   0x008e1100  device selection    -> compares device-type strings
+//   0x03544790  mount + directory listing (count * 0x108 records)
+//
+// Every PS5 address here is an image virtual address under the SELF block
+// mapping (docs/ps5-symbols.md). The first pass recorded them 0x445d0 higher
+// because it read the ELF p_offset as a file offset; the bytes were the same,
+// so the bodies did not change, only the labels.
 //
 // Layout reference: MiscRef/GTAVSRC/src/dev_ng/rage/base/src/file/packfile.cpp,
 // packfile.h, device.h. Same object family, VI's field order.
@@ -196,7 +201,7 @@ static_assert(offsetof(fiPackfile, header) == 0x18, "header is at +0x18");
 static_assert(offsetof(fiPackfile, names) == 0x20, "names is at +0x20");
 
 // ---------------------------------------------------------------------------
-// The layout fiPackfile::Open derives from the header (PS5 body, 0x924f60)
+// The layout fiPackfile::Open derives from the header (PS5 body, 0x8e0990)
 // ---------------------------------------------------------------------------
 
 // Before it reads anything, the PS5 body computes seven 64-bit numbers from the

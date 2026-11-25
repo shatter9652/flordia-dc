@@ -82,7 +82,13 @@ open path, and its RAGE AES tables have no code reference at all — the PS5 bui
 uses AES-NI instead. Its open body is also inlined enough to show the header
 layout arithmetic in full, which is now `fiPack_ComputeLayout` in `packfile.cpp`.
 `docs/ps5-build.md` has the container, the loader and the recovered addresses;
-`tools/ps5elf.py` is the loader.
+`tools/ps5elf.py` is the loader. Its `p_offset` values are image offsets and the
+SELF stores each segment in its own block, so the loader resolves segment to
+block by exact length: reading text at `0x4000` reads 280 KB of zero padding and
+shifts every address by `0x445d0`. `docs/ps5-symbols.md` has the correction, the
+three measurements behind it, and what the image keeps symbolically — the
+46-library import manifest (`tools/ps5imports.py`), the AGC and shader names, and
+the encrypted state of every firmware module.
 
 `docs/rpf-crypto.md` has the evidence and the gaps. The header is 64 bytes, not
 16, and the name region is `align16(entryCount * (8 + mode))` bytes -- exact on
@@ -175,6 +181,11 @@ script VM objective recovers the real table. `tools/natives.py` regenerates both
 3. **GTA V source string transfer** (`matches/gtav_source_functions.tsv`): a literal that appears both in a
    GTA V source function and in the executable names the GTA VI function that loads it.
 4. **Byte-marker matches** (`matches/bytes_*.tsv`), when a corpus produces any.
+
+`tools/ApplyPs5.java` is the PS5 equivalent, with no GDK step: the 46 imported system libraries become
+Ghidra external libraries, `names/rage_structs.tsv` (generated from the recovered RAGE headers by
+`tools/make_ps5_types.py`) becomes real structures under `/rage`, and GTA V's classes come from the same
+table as on Xbox. It prints the same `REFS|…` line, so `tools/progress.py` reads both builds.
 
 ## Byte markers, stated plainly
 

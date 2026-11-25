@@ -13,10 +13,14 @@ loader:
     reported as an unsupported/orbis image instead of a Prospero one.
 
 Both are container-level facts, not properties of the code. The program header
-table already describes the Prospero image correctly, and its ``p_offset``
-values are absolute offsets into the SELF file, so the bytes at those offsets
-are the loaded image as-is. This tool rewrites only the container around those
-bytes:
+table already describes the Prospero image correctly; its ``p_offset`` values
+are *image* offsets, and the SELF stores each segment in its own block at a
+different file offset (the blocks are listed in the SELF entry table right
+after the 0x20-byte header). For the GTA VI eboot the text block sits at file
+``0x485d0`` while ``p_offset`` says ``0x4000``: a 0x445d0-byte block of zero
+padding, so reading at ``p_offset`` reads the wrong bytes and every virtual
+address comes out shifted. This tool resolves each program header to its
+block by exact length and rewrites only the container around those bytes:
 
   * a 64-byte ELF header at offset 0, ``e_type = ET_DYN`` (3);
   * the original ``PT_LOAD`` entries, with their ``p_vaddr`` / ``p_memsz``
@@ -33,8 +37,10 @@ Ghidra import.
 Usage:
     ps5elf.py info <self-file>
     ps5elf.py convert <self-file> <out.elf>            # every PT_LOAD
-    ps5elf.py convert <self-file> <out.elf> --window 0x924000:0x926000
-    ps5elf.py convert <self-file> <out.elf> --window 0x924000+0x2000
+    ps5elf.py convert <self-file> <out.elf> --window 0x8e0800:0x8e0c00
+    ps5elf.py convert <self-file> <out.elf> --window 0x8e0800+0x400
+    ps5elf.py va  <self-file> 0x929092                 # file offset -> vaddr
+    ps5elf.py off <self-file> 0x8e0ac2                 # vaddr -> file offset
 
 Addresses are printed in the image's own space; the eboot's text starts at
 virtual address 0.
@@ -116,6 +122,75 @@ def find_elf(data):
     raise SystemExit("unreachable")
 
 
+    
+def read_self_blocks(data):
+    """Return the SELF entry table as [(props, file offset, length, stored)].
+
+    The SELF header is 0x20 bytes and each entry is 32 bytes: a properties
+    word, the block's offset in the SELF file, its length, and the length it
+    occupies when stored (equal to the length when the block is not
+    compressed). The blocks are in program-header order for the PT_LOADs.
+    """
+    if data[:4] not in SELF_MAGICS or len(data) < 0x20:
+        return []
+    num_entries, = struct.unpack_from("<H", data, 24)
+    out = []
+    for i in range(num_entries):
+        o = 0x20 + i * 32
+        if o + 32 > len(data):
+            break
+        out.append(struct.unpack_from("<QQQQ", data, o))
+    return out
+
+
+def map_segments(data, phdrs):
+    """Pair each program header with the SELF block that holds its bytes.
+
+    Returns a list parallel to ``phdrs`` of (file offset, delta) where delta
+    is ``file offset - p_offset``, or None when no block matches. Matching is
+    by exact length because that is what the container records, and a block is
+    consumed once so two headers can never claim the same bytes.
+    """
+    blocks = read_self_blocks(data)
+    used = [False] * len(blocks)
+    out = []
+    for p_type, p_flags, p_offset, p_vaddr, p_paddr, p_filesz, p_memsz, p_align in phdrs:
+        found = None
+        if p_filesz:
+            for i, (_props, off, length, _stored) in enumerate(blocks):
+                if used[i] or length != p_filesz:
+                    continue
+                used[i] = True
+                found = (off, off - p_offset)
+                break
+        out.append(found)
+    return out
+
+
+def resolve(image, va=None, offset=None):
+    """Translate between image virtual addresses and SELF file offsets."""
+    for i, p in enumerate(image["phdrs"]):
+        p_type, p_flags, p_offset, p_vaddr, p_paddr, p_filesz, p_memsz, p_align = p
+        if p_type != PT_LOAD or p_filesz == 0:
+            continue
+        mapped = image["maps"][i]
+        src = mapped[0] if mapped else p_offset
+        if va is not None and p_vaddr <= va < p_vaddr + p_filesz:
+            return src + (va - p_vaddr)
+        if offset is not None and src <= offset < src + p_filesz:
+            return p_vaddr + (offset - src)
+    return None
+
+
+def load_image(path):
+    data = open(path, "rb").read()
+    elf_off, header = find_elf(data)
+    phdrs = read_phdrs(data, elf_off, header)
+    return {"data": data, "elf_off": elf_off, "header": header,
+            "phdrs": phdrs, "maps": map_segments(data, phdrs),
+            "entry": struct.unpack_from("<Q", header, 24)[0]}
+
+
 def read_phdrs(data, elf_off, header):
     e_phoff, = struct.unpack_from("<Q", header, 32)
     e_phnum, = struct.unpack_from("<H", header, 56)
@@ -178,16 +253,25 @@ def cmd_info(args):
     print("  e_entry       %#x" % e_entry)
     print("  phoff %#x phentsize %d phnum %d  shoff %#x shnum %d"
           % (e_phoff, e_phentsize, e_phnum, e_shoff, e_shnum))
+    phdrs = read_phdrs(data, elf_off, header)
+    maps = map_segments(data, phdrs)
     print("segments")
     for i, (p_type, p_flags, p_offset, p_vaddr, p_paddr,
-            p_filesz, p_memsz, p_align) in enumerate(read_phdrs(data, elf_off, header)):
+            p_filesz, p_memsz, p_align) in enumerate(phdrs):
         perm = "".join(c if p_flags & m else "-"
                        for c, m in (("r", 4), ("w", 2), ("x", 1)))
+        mapped = maps[i]
+        # A SELF repacks segments, so the bytes live at the block offset, not
+        # at p_offset. Printing both makes a shifted window obvious up front.
+        where = ("file %#010x (p_offset + %#x)" % (mapped[0], mapped[1])
+                 if mapped else "no SELF block matched p_offset")
         print("  [%2d] %-18s %s off %#010x vaddr %#010x filesz %#09x "
               "memsz %#09x align %#x"
               % (i, TYPE_NAMES.get(p_type, "type %#x" % p_type), perm,
                  p_offset, p_vaddr, p_filesz, p_memsz, p_align))
-    loads = [p for p in read_phdrs(data, elf_off, header) if p[0] == PT_LOAD]
+        if p_filesz:
+            print("       %s" % where)
+    loads = [p for p in phdrs if p[0] == PT_LOAD]
     print("load image      %#x .. %#x (%d PT_LOAD)"
           % (min(p[3] for p in loads),
              max(p[3] + p[6] for p in loads), len(loads)))
@@ -203,15 +287,22 @@ def cmd_convert(args):
     if args.entry:
         e_entry = int(args.entry, 0)
     windows = [parse_window(w) for w in (args.window or [])]
+    maps = map_segments(data, phdrs)
     blocks = []          # (flags, source offset, vaddr, size)
-    for p_type, p_flags, p_offset, p_vaddr, p_paddr, p_filesz, p_memsz, p_align in phdrs:
+    for i, (p_type, p_flags, p_offset, p_vaddr, p_paddr,
+            p_filesz, p_memsz, p_align) in enumerate(phdrs):
         if p_type != PT_LOAD or p_filesz == 0:
             continue
-        if p_offset + p_filesz > len(data):
+        # p_offset addresses the image, not the file: use the SELF block that
+        # holds this segment's bytes.
+        src_off = maps[i][0] if maps[i] else p_offset
+        if src_off + p_filesz > len(data):
             print("warning: segment vaddr %#x runs past EOF, clipping"
                   % p_vaddr, file=sys.stderr)
-            p_filesz = len(data) - p_offset
+            p_filesz = len(data) - src_off
             p_memsz = min(p_memsz, p_filesz)
+            if p_filesz <= 0:
+                continue
         ranges = [(p_vaddr, p_vaddr + p_filesz)]
         if windows:
             ranges = [(max(p_vaddr, ws), min(p_vaddr + p_filesz, we))
@@ -223,7 +314,7 @@ def cmd_convert(args):
         if p_flags & 1:
             p_flags |= 4
         for lo, hi in ranges:
-            blocks.append((p_flags, p_offset + (lo - p_vaddr), lo, hi - lo))
+            blocks.append((p_flags, src_off + (lo - p_vaddr), lo, hi - lo))
 
     if not blocks:
         raise SystemExit("no PT_LOAD segment matched the requested range")
@@ -275,6 +366,24 @@ def cmd_convert(args):
     return 0
 
 
+def cmd_va(args):
+    image = load_image(args.file)
+    va = resolve(image, offset=int(args.addr, 0))
+    if va is None:
+        raise SystemExit("%s is not inside a PT_LOAD block" % args.addr)
+    print("%s" % hex(va))
+    return 0
+
+
+def cmd_off(args):
+    image = load_image(args.file)
+    off = resolve(image, va=int(args.addr, 0))
+    if off is None:
+        raise SystemExit("%s is not inside a PT_LOAD block" % args.addr)
+    print("%s" % hex(off))
+    return 0
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -294,6 +403,14 @@ def main(argv):
                         "virtual-address range (START+SIZE is also accepted); "
                         "repeat to add more windows")
     p.set_defaults(func=cmd_convert)
+    p = sub.add_parser("va", help="map a SELF file offset to a virtual address")
+    p.add_argument("file")
+    p.add_argument("addr")
+    p.set_defaults(func=cmd_va)
+    p = sub.add_parser("off", help="map a virtual address to a SELF file offset")
+    p.add_argument("file")
+    p.add_argument("addr")
+    p.set_defaults(func=cmd_off)
     args = ap.parse_args(argv)
     return args.func(args)
 
