@@ -31,9 +31,12 @@ rdata_strings.txt
 out.txt
 
 # --- keys and keyrings -----------------------------------------------------
-# The archive key is project data, not source. tools/rpf9crypt.cpp reads it
-# from here at run time; the repo ships the algorithm, never the key.
-keys/
+# The archive key is project data, not source. tools/rpf9crypt.cpp and
+# tools/rpf9keyhunt.cpp read it from here at run time; the repo ships the
+# algorithm and the format, never a key. The directory keeps its README.
+keys/*
+!keys/README.md
+!keys/.gitkeep
 *.key
 *.keyring
 

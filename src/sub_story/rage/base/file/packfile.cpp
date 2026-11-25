@@ -262,10 +262,15 @@ bool fiFile_Initialise(fiFile* self, const char* name,
     } else {
         std::memcpy(pathBuffer, name, sizeof(pathBuffer));
     }
-    // FUN_14079e350(path, buf) assigns; FUN_1428cd1a0(path) keys it.
+    // The retail assignment (FUN_14079e350) and the path hash (FUN_1428cd1a0)
+    // were not recovered, so this is a local stand-in with the same observable
+    // shape: short text goes inline and the last byte's sign bit is set, which
+    // is exactly what IsInline() tests in the recovered callers. Heap text would
+    // store a pointer in `data` instead; no recovered body sets that case here.
+    std::memset(self->path.inline_text, 0, sizeof(self->path.inline_text));
     std::strncpy(self->path.inline_text, pathBuffer, 15);
     self->path.inline_text[15] = static_cast<char>(0x80);
-    self->pathKey = static_cast<uint16_t>(0x1462fd890ull & 0xFFFF);
+    self->pathKey = 0;   // FUN_1428cd1a0(path) not reconstructed
 
     const char* openPath = self->path.IsInline() ? self->path.inline_text
                                                  : self->path.data;

@@ -86,17 +86,25 @@ static_assert(offsetof(fiPackHeader9, mode) == 0x2C, "mode is at +0x2C");
 //   AES tables at RVA 0x5fc1b20 (TE0), 0x5fc2b50 (TD0), 0x5fc2b20 (rcon)
 // and the key ids are the AES_KEY_ID_* family in data/aes.h.
 //
-// RPF9's table of contents is [0x40, tocEnd): the 64-byte header stays
-// plaintext, because the magic, the TOC size and the name offset have to be
-// readable before any key is chosen. Both ends are 16-aligned in every sampled
-// archive (tocEnd is a multiple of 16 in all four). Two things are *not*
+// RPF9's table of contents is modelled as [0x40, tocEnd): the 64-byte header
+// stays plaintext, because the magic, the TOC size and the name offset have to
+// be readable before any key is chosen. Both ends are 16-aligned in every
+// sampled archive (tocEnd is a multiple of 16 in all four). The mode is *not*
+// proven -- the shared 32-byte prefix across archives is equally consistent with
+// ECB and with CBC under a fixed IV, and no 16-byte block repeats in any of the
+// four regions -- so this is a hypothesis with a tool attached
+// (tools/rpf9keyhunt.cpp) rather than a measurement. Three things are *not*
 // proven and are deliberately left to the caller:
 //   * which key id an RPF9 archive uses -- the recovered reader never reads
 //     +0x28, and that field is not constant across archives anyway;
 //   * that this build calls the block here at all. FUN_141fb2600 reads the
 //     table without calling AES, so on Xbox Series X the decryption may sit
 //     below this layer. tools/rpf9crypt.cpp therefore takes a key id and a key
-//     explicitly instead of inventing one.
+//     explicitly instead of inventing one;
+//   * that the key exists as a constant in the image at all. All 7,210,119
+//     aligned 32-byte windows of the image fail the padding test, and the only
+//     RAGE key array it carries is the GTA V Durango key at RVA 0x65b5758,
+//     which does not open these archives (docs/rpf-crypto.md).
 struct fiPackCrypt {
     static constexpr uint32_t kTocStart = 0x40;  // the header is plaintext
     static constexpr uint32_t kAlignment = 16;

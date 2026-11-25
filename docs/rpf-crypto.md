@@ -88,18 +88,26 @@ aes2.Encrypt(buffer, totalSize);
 `data/aes.cpp`**. So the cipher stream is AES-256 in ECB mode, each 16-byte block
 standing alone.
 
-RPF9 keeps the same shape with a longer header: everything from `0x40` to
-`tocEnd` is ciphertext, and both ends are 16-aligned in every sampled archive
-(`tocEnd` is a multiple of `0x10` in all four). The 64-byte header stays
-plaintext because the magic, the TOC end and the name offset have to be readable
-before a key is chosen.
+RPF9 keeps the same *shape* for the region after the header, but two things
+that an earlier revision of this page asserted are not established, and one of
+them is now measured false:
 
-The ECB prediction matches the bytes. Across the 193 headers the 6RE notes
-sample, `[0x40,0x50)` is the **same** 16 bytes in every archive, and the next
-block has only four variants — that is the first TOC block of a constant
-plaintext. With CBC every archive would differ from the first block on. The "not
-ECB" argument in those notes rests on finding no repeated 16-byte block in the
-*varying* part, which ECB does not promise.
+1. **The bytes are opaque, but not with a proven cipher.** `[0x40, tocEnd)` is
+   16-aligned on both ends in all four archives and has entropy 7.59-8.00 with
+   **no repeated 16-byte block at all** (0 of 3,917 blocks in `data.rpf`, 0 of
+   2,126 in `common.rpf`). A packed table of contents that stored records would
+   repeat slots; ECB over it would repeat blocks. So either the plaintext has no
+   repeated block (a table of 64-bit hashes does not) or the mode is not ECB.
+2. **The shared 32-byte prefix does not identify ECB.** `[0x40,0x60)` is the
+   same 32 bytes in all four archives. That proves the first two plaintext
+   blocks are the same in all four; it does not distinguish ECB from CBC with a
+   fixed IV, because in CBC `block0 = E(P0 xor IV)` and `block1 = E(P1 xor C0)`
+   are also equal when `P0`, `P1` and `IV` are. The sixth revision of the 6RE
+   notes rejects ECB from the absence of duplicates in the varying part; this
+   page rejects the *proof* of ECB for the same reason, not the mode.
+
+What is left is a hypothesis, and the code below is written as one: the range is
+`[0x40, tocEnd)`, the cipher is RAGE's own AES block, and the key is unknown.
 
 ## Where the block is in this image
 
@@ -129,8 +137,30 @@ shape. Above it sits `FUN_021a927b` (156 B) and then the users
 It is **not** CNG. `/opt/xwin/sdk/Include/10.0.26100/um/bcrypt.h` is the header
 this build would use, and the import table has exactly three bcrypt entries —
 `BCryptOpenAlgorithmProvider`, `BCryptGenRandom`, `BCryptCloseAlgorithmProvider`
-(`imports/gdk_symbols.tsv`) — and **no** `BCryptEncrypt` / `BCryptDecrypt`. The
-archive crypto is RAGE's own block.
+(`imports/gdk_symbols.tsv`) — and **no** `BCryptEncrypt` / `BCryptDecrypt`.
+
+Where the block is **not** used is as important. The two callers above
+`FUN_021a927b` are not file code:
+
+| Function | Size | Evidence |
+|---|---|---|
+| `FUN_0218809a` | 6012 B | loads the literals `CLNT` and `SRVR` — an HTTP client/server request builder |
+| `FUN_02189816` | 424 B | same neighbourhood, no file or archive literal |
+
+And the recovered RPF9 open path contains no call to the block at all:
+
+```
+FUN_140fc2540  packfile ctor
+  -> FUN_141fb2600  read header + TOC through a fiDevice vtable slot
+       callees: none (the vtable read is the only call)
+  -> FUN_141fb2780  index ctor
+  -> FUN_1408ec200  validate index against the file
+  -> FUN_14087aec0  build index from the header block
+```
+
+So on this build the packfile layer reads the TOC as opaque bytes. If it is
+encrypted, the decryption sits below it — in the `fiDevice` implementation that
+`FUN_140968480` returns — not here.
 
 The GTA V Durango key is still in the image, at RVA `0x65b5758`
 (`unique_key_gta5_xboxone`, 32 bytes, matched byte for byte). That is how the
@@ -177,6 +207,52 @@ defined it and the batch export skipped it; the disassembly and the exact
 arithmetic are in `src/sub_story/game/Core/FUN_14087b0f0/`. What the run counts
 is still open — it is not the name region, which the four archives fix at
 `align16(entryCount * (8 + mode))`.
+
+## The key hunt
+
+`tools/rpf9keyhunt.cpp` turns the question into an experiment. Every aligned
+window of the image is expanded as an AES key, the archive's name-region tail
+block is decrypted, and the plaintext is scored. The tail block is the probe
+because a packed name region is built into a 16-aligned heap: its last block is
+record bytes plus zero padding, so a correct key produces zeros where a wrong
+one produces noise. Two archives must agree.
+
+```sh
+g++ -std=c++17 -O2 -o build/rpf9keyhunt tools/rpf9keyhunt.cpp \
+    src/sub_story/rage/base/data/aes.cpp
+./build/rpf9keyhunt selftest
+./build/rpf9keyhunt scan 6RE/DUMP/game_scarlett_master.exe \
+    6RE/DUMP/appdata0.rpf 6RE/DUMP/script.rpf --keylen 32 --min-zeros 8
+```
+
+The self-test plants a key in a synthetic image and requires the scan to find
+it at the right offset, so a negative is a statement about the image:
+
+```
+ok    key schedule
+ok    synthetic image and archive written
+ok    synthetic archive parses
+hit   file+0x340 (rva 0x340) key256 030a1118…  zeros 16 printable 0
+ok    scanner reports a hit for the planted key
+```
+
+On the retail image:
+
+```
+.text    99875174 bytes scanned
+.rdata    9047052 bytes scanned
+.data     6434304 bytes scanned
+.retplne      228 bytes scanned
+.tls         5249 bytes scanned
+examined 7210119 candidate keys (0 before --start)
+no key found: no window in this image decrypts the probe blocks to padding
+```
+
+7,210,119 32-byte windows at 16-alignment, all four archives' geometry, zero
+hits. The same scan over both RDR2 PS4 eboots (`roms/rdr2ps4/base/eboot.bin`,
+`.../upd/eboot.bin`) at 16- and 32-byte windows is also empty. The only RAGE key
+array the image carries is the GTA V Durango key at RVA `0x65b5758`, and it does
+not open these archives.
 
 ## Measured
 
@@ -233,7 +309,8 @@ GTA V arrays.
 
 ## Using it
 
-The key is never in the repository. `keys/` and `*.keyring` are ignored.
+The key is never in the repository. `keys/*` and `*.keyring` are ignored;
+`keys/README.md` records the format and the measured result, and is tracked.
 
 ```sh
 g++ -std=c++17 -O2 -o build/rpf9crypt tools/rpf9crypt.cpp \
@@ -258,9 +335,14 @@ and after, so a wrong key is visible immediately instead of silent.
 
 ## Still blocked
 
-1. **The key.** 32 bytes that are not in the image's GTA V arrays and not in any
-   public note. Nothing in `6RE/new` or `6RE/docs` supplies it: those projects
-   carve payloads and explicitly do not decode the TOC.
+1. **The key, and whether one is needed.** All 7,210,119 aligned 32-byte
+   windows of this image fail the padding test, and the packfile open path never
+   calls the AES block, so the key is not a constant in this build's `.text`,
+   `.rdata` or `.data`. Either the decryption belongs to the device layer (see
+   `FUN_140968480` and the `fiDevice` vtable) or the TOC is not AES-encrypted at
+   all (a packed table of 64-bit hashes has exactly the entropy and the absence
+   of duplicates measured above). Nothing in `6RE/new` or `6RE/docs` supplies a
+   key: those projects carve payloads and explicitly do not decode the TOC.
 2. **The entry records.** The name records are settled — `entryCount` records of
    `8 + mode` bytes, hash plus flags — but the entry records that precede them,
    `[0x40, namesOffset)`, are *not* a fixed stride:

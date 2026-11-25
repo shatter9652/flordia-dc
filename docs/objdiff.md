@@ -114,3 +114,46 @@ python3 gta6decomp/tools/progress.py
 
 That is deliberately the only way the number can change, and it is recorded in
 version control with the tree it describes.
+
+## Function match first, byte match last
+
+Two different counts are easy to confuse, so the tree keeps them apart:
+
+| Tier | Question | Where it is recorded |
+|---|---|---|
+| **function match** | does the readable body do what the Ghidra body does? | the body itself, plus the evidence header; all 4,626 exported bodies and the 4 hand-written ones |
+| **byte match** | are the compiled instructions identical to retail? | `tools/funcmatch.py`, objdiff, objective 7 |
+
+Byte matching needs the same compiler and flags as the retail build. Until that
+exists, `tools/funcmatch.py` answers the narrower question directly: it pulls the
+retail bytes at an RVA out of the PE, pulls the rebuilt section out of a COFF
+object, blanks relocation placeholders, and prints the first difference.
+
+The only function with a hand-disassembled reference body is `FUN_14087b0f0`
+(52 bytes, no `.pdata` entry):
+
+```
+$ python3 tools/funcmatch.py --rva 0x87b0f0 --size 0x34 \
+      --obj build/game/Core/FUN_14087b0f0.obj --symbol fiPack_ComputeRun
+retail   .text:0x87b0f0  52 bytes
+rebuilt  .text          73 bytes (8 relocation bytes blanked)
+retail   8b 44 24 28 45 0f af c1 44 0f af c0 48 8d 54 02 ff ...
+rebuilt  48 89 c8 8b 4c 24 28 45 89 c0 45 89 c9 4d 0f af c8 ...
+first difference at +0x0: retail 8b, rebuilt 48
+NOT BYTE-IDENTICAL
+```
+
+The gap is codegen, not the reconstruction:
+
+- retail reads the fifth argument with `mov 0x28(%rsp),%eax` and multiplies with
+  32-bit `imul`; clang-cl zero-extends `%r8d`/`%r9d` and uses 64-bit `imulq`;
+- retail stores `out[0]` before computing the rest; clang keeps the sret pointer
+  in `%rax` and stores later;
+- clang folds the two `align` steps into `paddq`/`pand` against two `.rdata`
+  constants; MSVC emits `add`/`and` per step.
+
+So this body is a **function match** and not a byte match, and the diff names
+exactly what the byte-matching tier still needs: an MSVC toolchain (or objdiff's
+normalisation) and the last objective's full pass. Nothing in the readable body
+is adjusted to chase clang's instruction selection, because that would make the
+source less like the RAGE original, not more.
