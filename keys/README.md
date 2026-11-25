@@ -20,6 +20,13 @@ raw 16/32-byte windows without one.
    is at RVA `0x65b5758` (VA `0x1465b5758`), 32 bytes, byte-for-byte the GTA V
    Durango key from `MiscRef/GTAVSRC/.../data/aes.cpp`. No other
    `unique_key_*` array from that file survives in this build.
+
+   Key arrays do survive across titles, so their absence here is meaningful:
+   both RDR2 PS4 eboots (`roms/rdr2ps4/base/eboot.bin` at `0x6983980`,
+   `.../upd/eboot.bin` at `0x7ab65c0`) still carry the GTA V PS4 key
+   (`unique_key_gta5_ps4`, id `0x0FFEFFFF`) in plaintext. A title that encrypted
+   its RPF with an embedded array would show the array the same way; this one
+   does not.
 2. **That key does not open an RPF9 archive.** `appdata0.rpf`, `script.rpf`,
    `common.rpf` and `data.rpf` all decrypt to noise with it (printable-ASCII
    share 0.34-0.38 over the entry region).
