@@ -77,6 +77,13 @@ the TOC as opaque bytes — and the block's only callers in the image are the HT
 stack (`FUN_0218809a` builds `CLNT`/`SRVR`). So `[0x40, tocEnd)` is recorded as
 the hypothesised cipher range, not a proven one.
 
+The PS5 release was read the same way and agrees: `RPF9` only, no cipher on the
+open path, and its RAGE AES tables have no code reference at all — the PS5 build
+uses AES-NI instead. Its open body is also inlined enough to show the header
+layout arithmetic in full, which is now `fiPack_ComputeLayout` in `packfile.cpp`.
+`docs/ps5-build.md` has the container, the loader and the recovered addresses;
+`tools/ps5elf.py` is the loader.
+
 `docs/rpf-crypto.md` has the evidence and the gaps. The header is 64 bytes, not
 16, and the name region is `align16(entryCount * (8 + mode))` bytes -- exact on
 all four archives in the dump, which is what `rpf9crypt info` checks without a

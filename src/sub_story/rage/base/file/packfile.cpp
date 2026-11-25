@@ -27,6 +27,18 @@
 // wrapper* and the 0x80-byte object is the *packfile* that reads a header out
 // of it.
 //
+// PlayStation 5 cross-check (docs/ps5-build.md): the PS5 eboot carries the same
+// two objects, compiled with different inlining, and its bodies are inlined
+// enough to show the whole layout computation --
+//   0x02889420  fiFile::Open        -> 0x60 object, magic-gated, -1 = failure
+//   0x02889540  fiFile::Initialise  -> vtable, device +0x10, handle +0x18 = -1,
+//                                      size +0x30, atString path +0x38
+//   0x00924f60  fiPackfile::Open    -> 0x80 object, file +0x08, header +0x18,
+//                                      names +0x20, index kind +0x28, block
+//                                      +0x30, derived layout +0x38..+0x68
+//   0x009256d0  device selection    -> compares device-type strings
+//   0x03588d60  mount + directory listing (count * 0x108 records)
+//
 // Layout reference: MiscRef/GTAVSRC/src/dev_ng/rage/base/src/file/packfile.cpp,
 // packfile.h, device.h. Same object family, VI's field order.
 //
@@ -101,13 +113,18 @@ static_assert(offsetof(fiFile, extraCount) == 0x4C, "extraCount is at +0x4C");
 
 // The device half used by both classes. Slot offsets are the ones the recovered
 // bodies call through, in the order they appear there.
+//
+// One slot is still open: the Xbox bodies call Read through +0x60, the PS5 body
+// through +0x68 (docs/ps5-build.md has the call). A one-slot difference is easy
+// to make either way, so both are recorded here and neither is treated as the
+// settled answer until one of the two builds is read again for it.
 struct fiDevice {
     virtual ~fiDevice() = default;
     virtual int64_t Open(const char* path, uint64_t* outInfo) = 0;  // +0x28
     virtual void    Close(int64_t handle) = 0;                      // +0x90
     virtual int     Read(int64_t handle, uint64_t offset, void* dst,
-                         int bytes) = 0;                            // +0x60 in the
-                                                                    // recovered calls
+                         int bytes) = 0;  // +0x60 Xbox, +0x68 PS5; 16-byte
+                                          // units in the PS5 header read
 };
 
 // fiPackHeader9 and the fiPackCrypt block live in packfile_crypt.h, so the
@@ -177,6 +194,97 @@ struct fiPackfile {
 static_assert(sizeof(fiPackfile) == 0x80, "fiPackfile is 0x80 bytes");
 static_assert(offsetof(fiPackfile, header) == 0x18, "header is at +0x18");
 static_assert(offsetof(fiPackfile, names) == 0x20, "names is at +0x20");
+
+// ---------------------------------------------------------------------------
+// The layout fiPackfile::Open derives from the header (PS5 body, 0x924f60)
+// ---------------------------------------------------------------------------
+
+// Before it reads anything, the PS5 body computes seven 64-bit numbers from the
+// header alone and stores them at +0x38..+0x68 of the packfile object. The Xbox
+// bodies only show the first two, which is why this was not visible here before.
+// Written in the order the PS5 body computes them, with `base` as the header's
+// address:
+//
+//   +0x38  align_up(base + 0x40,                    16 or 4)
+//   +0x40  align(  +0x38 + field1A * 8,              16 or 8)
+//   +0x48  align(  +0x40 + field1C,                  16 or 8)
+//   +0x50  align(  +0x48 + field20 * 0x18,           mode)
+//   +0x58  align8( +0x50 + (field20 - field22) * entryCount * mode)
+//   +0x60  align(  base + namesOffset | name buffer, mode)   kind 0 | kind 1
+//   +0x68  align8( +0x60 + entryCount * field22 * mode)
+//
+// Both alignment classes come from bit 0 of +0x2D -- the byte that is 0x0F in
+// every archive in the dump. With the bit set the regions are 16-byte aligned
+// and the ends 16-byte aligned; with it clear the regions are 4-byte aligned and
+// the ends 8-byte aligned. `mode` (+0x2C, 1 or 2) is used as an alignment
+// itself, which is why its two values matter to the geometry and not only to the
+// name-record stride.
+//
+// What this does *not* do is reproduce the on-disk geometry: for appdata0 these
+// seven numbers come out as 0x40, 0x60, 0x1B0, 0x1F8, 0x200, ... while the
+// header separately carries namesOffset 0x340 and tocEnd 0x360. So the header's
+// own namesOffset/tocEnd stay the authority for the file layout (that is what
+// fiPackCrypt checks), and the seven numbers here describe something the loader
+// builds *from* the counts -- a working copy, most likely. Nothing in the PS5
+// body reads them back against tocEnd, so which buffer they describe is still
+// open; they are computed here rather than invented, and nothing is derived from
+// them yet.
+struct fiPackLayout {
+    uint64_t entryBase;    // +0x38
+    uint64_t entryTable;   // +0x40
+    uint64_t nameIndex;    // +0x48
+    uint64_t nameBlob;     // +0x50
+    uint64_t nameBlobEnd;  // +0x58
+    uint64_t records;      // +0x60  kind 0: inside the header buffer
+    uint64_t recordsEnd;   // +0x68
+};
+
+inline uint64_t fiPack_AlignUp(uint64_t value, uint64_t alignment) {
+    return (value + alignment - 1) & ~(alignment - 1);
+}
+
+// `names` is the separately-read name buffer (kind 1) and may be null for kind
+// 0. Kind 2 zeroes the record pair; a null header zeroes all ten fields and
+// leaves index kind 2, which is the failure path of the same body.
+fiPackLayout fiPack_ComputeLayout(uint64_t base, const fiPackHeader9& header,
+                                  const void* names, uint32_t kind) {
+    const bool wide = (header.field2D & 1) != 0;
+    const uint64_t regionAlign = wide ? 16 : 4;
+    const uint64_t tailAlign = wide ? 16 : 8;
+
+    fiPackLayout layout{};
+    layout.entryBase = fiPack_AlignUp(base + 0x40, regionAlign);
+    layout.entryTable = fiPack_AlignUp(
+        layout.entryBase + static_cast<uint64_t>(header.field18 >> 16) * 8,
+        tailAlign);
+    layout.nameIndex = fiPack_AlignUp(
+        layout.entryTable + static_cast<uint64_t>(header.field1C), tailAlign);
+    layout.nameBlob = fiPack_AlignUp(
+        layout.nameIndex + static_cast<uint64_t>(header.field20) * 0x18,
+        header.mode);
+
+    // The subtraction is 32-bit and unsigned in the retail body, so it wraps the
+    // same way here rather than being clamped.
+    const uint32_t span = static_cast<uint32_t>(header.field20) - header.field22;
+    layout.nameBlobEnd = fiPack_AlignUp(
+        layout.nameBlob + static_cast<uint64_t>(span) * header.entryCount *
+                              header.mode,
+        8);
+
+    if (kind == 2) {
+        return layout;
+    }
+    const uint64_t recordBase = (kind == 1 && names != nullptr)
+                                    ? reinterpret_cast<uint64_t>(names)
+                                    : base + header.namesOffset;
+    layout.records =
+        fiPack_AlignUp(recordBase + (header.mode - 1u), header.mode);
+    layout.recordsEnd = fiPack_AlignUp(
+        layout.records + static_cast<uint64_t>(header.entryCount) *
+                             header.field22 * header.mode,
+        8);
+    return layout;
+}
 
 // ---------------------------------------------------------------------------
 // Path resolution through the device mount table (FUN_14056eb30)

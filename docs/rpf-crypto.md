@@ -167,6 +167,46 @@ The GTA V Durango key is still in the image, at RVA `0x65b5758`
 key arrays are addressed, and it is why the reconstruction does not embed them:
 the algorithm is source, the key is project data.
 
+## The PlayStation 5 build
+
+VI ships for PS5 as well, and its `eboot.bin` is a SELF container around a
+plaintext Prospero ELF, so the same layer decompiles a second time from a
+different compiler (`docs/ps5-build.md`, `tools/ps5elf.py`). It does not change
+the conclusion, but it removes two of the open edges:
+
+| Question | Xbox Series X | PlayStation 5 |
+|---|---|---|
+| RPF magics in `.text` | `RPF9` only | `RPF9` only — `0x925092`, `0x9252f8`, `0x288943c`, plus 2 table slots |
+| Header read on the open path | `[device+0x60]` | `[device+0x68]`, 16 bytes at a time |
+| A cipher on the open path | none | none |
+| AES in the image | table-driven `FUN_0215f06c` | AES-NI: `aesenc` 559, `aesdec` 43, `aeskeygenassist` 31, all at `0x443d…` |
+| `TE0`/`TD0` users | 3 bodies | **no code reference at all** (`0x9c96370` is a data copy) |
+
+The last row is the one worth having. The PS5 build carries the RAGE AES tables
+and nothing loads them, and its own crypto is hardware AES — so the table code in
+`data/aes.cpp` is not what this build would reach for even if the RPF path called
+a cipher, and the RPF path is verifiably not calling one. That makes "the
+decryption, if any, sits below the packfile layer" a cross-build result rather
+than a single-image reading.
+
+The header is corroborated too. The PS5 open body consumes the same 64-byte
+header at the same offsets — `+0x1A` (u16, the high half of `field18`), `+0x1C`,
+`+0x20` (u16), `+0x22` (u16), `+0x24` (u32), `+0x2C` (u8 `mode`), `+0x2D` (u8
+flags, bit 0 tested) — and its layout arithmetic is readable in full, which is
+what `fiPack_ComputeLayout` in `packfile.cpp` transcribes. Two things it settles:
+
+* `mode` is not only the name-record stride (8 + mode); it is also an alignment,
+  used to align the name-blob base and the record run.
+* bit 0 of `+0x2D` selects the alignment class: set → 16-byte regions and 16-byte
+  ends, clear → 4-byte regions and 8-byte ends. The byte is `0x0F` in all four
+  archives, so the wide path is the one VI takes.
+
+What it does **not** settle is the on-disk geometry. The seven numbers the PS5
+body derives from the header come out at `0x40, 0x60, 0x1B0, 0x1F8, 0x200, …`
+for appdata0, while that archive's header says `namesOffset 0x340`,
+`tocEnd 0x360`. So those seven describe a buffer built *from* the counts, not the
+file, and `namesOffset`/`tocEnd` remain the authority for the archive layout.
+
 ## What was reconstructed
 
 `data/aes.cpp` keeps the retail structure — `rijndael_setup` with the AES-256
@@ -339,10 +379,11 @@ and after, so a wrong key is visible immediately instead of silent.
    windows of this image fail the padding test, and the packfile open path never
    calls the AES block, so the key is not a constant in this build's `.text`,
    `.rdata` or `.data`. Either the decryption belongs to the device layer (see
-   `FUN_140968480` and the `fiDevice` vtable) or the TOC is not AES-encrypted at
-   all (a packed table of 64-bit hashes has exactly the entropy and the absence
-   of duplicates measured above). Nothing in `6RE/new` or `6RE/docs` supplies a
-   key: those projects carve payloads and explicitly do not decode the TOC.
+   `FUN_140968480` and the `fiDevice` vtable) or the TOC is not AES-encrypted    at all (a packed table of 64-bit hashes has exactly the entropy and the absence
+   of duplicates measured above). The PS5 build agrees from the other side: no
+   cipher on its open path either, and its RAGE AES tables have no code
+   reference. Nothing in `6RE/new` or `6RE/docs` supplies a key: those projects
+   carve payloads and explicitly do not decode the TOC.
 2. **The entry records.** The name records are settled — `entryCount` records of
    `8 + mode` bytes, hash plus flags — but the entry records that precede them,
    `[0x40, namesOffset)`, are *not* a fixed stride:
