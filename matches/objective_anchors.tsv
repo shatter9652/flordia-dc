@@ -1,0 +1,5 @@
+objective	literal	rva	section	via	xref_rva	func_rva	func_size
+camera	Camera_Move	0678187f	.rdata	direct	0330187b	03301850	133
+rpf	imm:RPF9	00fc21d9	.text	imm	00fc21d9	00fc21c0	113
+rpf	imm:RPF9	01fb2619	.text	imm	01fb2619	01fb2600	372
+rpf	imm:RPF9	01fb2692	.text	imm	01fb2692	01fb2600	372

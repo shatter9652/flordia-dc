@@ -1,0 +1,66 @@
+kind	path	area
+build-path	B:\		p	
+build-path	B:\6	p	
+build-path	B:\6	p B	
+build-path	B:\6	p!J	
+build-path	B:\6	p$B	
+build-path	B:\6	p/B	
+build-path	B:\6	p<B	
+build-path	B:\7	p$B	
+build-path	D:\$]u5F	
+build-path	D:\$^u7E	
+build-path	G://settings/	
+build-path	V:\Zt)(	
+build-path	c:\code\xbox\breakpad\src\src\common\windows\backtrace.cc	
+build-path	c:\code\xbox\breakpad\src\src\common\windows\http_upload.cc	
+build-root	X:/americas/src/sub_story/game/vs_project/Gaming.Xbox.Scarlett.x64/Build/master/game_scarlett_master.pdb	
+content-path	common:/data	
+content-path	common:/data/InteriorGroups	
+content-path	common:/data/ModelTagMappings.meta	
+content-path	common:/data/ModelTags.meta	
+content-path	common:/data/TVPlaylists	
+content-path	common:/data/ai/DefaultVehicleAiHandlingEntry	game/ai
+content-path	common:/data/ai/Ladders	game/ai
+content-path	common:/data/ai/PedMotionData	game/ai
+content-path	common:/data/ai/VehicleDrivingStyles	game/ai
+content-path	common:/data/ai/animalattackbehaviours	game/ai
+content-path	common:/data/ai/animalcontextualanimations	game/ai
+content-path	common:/data/ai/baitinfo	game/ai
+content-path	common:/data/ai/buddymindsetprofiles	game/ai
+content-path	common:/data/ai/conversationlist	game/ai
+content-path	common:/data/ai/conversations	game/ai
+content-path	common:/data/ai/hazardnodes	game/ai
+content-path	common:/data/ai/searchpointsofinterest	game/ai
+content-path	common:/data/ai/trainConfigs	game/ai
+content-path	common:/data/ai/vehicleAI/ParkingSplineData	game/ai
+content-path	common:/data/ai/weapons/fullbodyweaponanimcontrollerdata	game/ai
+content-path	common:/data/audio/speechevents.meta	game/audio
+content-path	common:/data/control/prompts.meta	
+content-path	common:/data/garages	
+content-path	common:/data/levels/americas/fallback_heightmap.dat	
+content-path	common:/data/localmovement	
+content-path	common:/data/materials	
+content-path	common:/data/movieVariations	
+content-path	common:/data/pathingstyles	
+content-path	common:/data/pedbreathingsettings	
+content-path	common:/data/personaabilities	
+content-path	common:/data/tacticalpointdistribution	
+content-path	common:/data/tacticalpointvalidationdata	
+content-path	common:/data/version.txt	
+content-path	common:/data/walkandtalk	
+content-path	commoncrc:/data/visualsettings	
+content-path	platform:/data/ai/conditionalanims	game/ai
+content-path	platform:/data/events	
+content-path	platform:/data/fencePosingValues	
+content-path	platform:/data/gameconfig	
+content-path	platform:/data/grassPivotPositionTables	
+content-path	platform:/data/heightmapStreaming	
+content-path	platform:/data/ui/loose/feeds/uiFeedConditions	game/frontend/ui
+content-path	platform:/data/ui/loose/helpDataset_core	game/frontend/ui
+content-path	platform:/data/ui/loose/main_colortable	game/frontend/ui
+content-path	platform:/data/ui/loose/map/data/fog_data	game/frontend/ui
+content-path	platform:/data/ui/loose/map/data/fwuiAreaBlipStyle	game/frontend/ui
+content-path	platform:/data/ui/loose/map/data/gps	game/frontend/ui
+content-path	platform:/data/ui/loose/map/data/map_buildings	game/frontend/ui
+content-path	platform:/data/ui/loose/map/data/map_interiors_attr	game/frontend/ui
+content-path	platform:/data/ui/loose/uiConditionStore	game/frontend/ui

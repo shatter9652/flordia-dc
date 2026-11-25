@@ -1,0 +1,71 @@
+# florida-dc
+#
+# What is published here is the reverse engineering: hand-written bodies,
+# evidence tables, docs and tools. Everything below is either a copy of the
+# retail game, an analysis cache, or a build product, so none of it is uploaded.
+# Directories are kept with a .gitkeep where the whole directory is ignored.
+
+# --- retail game data: never distribute -----------------------------------
+*.exe
+*.dll
+*.lib
+*.pdb
+*.rpf
+*.ttpf
+*.awc
+*.bk2
+*.xvd
+*.xex
+*.pkg
+*.dmp
+*.bin
+*.sco
+*.csc
+
+# --- dumps taken from the executable --------------------------------------
+*.strings.txt
+*unicodestrings.txt
+all_strings.txt
+strings2.txt
+rdata_strings.txt
+out.txt
+
+# --- keys and keyrings -----------------------------------------------------
+# The archive key is project data, not source. tools/rpf9crypt.cpp reads it
+# from here at run time; the repo ships the algorithm, never the key.
+keys/
+*.key
+*.keyring
+
+# --- Ghidra project and its exports ---------------------------------------
+ghidra_proj/
+*.gpr
+*.rep/
+*.lock
+
+# --- raw decompiler output kept only for comparison ------------------------
+attic/**
+!attic/.gitkeep
+
+# --- objdiff / clang-cl build products ------------------------------------
+build/**
+!build/.gitkeep
+objdiff/
+*.obj
+*.o
+*.so
+*.a
+
+# --- generated indexes (tools/reindex.py and tools/gen_objdiff.py rebuild them)
+index.tsv
+INDEX.md
+objdiff.json
+
+# --- tool caches ----------------------------------------------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+target/
+.cache/

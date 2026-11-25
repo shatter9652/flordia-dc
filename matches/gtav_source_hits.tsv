@@ -1,0 +1,296 @@
+rva	literal	gtav_function	gtav_file
+100400544	ViewTargetVideoHistory	rlXblCommon::UTF8ToWinRtString	rage/base/src/rline/durango/private/rlXblPrivacySettings.cpp
+100400568	ViewTargetMusicHistory	rlXblCommon::UTF8ToWinRtString	rage/base/src/rline/durango/private/rlXblPrivacySettings.cpp
+100400592	ViewTargetExerciseInfo	rlXblCommon::UTF8ToWinRtString	rage/base/src/rline/durango/private/rlXblPrivacySettings.cpp
+100401264	x-xbl-contract-version	netXblHttp::GetAuthActorHeaderName	rage/base/src/rline/durango/private/rlxblhttptask.cpp
+100405872	Content-Type	netHttpRequest::IsBinaryResponse	rage/base/src/net/http.cpp
+100405888	Accept-Language	CefApp::GetResourceBundleHandler	rage/suite/src/rgsc/cef32/include/internal/cef_types.h
+100428480	application/octet-stream	rlNpPutChangeableDataWorkItem::Configure	rage/base/src/rline/rlnpwebapiworkitem.cpp
+100428536	If-None-Match	fiDevice::GetDevice	rage/base/src/diag/civetweb.cpp
+103803392	ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/	fiDevice::GetDevice	rage/base/src/diag/civetweb.cpp
+106648144	%s %s%s HTTP/1.1	netHttpRequest::MakeHeader	rage/base/src/net/http.cpp
+107175793	abcdefghijklmnopqrstuvwxyz	HashCreator::RsaSign	tools/MemoryHasher/HashCreator.cpp
+107175873	ABCDEFGHIJKLMNOPQRSTUVWXYZ	HashCreator::RsaSign	tools/MemoryHasher/HashCreator.cpp
+108496094	VehicleGlassComponentEntity	CVehicleGlassComponentEntity::InitPool	game/vfx/vehicleglass/VehicleGlassComponent.cpp
+108496122	PtFxSortedEntity	CPtFxSortedEntity::InitPool	game/vfx/particles/PtFxEntity.cpp
+108496333	ptxu_Velocity	ptxParticleRule::InitDefaultBehaviours	rage/suite/src/rmptfx/ptxparticlerule.cpp
+108496438	driverSettings_RpfDirectory	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108497089	double_array	parStream::Close	rage/base/src/parsercore/parstream.cpp
+108497116	vector4_array	atLiteralHashString::TryGetString	rage/base/tools/cli/parsertools/psoprinter.cpp
+108497142	vector3_array	atLiteralHashString::TryGetString	rage/base/tools/cli/parsertools/psoprinter.cpp
+108497156	vector2_array	atLiteralHashString::TryGetString	rage/base/tools/cli/parsertools/psoprinter.cpp
+108498284	%08x%08x%08x	RosFeedGuid::ToFixedString	game/network/SocialClubServices/SocialClubFeed.cpp
+108500276	deferred_draw	grmShaderFactory::GetInstance	game/renderer/TreeImposters.cpp
+108500394	glass_pv_env	GlassInfo::Init	rage/suite/src/breakableglass/glassmanager.cpp
+108500748	%02u:%02u.%03u	CTextConversion::FormatMsTimeAsString	game/text/TextConversion.cpp
+108500780	RADIO_STATIONS_%02u	strStreamingEngine::GetLoader	game/audio/radiostation.cpp
+108500849	%02u:%02u.%02u	CTextConversion::FormatMsTimeAsString	game/text/TextConversion.cpp
+108500974	DAY_OF_MONTH_%u	fwLanguagePack::GetDayOfTheMonthString	rage/framework/src/fwlocalisation/languagePack.cpp
+108501164	common:/data/version.txt	CDebug::SetVersionNumber	game/debug/Debug.cpp
+108501189	american.txt	diagErrorCodes::LoadLanguageFile	rage/base/src/diag/diagerrorcodes.cpp
+108501921	DoesNotExist	rlRosEntitlementDownloadURLTask::ProcessError	rage/base/src/rline/entitlement/rlrosentitlementtask.cpp
+108501988	ShoreLineList	audNorthAudioEngine::GetCurrentAudioLevelName	game/audio/ambience/ambientaudioentity.cpp
+108502824	PlayerAccount	rlClanRosBaseTask::ConvertRosResultToClanError	rage/base/src/rline/clan/rlclantasks.cpp
+108502838	RockstarAccount	rlRosEntitlementDownloadURLTask::ProcessError	rage/base/src/rline/entitlement/rlrosentitlementtask.cpp
+108502854	IsSubAccount	rlHttpTaskHelper::ReadBool	rage/base/src/rline/ros/rlroscredtasks.cpp
+108503108	waterreflectionalphacliptint	grmShaderFx::FindTechniqueGroupId	game/shaders/ShaderHairSort.cpp
+108503137	deferredalphacliptint	grmShaderFx::FindTechniqueGroupId	game/shaders/ShaderHairSort.cpp
+108504046	InvalidArgument	rlScFriendsBaseTask::ConvertRosResultToError	rage/base/src/rline/scfriends/rlscfriendstasks.cpp
+108504062	TargetEnvironment	rlTelemetryPolicies::LoadMetricsFromJson	rage/base/src/rline/rltelemetry.cpp
+108504674	Phone_SoundSet_Default	CVideoEditorPlayback::BeginCameraShutterEffect	game/frontend/VideoEditor/ui/Playback.cpp
+108505566	engineSettings_NumRequestedSettingsPerBucket	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108505611	engineSettings_NumSoundsPerBucket	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108505652	ros-SessionTicket	rlRosHttpFilter::ProcessRequestHeader	rage/base/src/rline/ros/rlroshttptask.cpp
+108507030	%s%saudioconfig.dat	audEngineUtil::InitClass	rage/base/src/audioengine/engine.cpp
+108507239	cascadeshadows	grmShaderFactory::GetInstance	game/renderer/RenderPhases/RenderPhaseCascadeShadows.cpp
+108507280	useDynamicShadows	ConfigLightSettings::Set	game/timecycle/TimeCycleConfig.cpp
+108507388	MinAndBoundingRadius	spdAABB::PreLoad	rage/base/src/spatialdata/aabb.cpp
+108507409	MaxAndInscribedRadius	spdAABB::PreLoad	rage/base/src/spatialdata/aabb.cpp
+108507524	AlreadyExists	rlClanRosBaseTask::ConvertRosResultToClanError	rage/base/src/rline/clan/rlclantasks.cpp
+108507538	common:/data/TVPlaylists	CTVPlaylistContainer::Load	game/vfx/misc/TVPlaylistManager.cpp
+108507563	contentlists	CTunables::LoadContentLists	game/network/Cloud/Tunables.cpp
+108507655	LoginAttempts	rlScTaskBase::HandleError	rage/base/src/rline/socialclub/rlsocialclubtask.cpp
+108507853	Shocking Events	x::sm_Tunables	game/event/EventShocking.cpp
+108507921	Achievements	AchievementList::GetMemoryRequired	rage/suite/src/rgsc/rgsc/rgsc/achievements.cpp
+108508261	engineSettings_NumBuckets	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108508287	engineSettings_NumReservedBuckets	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108509158	driverSettings_NumGranularDecoders	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108509193	common:/data/ai/Ladders	CLadderMetadataManager::Load	game/task/Movement/Climbing/Ladders/LadderMetadataManager.cpp
+108510613	InvalidCredentials	rlScTaskBase::HandleError	rage/base/src/rline/socialclub/rlsocialclubtask.cpp
+108510632	common:/data/materials	phMaterialMgrGta::LoadGtaMtlFile	game/physics/gtaMaterialManager.cpp
+108510655	General Tasks	classname::Tunables::Tunables	game/task/System/Tuning.h
+108511026	Profile Settings	CProfileSettings::InitWidgets	game/frontend/ProfileSettings.cpp
+108511242	DisabledSecurityFlags	rlHttpTaskHelper::ReadInt	rage/base/src/rline/ros/rlroscredtasks.cpp
+108511264	ros-SecurityFlags	rlRosHttpFilter::ProcessRequestHeader	rage/base/src/rline/ros/rlroshttptask.cpp
+108511322	metadataPaths_Curves	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108512165	Player Tunables	classname::Tunables::Tunables	game/task/System/Tuning.h
+108512333	Capabilities	CPedNavCapabilityInfoManager::AddWidgets	game/Peds/NavCapabilities.cpp
+108512384	metadataPaths_Categories	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108512662	/cloudservices	std::replace	rage/base/src/rline/cloud/rlcloud.cpp
+108512703	driverSettings_NumPhysicalBufferVoices	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108512742	driverSettings_MaxPhysicalStereoVoices	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108512781	driverSettings_NumVirtualVoices	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108512813	driverSettings_NumPhysicalVoices	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108512991	metadataPaths_Sounds	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108513063	StaticBounds	fwStaticBoundsStore::fwStaticBoundsStore	rage/framework/src/fwscene/stores/staticboundsstore.cpp
+108513776	%s://%s%s%s%s	sysUri::GetCompleteUri	rage/base/src/system/uri.cpp
+108513999	ShoreLineList_%s	audNorthAudioEngine::GetCurrentAudioLevelName	game/audio/ambience/ambientaudioentity.cpp
+108514306	AMBIENT_ZONE_LIST_%s	audNorthAudioEngine::GetCurrentAudioLevelName	game/audio/ambience/ambientaudioentity.cpp
+108514386	AMBIENCE_BANK_MAP_AUTOGENERATED_%s	audNorthAudioEngine::GetCurrentAudioLevelName	game/audio/ambience/ambientaudioentity.cpp
+108514425	multipart/form-data; boundary=%s	sysTimer::GetSystemMsTime	rage/base/src/rline/rlhttptask.cpp
+108514464	&playerTicket=%s	netHttpRequest::UrlEncode	rage/base/src/rline/scauth/rlscauth.cpp
+108514481	&scAuthLinkToken=%s	netHttpRequest::UrlEncode	rage/base/src/rline/scauth/rlscauth.cpp
+108514611	&machineId=%s	datBase64::Encode	rage/base/src/rline/scauth/rlscauth.cpp
+108514669	memory:$%p,%d,%d:%s	fiDevice::MakeMemoryFileName	rage/base/src/file/device_common.cpp
+108514712	secure/%s/%s	rlPresence::GetGamerHandle	game/network/Cloud/CloudManager.cpp
+108514839	sc/msg/%s/%s.%s	netLocalizedStringInCloudRequest::Start	game/network/SocialClubServices/netLocalizedCloudStrings.cpp
+108516345	materialcolor	phBoundGeometry::Load_v110	rage/base/src/phbound/boundgeom.cpp
+108516851	pedFpsLight.volumeColor	CPed::LoadVisualSettings	game/Peds/Ped.cpp
+108516875	pedLight.volumeColor	CPed::LoadVisualSettings	game/Peds/Ped.cpp
+108517158	Synchronizer	crProperties::CalcKey	rage/suite/src/crmotiontree/synchronizer.cpp
+108517178	silhouettelayer	grmShaderFactory::GetInstance	game/renderer/HorizonObjects.cpp
+108517201	metadataPaths_DynamicMixer	audConfig::GetValue	rage/base/src/audioengine/dynamicmixmgr.cpp
+108517228	Fake Audio Mixer	audMixerDeviceXAudio2::InitHardware	rage/base/src/audiohardware/device_xaudio_pc.cpp
+108518177	FacialFilter	fwAnimDirectorComponentFacialRig::FacialFilter::CalcSignature	rage/framework/src/fwanimation/directorcomponentfacialrig.cpp
+108519070	audioFrameTimer	audDriver::GetMixer	rage/base/src/audioengine/engine.cpp
+108519123	engineSettings_MaxRelativeVelocityForDoppler	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108520633	billboard_nobump	rage::GetTextureTemplateTypeString	tools/AssetAnalysisTool/src/AssetAnalysisTool.cpp
+108520803	waterreflectionalphaclip	grmShaderFx::FindTechniqueGroupId	game/shaders/ShaderHairSort.cpp
+108520914	deferredalphaclip	grmShaderFx::FindTechniqueGroupId	game/shaders/ShaderHairSort.cpp
+108521441	growbuffer:%p	fiDevice::MakeGrowBufferFileName	rage/base/src/file/device_common.cpp
+108523078	allowInternalMotion	phBoundComposite::Load_v110	rage/base/src/phbound/boundcomposite.cpp
+108523304	intersection	phShapeComposite::SetUserProvidedCullShape	rage/base/src/physics/shapetest.h
+108523337	waterreflection	grmShaderFx::RegisterTechniqueGroup	game/shaders/ShaderLib.cpp
+108523563	Authorization	datBase64::Encode	rage/base/src/net/http.cpp
+108523913	SecsUntilExpiration	rlHttpTaskHelper::ReadInt	rage/base/src/rline/ros/rlroscredtasks.cpp
+108524254	Ped Population	CPedPopulation::InitWidgets	game/Peds/pedpopulation.cpp
+108524615	CurrentVersion	rlHttpTaskHelper::ReadInt	rage/base/src/rline/rltelemetry.cpp
+108524641	AcceptedVersion	rlScTaskBase::HandleError	rage/base/src/rline/socialclub/rlsocialclubtask.cpp
+108524681	raincollision	CTimeCycle::LoadVisualSettings	game/timecycle/TimeCycle.cpp
+108524716	ptxu_Collision	ptxEffectSpawner::Trigger	rage/suite/src/rmptfx/ptxeffectspawning.cpp
+108525816	%u.%u.%u.%u%n	netIpV4Address::FromString	rage/base/src/net/netaddress.cpp
+108526290	%s.scauth.rockstargames.com	rlScAuth::FormatHostName	rage/base/src/rline/scauth/rlscauth.cpp
+108528211	Game Virtual	sysMemAllocator::GetMaster	rage/base/src/system/main.cpp
+108528224	Resource Virtual	rage::SetPhysicalMemoryArea	rage/base/src/system/main.h
+108528515	Game Physical	sysMemVisualize::GetInstance	rage/base/src/grcore/device_gcm.cpp
+108528529	Resource Physical	sysMemVisualize::GetInstance	rage/base/src/grcore/device_gcm.cpp
+108529981	ModularSynth	synthCoreDisasm::InitClass	rage/base/src/audiosynth/synthesizer.cpp
+108530374	NicknameLength	rlScTaskBase::HandleError	rage/base/src/rline/socialclub/rlsocialclubtask.cpp
+108530389	capsuleLength	ConfigLightSettings::Set	game/timecycle/TimeCycleConfig.cpp
+108530403	PasswordLength	rlScTaskBase::HandleError	rage/base/src/rline/socialclub/rlsocialclubtask.cpp
+108530418	Content-Length	netXblHttp::FreeAuthToken	rage/base/src/net/http.cpp
+108530527	driverSettings_EffectsRootPath	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108530558	driverSettings_WaveRootPath	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108530711	application/x-shockwave-flash	fiDevice::GetDevice	rage/base/src/diag/civetweb.cpp
+108530756	ros-ContentHash	netHttpRequest::GetHeaderValue	rage/base/src/rline/ros/rlroshttptask.cpp
+108531419	deferred_lighting	grmShaderFactory::GetInstance	game/renderer/Deferred/DeferredLighting.cpp
+108531437	tiled_lighting	grmShaderFactory::GetInstance	game/renderer/Deferred/DeferredLighting.cpp
+108531463	cascadeshadows_processing	grmShaderFactory::GetInstance	game/renderer/RenderPhases/RenderPhaseCascadeShadows.cpp
+108531817	cascadeshadows_rendering	grmShaderFactory::GetInstance	game/renderer/RenderPhases/RenderPhaseCascadeShadows.cpp
+108531925	Wanted Tuning	CWanted::Overrides::SetDifficulty	game/game/Wanted.cpp
+108532229	Transfer-Encoding	netXblHttp::FreeAuthToken	rage/base/src/net/http.cpp
+108532607	TelemetryConfig	rlTelemetryPolicies::LoadMetricsFromJson	rage/base/src/rline/rltelemetry.cpp
+108532646	driverSettings_WaveSlotsConfig	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108532689	driverSettings_RpfConfig	audConfig::GetData	rage/base/src/audiohardware/driverconfig.cpp
+108534518	avgLuminanceCompute	grmShaderFactory::GetInstance	game/renderer/PostProcessFX.cpp
+108534624	SecsUntilNextWrite	rlHttpTaskHelper::ReadUns	rage/base/src/rline/rltelemetry.cpp
+108535505	GesturePhase	CPed::ms_gesturePhaseId	game/Peds/Ped.cpp
+108535793	ptxu_AnimateTexture	ptxClipRegions::GetData	rage/suite/src/rmptfx/ptxparticlerule.cpp
+108535813	DownloadedTexture	fiDevice::MakeMemoryFileName	game/scene/DownloadableTextureManager.cpp
+108535831	ros-ContentSignature	netHttpRequest::GetHeaderValue	rage/base/src/rline/ros/rlroshttptask.cpp
+108536034	PtFxAssetStore	ptfxAssetStore::ptfxAssetStore	rage/framework/src/vfx/ptfx/ptfxasset.cpp
+108536121	MapTypesStore	fwMapTypesStore::fwMapTypesStore	rage/framework/src/fwscene/stores/maptypesstore.cpp
+108536171	PoseMatcherStore	fwPoseMatcherStore::fwPoseMatcherStore	rage/framework/src/fwscene/stores/posematcherstore.cpp
+108536334	RemoveFromStore	rage::fwPsoStoreLoader::Unload	rage/framework/src/fwscene/stores/psostore.cpp
+108536402	NetworkDefStore	fwNetworkDefStore::fwNetworkDefStore	rage/framework/src/fwscene/stores/networkdefstore.cpp
+108536520	MapDataStore	fwMapDataStore::fwMapDataStore	rage/framework/src/fwscene/stores/mapdatastore.cpp
+108537895	xValuesPerLine	parXmlWriterVisitor::BeginArrayMember	rage/base/src/parser/visitorxml.cpp
+108538083	deferred_volume	grmShaderFactory::GetInstance	game/renderer/Deferred/DeferredLighting.cpp
+108538214	SubStartTime	rlHttpTaskHelper::ReadString	rage/base/src/rline/scmembership/rlscmembershiptasks.cpp
+108538357	EmailOrNickname	rlScTaskBase::HandleError	rage/base/src/rline/socialclub/rlsocialclubtask.cpp
+108538567	InteriorName	CInteriorProxy::GetPool	game/audio/environment/occlusion/occlusionmanager.cpp
+108538615	platformName	rlLeaderboard2CommonReadTask::Configure	rage/base/src/rline/rlstats.cpp
+108538843	Invalid Name	internal::ValidateName	rage/base/src/rline/rlpresence.cpp
+108539533	outerConeAngle	ConfigLightSettings::Set	game/timecycle/TimeCycleConfig.cpp
+108539548	innerConeAngle	ConfigLightSettings::Set	game/timecycle/TimeCycleConfig.cpp
+108540617	vfx_lightningStrike	grmShaderFactory::GetInstance	game/vfx/systems/VfxLightning.cpp
+108540840	ros-Challenge	rlRosHttpFilter::ProcessRequestHeader	rage/base/src/rline/ros/rlroshttptask.cpp
+108542071	LanguageCode	rlHttpTaskHelper::ReadString	rage/base/src/rline/ros/rlroscredtasks.cpp
+108542470	shadtexture_wdcascade	grmShaderFx::RegisterTechniqueGroup	game/shaders/ShaderLib.cpp
+108542570	If-Modified-Since	netHttpRequest::Succeeded	rage/base/src/net/http.cpp
+108542601	RichPresence	rlFriendsManager::GetDefaultFriendPage	rage/suite/src/rgsc/rgsc/rgsc/players.cpp
+108543987	/bound/bound	fiAssetManager::FileName	rage/base/src/phbound/boundloader.cpp
+108544000	audDynamicEntitySound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544056	audEnvironmentSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544115	audFluctuatorSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544134	audWrapperSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544150	audGranularSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544167	audOnStopSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544182	audTwinLoopSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544199	audSequentialOverlapSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544253	audCollapsingStereoSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544278	audMathOperationSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544300	audAutomationSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544347	audParameterTransformSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544374	audExternalStreamSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544397	audDirectionalSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544417	audSequentialSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544452	audVariableBlockSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544474	audMultitrackSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544510	audModularSynthSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544531	audSwitchSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544565	audSpeechSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544605	audLoopingSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544621	audStreamingSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544639	engineSettings_SpeedOfSound	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108544678	audVariableCurveSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544700	audVariablePrintValueSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544777	audEnvelopeSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544794	audSimpleSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544825	audCrossfadeSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544871	audRandomizedSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544907	audRetriggeredOverlappedSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108544994	audKineticSound	audSound::GetStaticPool	rage/base/src/audiosoundtypes/soundclassfactory.h
+108545392	shadtexture_ld	grmShaderFx::RegisterTechniqueGroup	game/shaders/ShaderLib.cpp
+108546303	AuthenticationFailed	rlRosEntitlementDownloadTokenTask::ProcessError	rage/base/src/rline/entitlement/rlrosentitlementtask.cpp
+108546385	IsTelemetryEnabled	rlRosGetTelemetryClientConfigTask::ProcessSuccess	rage/base/src/rline/rltelemetry.cpp
+108546584	Last-Modified	rlGetCloudSaveFileTask::ProcessResponse	rage/base/src/rline/cloudsave/rlcloudsave.cpp
+108546612	MaxEmailsReached	rlScTaskBase::HandleError	rage/base/src/rline/socialclub/rlsocialclubtask.cpp
+108546839	driverSettings_NumPhysicalVoices_Reduced	audConfig::GetValue	rage/base/src/audiohardware/voicemgr.cpp
+108547071	Crack types failed to load	bgCracksTemplate::IsReady	rage/suite/src/breakableglass/crackstemplate.cpp
+108547234	PlayerAccountId	rlHttpTaskHelper::ReadInt	rage/base/src/rline/clan/rlclantasks.cpp
+108547679	%02d:%02d.%03d	CNetwork::RestartNetworkTimePausable	game/script/commands_network.cpp
+108548064	INTERACTIVE_MUSIC_%.1d	audCategoryControllerManager::InstancePtr	game/audio/music/musicplayer.cpp
+108548224	_hi@Proxy_%d	CInteriorProxy::GetWeaponBoundsName	game/scene/portals/InteriorProxy.cpp
+108548634	AMBIENT_SCRIPT_SLOT_%d	audEntity::SetName	game/audio/scriptaudioentity.cpp
+108548944	SCRIPT_SPEECH_%d	audWaveSlot::FindWaveSlot	game/audio/speechmanager.cpp
+108549004	_CONV%02d_PART%d	CAmbientAudio::GetPartialHash	game/task/Default/AmbientAudio.cpp
+108549049	e=%d,t=%s,p=%s,v=%d	sysTimer::GetSystemMsTime	rage/base/src/rline/ros/rlroshttptask.cpp
+108549124	%d %d %d %d:%d:%d	netHttpRequest::ParseDateString	rage/base/src/net/http.cpp
+108549231	memory:$%p,%d	fiDeviceLocal::GetInstance	rage/base/src/parsercore/utils.cpp
+108549245	growbuffer:$%p,%d	fiDeviceLocal::GetInstance	rage/base/src/parsercore/utils.cpp
+108549329	%s %s %d %d:%d:%d %d	netHttpRequest::ParseDateString	rage/base/src/net/http.cpp
+108550580	ros-HeadersHmac	datBase64::Encode	rage/base/src/rline/ros/rlroshttptask.cpp
+108551514	common:/data	CFileMgr::Write	game/Peds/rendering/PedVariationDebug.cpp
+108551527	Viseme animation data	strStreamingEngine::GetAllocator	game/audio/speechaudioentity.cpp
+108552667	[INSTALL_VERSION_NUMBER]	CFileMgr::ReadLine	game/debug/Debug.cpp
+108552692	[VERSION_NUMBER]	CFileMgr::ReadLine	game/debug/Debug.cpp
+108552813	%d-%d-%dT%d:%d:%dZ	CMinimalBug::ConvertStringToTime	game/debug/bugstar/MinimalBug.cpp
+108553788	ALTITUDE_WARNING_LOW	audScriptAudioEntity::InitAircraftWarningInfo	game/audio/scriptaudioentity.cpp
+108553857	CFQ7TTC0HX8W	rlScMembership::GetSubscriptionId	rage/base/src/rline/scmembership/rlscmembership.cpp
+108554183	AMBIENT_ZONE_LIST	audNorthAudioEngine::GetMetadataManager	game/audio/ambience/ambientaudioentity.cpp
+108554201	GRASS_INSTANCE_LIST	CEntity::GetLowLODFilter	game/scene/Entity.cpp
+108554443	%s %d %s %d %d:%d:%d GMT	netHttpRequest::ParseDateString	rage/base/src/net/http.cpp
+108554468	%a, %d %b %Y %H:%M:%S GMT	netHttpRequest::MakeDateString	rage/base/src/net/http.cpp
+108554767	PLAYER_SWITCH_CUSTOM_SOUNDSET	fwTimer::GetTimeInMilliseconds	game/camera/system/CameraManager.cpp
+108554852	ACQUIRING_TARGET	fwTimer::GetTimeInMilliseconds	game/audio/vehicleaudioentity.cpp
+108555071	DAMAGED_SERIOUS	audScriptAudioEntity::InitAircraftWarningInfo	game/audio/scriptaudioentity.cpp
+108555533	BLENDINDICES	grcDevice::DestroyVertexDeclaration	rage/base/src/grcore/device_gcm.cpp
+108555694	%.3ff}}; //XR	audAmbisonics::PrintDecoder	rage/base/src/audioengine/ambisonics.cpp
+108555812	%.3ff}, //FR	audAmbisonics::PrintDecoder	rage/base/src/audioengine/ambisonics.cpp
+108555972	%.3ff}, //CENTER	audAmbisonics::PrintDecoder	rage/base/src/audioengine/ambisonics.cpp
+108556166	%.3ff}, //BR	audAmbisonics::PrintDecoder	rage/base/src/audioengine/ambisonics.cpp
+108556702	UNKNOWN_SCENARIO	CScenarioManager::GetScenarioName	game/task/Scenario/ScenarioManager.cpp
+108557448	PARTICLESYSTEM	CEntity::GetLowLODFilter	game/scene/Entity.cpp
+108557503	%.3ff}, //XL	audAmbisonics::PrintDecoder	rage/base/src/audioengine/ambisonics.cpp
+108557549	SCRIPT_%s_%s_VOL	audSpeechAudioEntity::InitClass	game/audio/speechaudioentity.cpp
+108557566	PAIN_%s_%s_VOL	audSpeechAudioEntity::InitClass	game/audio/speechaudioentity.cpp
+108557581	AMB_%s_%s_VOL	audSpeechAudioEntity::InitClass	game/audio/speechaudioentity.cpp
+108557683	%.3ff}, //FL	audAmbisonics::PrintDecoder	rage/base/src/audioengine/ambisonics.cpp
+108557734	%.3ff}, //BL	audAmbisonics::PrintDecoder	rage/base/src/audioengine/ambisonics.cpp
+108557780	HOLLOW_METAL	GameObjectHashList::GetFieldPtr	game/audio/gameobjects.cpp
+108557934	DAMAGED_CRITICAL	audScriptAudioEntity::InitAircraftWarningInfo	game/audio/scriptaudioentity.cpp
+108558036	TARGETED_LOCK	fwTimer::GetTimeInMilliseconds	game/audio/vehicleaudioentity.cpp
+108558409	MOBILE_PRERING	audCarAudioEntity::IsPlayingStartupSequence	game/audio/caraudioentity.cpp
+108558615	0123456789ABCDEF	std::getline	extra/launcher/Launcher/Util.h
+108559049	ENGINE_4_FIRE	audScriptAudioEntity::InitAircraftWarningInfo	game/audio/scriptaudioentity.cpp
+108559063	ENGINE_3_FIRE	audScriptAudioEntity::InitAircraftWarningInfo	game/audio/scriptaudioentity.cpp
+108559077	ENGINE_2_FIRE	audScriptAudioEntity::InitAircraftWarningInfo	game/audio/scriptaudioentity.cpp
+108559091	ENGINE_1_FIRE	audScriptAudioEntity::InitAircraftWarningInfo	game/audio/scriptaudioentity.cpp
+108559485	TAPERED_CAPSULE	phBound::MessagesEnabled	rage/base/src/phbound/boundloader.cpp
+108559556	NAME_NOT_AVAILABLE	netLeaderboardReadMgr::GetIdName	rage/framework/src/fwnet/netleaderboardmgr.cpp
+108560356	AMBIENCE_BANK_MAP_AUTOGENERATED	audNorthAudioEngine::GetMetadataManager	game/audio/ambience/audambientzone.cpp
+108560408	TARGET_ACQUIRED	fwTimer::GetTimeInMilliseconds	game/audio/vehicleaudioentity.cpp
+108560424	MISSLE_FIRED	audScriptAudioEntity::InitAircraftWarningInfo	game/audio/scriptaudioentity.cpp
+108560958	HOLLOW_PLASTIC	GameObjectHashList::GetFieldPtr	game/audio/gameobjects.cpp
+108562504	BoundingBoxMax:	phBoundSurface::Load_v110	rage/base/src/phbound/boundsurface.cpp
+108562562	secondSurfaceMaxHeight:	phBoundGeometry::Load_v110	rage/base/src/phbound/boundgeom.cpp
+108562622	materialcolors:	phBoundGeometry::LoadGeomStats_v110	rage/base/src/phbound/boundgeom.cpp
+108562638	readedgenormals:	phBoundGeometry::Load_v110	rage/base/src/phbound/boundgeom.cpp
+108562678	PropertyFlags:	phBound::Load	rage/base/src/physics/archetype.cpp
+108562704	IncludeFlags:	phBound::Load	rage/base/src/physics/archetype.cpp
+108562745	pervertattribs:	phBoundGeometry::LoadGeomStats_v110	rage/base/src/phbound/boundgeom.cpp
+108562761	gravityFactor:	phArchetype::LoadData	rage/base/src/physics/archetype.cpp
+108562776	buoyancyFactor:	phArchetype::LoadData	rage/base/src/physics/archetype.cpp
+108562908	BoundingBoxMin:	phBoundSurface::Load_v110	rage/base/src/phbound/boundsurface.cpp
+108562943	vertexmaterial:	phBoundGeometry::Load_v110	rage/base/src/phbound/boundgeom.cpp
+108562959	vertedgematerial:	phBoundGeometry::Load_v110	rage/base/src/phbound/boundgeom.cpp
+108563059	inertiaScale:	phArchetype::LoadData	rage/base/src/physics/archetype.cpp
+108563073	boundsource:	phArchetype::LoadData	rage/base/src/physics/archetype.cpp
+108563086	secondSurface:	phBoundGeometry::Load_v110	rage/base/src/phbound/boundgeom.cpp
+108563804	application/json; charset=utf-8	rlHttpTask::Configure	rage/base/src/rline/ros/rlroshttptask.cpp
+108563836	application/x-www-form-urlencoded; charset=utf-8	rlHttpTask::Configure	rage/base/src/rline/rlhttptask.cpp
+108565127	metadataPaths_Speech2	audConfig::GetData	rage/base/src/audioengine/engineconfig.cpp
+108566335	cloudservices/	rlCloud::CreateUrl	rage/base/src/rline/cloud/rlcloud.cpp
+108566356	%s%%PLATFORM%%/data/cacheLoaderData_DLC%s/	strPackfileManager::SetExtraContentIndex	game/scene/MountableContent.cpp
+108566496	https://%s/console/	rlScAuth::FormatHostName	rage/base/src/rline/scauth/rlscauth.cpp
+108567952	The active camera is positioned outside the (expanded) world limits (%f, %f, %f)	camFreeCamera::GetStaticClassId	game/camera/helpers/FramePropagator.cpp
+108568033	(unknown object name)	audMetadataManager::GetObjectNameFromNameTableOffset	rage/base/src/audioengine/metadatamanager.cpp
+108568152	(Invalid NTO)	audMetadataManager::GetObjectNameFromNameTableOffset	rage/base/src/audioengine/metadatamanager.cpp
+108569045	bgSCracksTemplate not instantiated!	bgSCracksTemplate::InstancePtr	rage/suite/src/breakableglass/crackstemplate.cpp
+108580952	<?xml version="1.0" encoding="UTF-8"?>	CAnimViewer::DumpPose	game/animation/debug/AnimViewer.cpp
+108582880	MiniDumpWriteDump	sysStack::CloseSymbolFile	rage/base/src/system/exception.cpp
+108583160	kernel32.dll	sysParam::Init	tools/DllInject/main.cpp
+108584112	GameDisplayName	rlXblHttpProfileSettingsTask::GetSettingName	rage/base/src/rline/durango/private/rlxblhttptask.cpp
+108584208	richPresence	rlXblHttpTask::Configure	rage/base/src/rline/durango/private/rlxblhttptask.cpp
+108584384	lastModified	netHttpRequest::MakeDateString	rage/base/src/rline/cloudsave/rlcloudsave.cpp
+108584400	AchievementId	RgscAchievementManager::GetAchievementImageAsJson	rage/suite/src/rgsc/rgsc/rgsc/achievements.cpp
+108585712	"; filename="	HttpUpload::GenerateFileHeader	game/control/replay/HttpUpload/HttpUpload.cpp
+108585728	Content-Disposition: form-data; name="	HttpUpload::GenerateFieldHeader	game/control/replay/HttpUpload/HttpUpload.cpp
+108588352	0123456789abcdef	netHttpRequest::GetUrlEncodedLength	rage/base/src/net/http.cpp
+108611892	GetCurrentProcess	papi::Initialize	rage/base/src/security/ragesecwinapi.cpp
+108612110	GetModuleFileNameA	papi::Initialize	rage/base/src/security/ragesecwinapi.cpp
+108612132	GetModuleFileNameW	rageSecGamePluginManager::GetRageSecGameReactionObjectQueue	game/security/plugins/apicheckplugin.cpp
+108620276	GetThreadGroupAffinity	dRegistry::RegisterThread	rage/base/src/system/ipc.cpp
+108620302	SetThreadGroupAffinity	dRegistry::RegisterThread	rage/base/src/system/ipc.cpp
+108620352	GetLogicalProcessorInformation	sysTaskManager::GetProcessorInfo	rage/base/src/system/task_win32.cpp

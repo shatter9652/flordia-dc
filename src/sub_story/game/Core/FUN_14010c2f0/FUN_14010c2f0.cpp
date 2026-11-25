@@ -1,0 +1,247 @@
+// Recovered from game_scarlett_master.exe (GTA VI, Xbox Series X, PE32+ x64)
+// Address: 14010c2f0  size: 848 bytes
+// Name:    FUN_14010c2f0
+// Subsystem: core
+//
+// Referenced strings (0 in this body, 0 including direct callees):
+// Callees: 
+//
+// Generated decompilation. Formatting follows MiscRef/GTAVSRC conventions;
+// identifiers are recovered, not original. See ../../../README.md.
+
+#include "gta6decomp/rage_types.h"
+
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined8
+FUN_14010c2f0(undefined1 (*param_1) [16],undefined8 *param_2,undefined8 *param_3,float param_4,
+             float param_5)
+
+{
+  undefined1 auVar1 [16];
+  undefined1 extraout_var [56];
+  undefined1 auVar2 [64];
+  undefined1 auVar3 [64];
+  undefined1 auVar4 [64];
+  undefined1 auVar5 [64];
+  undefined1 auVar6 [64];
+  undefined1 auVar7 [64];
+  undefined1 auVar8 [64];
+  undefined1 extraout_var_07 [56];
+  undefined1 auVar10 [64];
+  float fVar12;
+  float fVar13;
+  float fVar14;
+  undefined1 auVar11 [64];
+  float fVar15;
+  undefined1 auVar16 [16];
+  undefined1 auVar17 [64];
+  undefined8 uVar18;
+  undefined8 uVar19;
+  undefined8 uVar20;
+  undefined8 uVar21;
+  undefined1 auVar22 [16];
+  float fVar24;
+  float fVar25;
+  float fVar26;
+  float fVar27;
+  float fVar28;
+  float fVar29;
+  float fVar30;
+  float fVar31;
+  undefined8 uStack_258;
+  undefined8 uStack_250;
+  undefined1 auStack_248 [16];
+  undefined8 uStack_238;
+  undefined8 uStack_230;
+  undefined8 uStack_228;
+  undefined8 uStack_220;
+  float fStack_218;
+  float fStack_214;
+  float fStack_210;
+  float fStack_20c;
+  undefined8 uStack_208;
+  undefined8 uStack_200;
+  undefined8 uStack_1f8;
+  undefined8 uStack_1f0;
+  float fStack_1e8;
+  float fStack_1e4;
+  float fStack_1e0;
+  float fStack_1dc;
+  undefined8 uStack_1d8;
+  undefined8 uStack_1d0;
+  undefined8 uStack_1c8;
+  undefined8 uStack_1c0;
+  float fStack_1b8;
+  float fStack_1b4;
+  float fStack_1b0;
+  float fStack_1ac;
+  undefined8 uStack_1a8;
+  undefined8 uStack_1a0;
+  undefined8 uStack_198;
+  undefined8 uStack_190;
+  undefined1 auStack_188 [16];
+  undefined8 uStack_178;
+  undefined8 uStack_170;
+  undefined8 uStack_168;
+  undefined8 uStack_160;
+  undefined1 auStack_158 [16];
+  undefined8 uStack_148;
+  undefined8 uStack_140;
+  undefined8 uStack_138;
+  undefined8 uStack_130;
+  undefined1 auStack_128 [16];
+  undefined8 uStack_118;
+  undefined8 uStack_110;
+  undefined8 uStack_108;
+  undefined8 uStack_100;
+  undefined1 auStack_f8 [16];
+  undefined8 uStack_e8;
+  undefined8 uStack_e0;
+  undefined8 uStack_d8;
+  undefined8 uStack_d0;
+  undefined1 auStack_c8 [16];
+  undefined8 uStack_b8;
+  undefined8 uStack_b0;
+  undefined1 extraout_var_00 [56];
+  undefined1 extraout_var_01 [56];
+  undefined1 extraout_var_02 [56];
+  undefined1 extraout_var_03 [56];
+  undefined1 extraout_var_04 [56];
+  undefined1 extraout_var_05 [56];
+  undefined1 extraout_var_06 [56];
+  float fVar9;
+  undefined1 auVar23 [64];
+  
+  auStack_c8 = *param_1;
+  auVar17 = ZEXT1664(auStack_c8);
+  uVar18 = *param_3;
+  uVar19 = param_3[1];
+  uVar20 = *param_2;
+  uVar21 = param_2[1];
+  auVar1 = vmaxss_avx(ZEXT416((uint)(param_4 - param_5)),ZEXT416(_DAT_145fc6f00));
+  fVar9 = _DAT_145fc6ed8 / auVar1._0_4_;
+  auVar10 = ZEXT464((uint)fVar9);
+  fVar15 = fVar9 * (float)((uint)param_5 ^ _DAT_145fc6f10);
+  uStack_d8 = uVar18;
+  uStack_d0 = uVar19;
+  uStack_b8 = uVar20;
+  uStack_b0 = uVar21;
+  auVar11._0_8_ = func_0x00014010c640(&uStack_b8,auStack_c8,&uStack_d8,fVar9,fVar15);
+  auVar11._8_56_ = extraout_var;
+  auVar11 = ZEXT1664(auVar11._0_16_);
+  auVar16 = auVar17._0_16_;
+  auVar1 = vshufps_avx(auVar16,auVar16,0xff);
+  auVar22._0_4_ = auVar1._0_4_ * _DAT_145fc6edc;
+  auVar22._4_4_ = auVar1._4_4_ * _DAT_145fc6edc;
+  auVar22._8_4_ = auVar1._8_4_ * _DAT_145fc6edc;
+  auVar22._12_4_ = auVar1._12_4_ * _DAT_145fc6edc;
+  auVar23 = ZEXT1664(auVar22);
+  auStack_f8 = vsubps_avx(auVar16,auVar22);
+  uStack_108 = uVar18;
+  uStack_100 = uVar19;
+  uStack_e8 = uVar20;
+  uStack_e0 = uVar21;
+  auVar2._0_8_ = func_0x00014010c640(&uStack_e8,auStack_f8,&uStack_108,auVar10._0_8_,fVar15);
+  auVar2._8_56_ = extraout_var_00;
+  auVar1 = vmaxss_avx(auVar2._0_16_,auVar11._0_16_);
+  auVar11 = ZEXT1664(auVar1);
+  auStack_128._0_4_ = auVar23._0_4_ * _DAT_14615ca40 + auVar17._0_4_;
+  auStack_128._4_4_ = auVar23._4_4_ * _UNK_14615ca44 + auVar17._4_4_;
+  auStack_128._8_4_ = auVar23._8_4_ * _UNK_14615ca48 + auVar17._8_4_;
+  auStack_128._12_4_ = auVar23._12_4_ * _UNK_14615ca4c + auVar17._12_4_;
+  fVar9 = _DAT_14615ca40;
+  fVar12 = _UNK_14615ca44;
+  fVar13 = _UNK_14615ca48;
+  fVar14 = _UNK_14615ca4c;
+  uStack_138 = uVar18;
+  uStack_130 = uVar19;
+  uStack_118 = uVar20;
+  uStack_110 = uVar21;
+  auVar3._0_8_ = func_0x00014010c640(&uStack_118,auStack_128,&uStack_138,auVar10._0_8_,fVar15);
+  auVar3._8_56_ = extraout_var_01;
+  auVar1 = vmaxss_avx(auVar3._0_16_,auVar11._0_16_);
+  auVar11 = ZEXT1664(auVar1);
+  auStack_158._0_4_ = auVar23._0_4_ * _DAT_14615fa20 + auVar17._0_4_;
+  auStack_158._4_4_ = auVar23._4_4_ * _UNK_14615fa24 + auVar17._4_4_;
+  auStack_158._8_4_ = auVar23._8_4_ * _UNK_14615fa28 + auVar17._8_4_;
+  auStack_158._12_4_ = auVar23._12_4_ * _UNK_14615fa2c + auVar17._12_4_;
+  fVar24 = _DAT_14615fa20;
+  fVar25 = _UNK_14615fa24;
+  fVar26 = _UNK_14615fa28;
+  fVar27 = _UNK_14615fa2c;
+  uStack_168 = uVar18;
+  uStack_160 = uVar19;
+  uStack_148 = uVar20;
+  uStack_140 = uVar21;
+  auVar4._0_8_ = func_0x00014010c640(&uStack_148,auStack_158,&uStack_168,auVar10._0_8_,fVar15);
+  auVar4._8_56_ = extraout_var_02;
+  auVar1 = vmaxss_avx(auVar4._0_16_,auVar11._0_16_);
+  auVar11 = ZEXT1664(auVar1);
+  auStack_188._0_4_ = auVar23._0_4_ * _DAT_1461658a0 + auVar17._0_4_;
+  auStack_188._4_4_ = auVar23._4_4_ * _UNK_1461658a4 + auVar17._4_4_;
+  auStack_188._8_4_ = auVar23._8_4_ * _UNK_1461658a8 + auVar17._8_4_;
+  auStack_188._12_4_ = auVar23._12_4_ * _UNK_1461658ac + auVar17._12_4_;
+  fVar28 = _DAT_1461658a0;
+  fVar29 = _UNK_1461658a4;
+  fVar30 = _UNK_1461658a8;
+  fVar31 = _UNK_1461658ac;
+  uStack_198 = uVar18;
+  uStack_190 = uVar19;
+  uStack_178 = uVar20;
+  uStack_170 = uVar21;
+  auVar5._0_8_ = func_0x00014010c640(&uStack_178,auStack_188,&uStack_198,auVar10._0_8_,fVar15);
+  auVar5._8_56_ = extraout_var_03;
+  fStack_1b8 = -(auVar23._0_4_ * fVar28) + auVar17._0_4_;
+  fStack_1b4 = -(auVar23._4_4_ * fVar29) + auVar17._4_4_;
+  fStack_1b0 = -(auVar23._8_4_ * fVar30) + auVar17._8_4_;
+  fStack_1ac = -(auVar23._12_4_ * fVar31) + auVar17._12_4_;
+  auVar1 = vmaxss_avx(auVar5._0_16_,auVar11._0_16_);
+  auVar11 = ZEXT1664(auVar1);
+  uStack_1c8 = uVar18;
+  uStack_1c0 = uVar19;
+  uStack_1a8 = uVar20;
+  uStack_1a0 = uVar21;
+  auVar6._0_8_ = func_0x00014010c640(&uStack_1a8,&fStack_1b8,&uStack_1c8,auVar10._0_8_,fVar15);
+  auVar6._8_56_ = extraout_var_04;
+  fStack_1e8 = -(auVar23._0_4_ * fVar24) + auVar17._0_4_;
+  fStack_1e4 = -(auVar23._4_4_ * fVar25) + auVar17._4_4_;
+  fStack_1e0 = -(auVar23._8_4_ * fVar26) + auVar17._8_4_;
+  fStack_1dc = -(auVar23._12_4_ * fVar27) + auVar17._12_4_;
+  auVar1 = vmaxss_avx(auVar6._0_16_,auVar11._0_16_);
+  auVar11 = ZEXT1664(auVar1);
+  uStack_1f8 = uVar18;
+  uStack_1f0 = uVar19;
+  uStack_1d8 = uVar20;
+  uStack_1d0 = uVar21;
+  auVar7._0_8_ = func_0x00014010c640(&uStack_1d8,&fStack_1e8,&uStack_1f8,auVar10._0_8_,fVar15);
+  auVar7._8_56_ = extraout_var_05;
+  fStack_218 = -(auVar23._0_4_ * fVar9) + auVar17._0_4_;
+  fStack_214 = -(auVar23._4_4_ * fVar12) + auVar17._4_4_;
+  fStack_210 = -(auVar23._8_4_ * fVar13) + auVar17._8_4_;
+  fStack_20c = -(auVar23._12_4_ * fVar14) + auVar17._12_4_;
+  auVar1 = vmaxss_avx(auVar7._0_16_,auVar11._0_16_);
+  auVar11 = ZEXT1664(auVar1);
+  uStack_228 = uVar18;
+  uStack_220 = uVar19;
+  uStack_208 = uVar20;
+  uStack_200 = uVar21;
+  auVar8._0_8_ = func_0x00014010c640(&uStack_208,&fStack_218,&uStack_228,auVar10._0_8_,fVar15);
+  auVar8._8_56_ = extraout_var_06;
+  auVar1 = vmaxss_avx(auVar8._0_16_,auVar11._0_16_);
+  auVar11 = ZEXT1664(auVar1);
+  auStack_248._0_4_ = auVar23._0_4_ + auVar17._0_4_;
+  auStack_248._4_4_ = auVar23._4_4_ + auVar17._4_4_;
+  auStack_248._8_4_ = auVar23._8_4_ + auVar17._8_4_;
+  auStack_248._12_4_ = auVar23._12_4_ + auVar17._12_4_;
+  uStack_258 = uVar18;
+  uStack_250 = uVar19;
+  uStack_238 = uVar20;
+  uStack_230 = uVar21;
+  auVar10._0_8_ = func_0x00014010c640(&uStack_238,auStack_248,&uStack_258,auVar10._0_8_,fVar15);
+  auVar10._8_56_ = extraout_var_07;
+  auVar1 = vmaxss_avx(auVar10._0_16_,auVar11._0_16_);
+  return auVar1._0_8_;
+}
+

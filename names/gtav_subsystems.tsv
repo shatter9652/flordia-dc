@@ -1,0 +1,74 @@
+subsystem	classes	examples
+rage/suite	4258	A, A1, A2, ALIGNAS, Aabb, Achievement, AchievementBitSet, AchievementFileLoadWorker
+rage/base	6107	AABB, AABBEntity, AABBIndexed, ABGR2101010, ABGR8888, ADLMode, AES, ALIGNAS
+rage/3rdparty	5132	AEBuildError, AEDesc, AEKeyDesc, AFPAlternateAddress, AFPCommandBlock, AFPLoginPrm, AFPTagData, AFPVolMountInfo
+rage/framework	2205	AIConnection, AILink, AIPath, ALIGNAS, ASFSinkWriterWrapper, ATL_NO_VTABLE, AckData, ActiveEntity
+game/task	1589	ARTFeedbackInterfaceGta, Ability, ActivationLimitModifiers, AggressiveMove, AimIntroClip, AimPose, AimSettings, AimStepInfo
+rage/scaleform	1224	AcquireSync, ActionEntry, ActionQueueEntry, ActionQueueIterator, ActionQueueSessionIterator, ActionQueueType, ActiveSoundItem, ActiveSounds
+game/network	1243	AchMgr, AchOp, AchSocialClubReader, Achievements, ActivityPresenceAttr, AnimStreamingHelper, AssetInfo, AutoGPUCaptureTelemetryStore
+rage/naturalmotion	288	ARTFeedbackInterface, AddStringToCachePacket, AgentState, AgentStatePacket, ArmData, ArmProperty, ArmState, AssetBlock
+game/control	762	AudioLinkageInfo, BoneModifier, Box, CAddressInReplayBuffer, CAmphibiousAutomobile, CAmphibiousQuadBike, CAnimNameDescriptor, CAutogyro
+rage/stlport	470	Fibonacci, FileReporter, Reporter, SortClass, TestCase, TestClass, TestController, TestFixture
+game/audio	624	ActiveAlarm, AircraftWarningSettings, AlarmSettings, AmbientBankMap, AmbientRule, AmbientSlotMap, AmbientStreamedSoundSlot, AmbientWallaHistory
+game/frontend	529	AltimeterDisplay, AnimStateData, AutoLock, BaseSocialClubMenu, BugCount, BugInfoStruct, CAccountPickerPage, CAmbientClipHandle
+game/Peds	477	AimPoseTransition, AnimPostFXEvent, C2dEffect, CActionBranch, CActionBranchSet, CActionCondPedOther, CActionCondSpecial, CActionDefinition
+game/renderer	467	ALIGNAS, Adaptation, AdaptiveDOF, AdaptiveDOFStruct, AmbientLights, AnimPostFXEvent, AnimPostFXEventManager, AnimPostFXEventPollingManager
+game/camera	344	AvalibleShotsToSelect, CActionResult, CCameraDebugInfo, CControl, CDebugClipSelector, CEntity, CEvent, CFirstPersonDriveByLookAroundData
+game/event	436	CEntity, CEvent, CEventAcquaintancePed, CEventAcquaintancePedDead, CEventAcquaintancePedDislike, CEventAcquaintancePedHate, CEventAcquaintancePedLike, CEventAcquaintancePedRespect
+game/vfx	339	ALIGNAS, C2dEffect, CBaseModelInfo, CBinkDebugTool, CBoat, CBrightLights, CCheckpoints, CClouds
+game/scene	331	AddActiveEntitiesData, BucketEntry, C2dEffect, C2dEffectDebugRenderer, CActiveEntityList, CAnimatedBuilding, CAttributeTweaker, CAudioAttr
+game/Vehicles	292	AnchorFlags, Area, CAICurvePoint, CAIHandlingInfo, CAIHandlingInfoMgr, CAdvancedData, CAircraftDamage, CAircraftDamageBase
+rage/contrib	225	Arg, BlockInfo, ConfigRebootData, ElemType, ErrorRulesBase, FixedString, FlashFileAndContext, FlashHelper
+game/debug	259	AnimMotionTreeTracker, AppLevelSaveData, AutomatedTest, BoneLink, BoxDimensions, BudgetBucket, BudgetBucketEntry, BudgetDisplay
+game/vehicle	201	AvoidanceCache, AvoidanceInfo, AvoidanceTaskObstructionData, CAssistedRouteInfo, CAutoJunctionAdjustment, CAutogyro, CAutomobile, CBike
+game/animation	234	AlphabeticalSort, AnimSceneEntityLocationData, BankData, BlendOutData, CAnimChecks, CAnimClipEditor, CAnimDataManager, CAnimDebug
+game/SaveLoad	197	CBaseShopPedApparelScriptData, CBaseStatsSaveStructure, CBoolStatStruct, CCameraSaveStructure, CCameraSaveStructure_Migration, CDataForOneCloudPhoto, CDate, CEntity
+game/game	201	AdvancedSpawnPoint, AngledArea, AngledAreaWithPosition, AreaWithPosition, Attributes, BGScriptInfo, BackgroundScripts, BackgroundScriptsDebug
+game/weapons	154	BulletCollisionPair, CAimingInfo, CAirDefenceArea, CAirDefenceManager, CAirDefenceSphere, CAirDefenceZone, CAmmoInfo, CAmmoItem
+game/modelinfo	153	Action, BaseModelInfoBoneIndices, C2dEffect, CAdditionalVfxWaterSample, CArchetypeStreamSlot, CAudioGroupMap, CAvoidancePointAttr, CBaseCapsuleInfo
+game/script	167	AIBlip, Arg, BuidlingDescription, CAbovePlayersHeadDisplay, CBlipFades, CBoatIsBeachedCheck, CDLCScript, CDebugAttachmentTool
+rage/script	126	Arg, ArgType, Bucket, CScriptArraySizeMonitor, CScriptCutoutTimeTracker, Enumerant, Global, HeapString
+game/physics	94	ALIGNAS, ARTFeedbackInterfaceGta, BvhPrimBox, BvhPrimCapsule, BvhPrimSphere, CBoundingBoxShapeTestData, CBreakable, CBuoyancy
+extra/launcher	111	AutoCritSec, BackupRestorationInfo, BandwidthDatapoint, BootstrapPatchCheck, ButtonParams, CAdminRights, CChannel, CCommandlineArgument
+game/system	113	ActuatorEntry, AutoreleasePool, BacktraceDumpUpload, CAudioSettings, CAutoLock, CCompanionBlipMessage, CCompanionBlipNode, CCompanionData
+game/ai	101	AnimBlackboardItem, CAIDebugInfo, CAILogManager, CAITarget, CAmbientModel, CAmbientModelSet, CAmbientModelSetFilter, CAmbientModelSetManager
+game/streaming	95	Avoids, BucketEntry, Budget, Bulk, CEntity, CGTABoxStreamerInterfaceNew, CGtaPvsEntry, CInteriorProxy
+game/ik	58	ArmReachSituation, BoneSituation, CArmIkSolver, CBaseIkManager, CBodyLookIkSolver, CBodyLookIkSolverProxy, CBodyRecoilIkSolver, CDynamicEntity
+game/shaders	77	ALIGNAS, BASIS_WAVE, BRANCH_BEND_AND_TRI_WAVE_MICRO_MOVEMENTS_DEBUG_CONTROL, BRANCH_BEND_AND_TRI_WAVE_MICRO_MOVEMENTS_GLOBALS, BRANCH_BEND_AND_TRI_WAVE_MICRO_MOVEMENTS_LOCALS, BRANCH_BEND_AND_TRI_WAVE_MICRO_MOVEMENTS_SFX_GLOBALS, BRANCH_BEND_AND_TRI_WAVE_MICRO_MOVEMENTS_SHADER_VARS, CBaseModelInfo
+game/Cutscene	67	ApprovedCutsceneList, AuthorizedCutscene, CCascadeShadowBoundsDebug, CCompEntity, CCutSceneAnimMgrEntity, CCutSceneAnimatedParticleEffect, CCutSceneAnimatedPropEntity, CCutSceneAnimatedWeaponEntity
+tools/AudMeshGenerator	66	AudGenInputs, CAudMeshDataExporterInterfaceTool, CAudMeshDataExporterTool, CAudMeshGeneratorConfig, CAudMeshScene, CAudioGen, CAudioGen_Display, CAudioLevelMesh
+game/Stats	64	CAsyncProbeHelper, CBike, CBmx, CBoat, CCashProductsData, CEntity, CPed, CSaveTelemetryStats
+game/pickups	46	CBaseModelInfo, CCollectionInfo, CCustomArchetypeInfo, CNetObjPickup, CNetObjPickupPlacement, CPed, CPickup, CPickupActionAudio
+game/Objects	49	C2dEffect, CCoverTuning, CCoverTuningFile, CCoverTuningManager, CCustomShaderEffectTint, CDoor, CDoorExtension, CDoorScriptHandlerObject
+tools/NoiseGenerator	29	Arcball, GLUI, GLUI_Bitmap, GLUI_Button, GLUI_Checkbox, GLUI_Column, GLUI_Control, GLUI_EditText
+tools/DisplaceMapGen	34	BestFitLine, Block, Box2, ColorToDisplacement, DDCAPS2, DDPIXELFORMAT, DDSURFACEDESC2, DisplacementGenerator
+game/replaycoordinator	39	CAncillaryReplayRenderer, CClip, CFileData, CMissionMontageGenerator, CMontage, CMontageMusicClip, CMontageText, CReplayAudioTrackProvider
+game/pathserver	38	CBaseModelInfo, CBlockedLadders, CCarDoor, CDynamicNavMeshEntry, CEntity, CFire, CItem, CNavDataCoverpoint
+game/cloth	26	CCloth, CClothArchetype, CClothArchetypeCreator, CClothCapsuleBounds, CClothConstraintGraph, CClothConstraintGraphElement, CClothContacts, CClothMgr
+game/text	37	CDebugString, CDebugStrings, CExtraTextFile, CFontDef, CFontRenderState, CGxt2Entry, CGxt2Header, CHelpMessage
+tools/common	31	ABGR8888, ARGB1555, ARGB4444, ARGB8888, BC7_BLOCK, BestFitLine, Box2, CTX1_BLOCK
+tools/AssetAnalysisTool	24	aaArchetype, aaArchetypeInstance, aaArchetypeInstanceRecord, aaArchetypeRecord, aaDrawable, aaDrawableDictionary, aaDrawableDictionaryRecord, aaDrawableRecord
+game/tools	30	CEditorWidget, CEntity, CJunctionTestResults, CLASS_NAME, CObjectPositionChecker, CObjectProfiler, CPerformanceStats, CSectorTools
+game/timecycle	27	ALIGNAS, CEntity, CPed, CSkySettings, CTimeCycle, CTimeCycleDebug, CVisualSettings, CalcAmbientScaleAsync
+game/PedGroup	26	CCoverScanner, CEvent, CGameScriptHandler, CPed, CPedFormation, CPedFormationTypes, CPedFormation_Arrowhead, CPedFormation_FollowInLine
+tools/NavMeshGenerator	16	CEntitySetDesc, CIplStore, CLevelProcessToolGameInterfaceGta, CNavMeshDataDefaultEntitySets, CNavMeshDataDefaultIplGroups, CNavMeshDataExporterInterfaceTool, CNavMeshDataExporterTool, CNavMeshGeneratorConfig
+game/Core	17	CApp, CDongle, CGame, CGameSessionStateMachine, CGameTempAllocator, CMemoryTest, CMultiViewportDemo, CUserEntitlementDataProvider_dummy
+game/SaveMigration	15	CSaveMigration, CSaveMigrationCompleteSingleplayerMigration, CSaveMigrationDownloadSingleplayerSave, CSaveMigrationGetAccounts, CSaveMigrationGetAvailableSingleplayerSaves, CSaveMigrationGetMPStatus, CSaveMigrationGetSingleplayerSaveState, CSaveMigrationMigrateAccount
+tools/LightExtractionTool	12	CChoppedLightDataGrid, CChoppedLightDataGridEntry, CCollectedLODLightData, CCompleteLODLight, CLevelProcessToolGameInterfaceGta, CLightDataCollector, CLightExporterInterfaceTool, CLightExporterPassInfo
+tools/WaterHeightImageProcessor	13	TileMap, WaterCell, WaterLake, WaterLakeBox, WaterMap, WaterPool, WaterPoolZone, WaterRefID
+rage/top	3	DELPHICLASS, X, class_name
+game/security	10	CEMetadataChecker, CEProcessChecker, LinkDataReport, OSModule, OSModuleInitializer, WindowNameFinder, rageSecGamePluginBonder, rageSecGamePluginBonderManager
+game/apps	8	CAppData, CAppDataBlock, CAppDataMgr, CAppDataRequest, CAppDataRequestMgr, RsonReader, bkBank, sPollRequest
+tools/DDSHeaderViewer	8	CString, DDPF_, DDPIXELFORMAT, DDSCAPS1_, DDSCAPS2, DDSCAPS2_, DDSD_, DDSURFACEDESC2
+game/glassPaneSyncing	6	CGlassPane, CGlassPaneManager, CObject, GlassPaneInitData, GlassPaneProxy, GlassPaneRegistrationData
+tools/DllInject	4	_DISASSEMBLER, _INSTRUCTION, _INSTRUCTION_OPERAND, _X86_OPCODE
+tools/DongleTool	5	CPSNDongle, CPSNDongleTool, CPSNStorageData, CXenonDongleTool, fiStream
+tools/RoadPathsGenerator	4	CLevelProcessToolGameInterfaceGta, CNavMeshDataDefaultIplGroups, CRoadPathsExporterTool, CToolScene
+game/templates	4	CDblBuf, CLink, CLinkList, TCircularArray
+tools/MemoryHasher	3	HashCreator, MemoryCheck, MemoryRegion
+game/shader_source	1	FxaaTex
+game/performance	2	System, perfClearingHouse
+game/utils	2	CQuadTreeNode, QuadTreeFn
+tools/HeightMapGenerator	1	CNavMeshDataExporterTool
+extra/pc_language_switcher	1	_stack_t
+extra/patcher	1	CLocalization

@@ -1,0 +1,564 @@
+dll	function	prototype	rva
+api-ms-win-core-processthreads-l1-1-2.dll	SetProcessPriorityBoost	WINBOOL SetProcessPriorityBoost(HANDLE, void*, int, int);	0x6793490
+api-ms-win-core-processthreads-l1-1-0.dll	CreateThread	HANDLE CreateThread(LPSECURITY_ATTRIBUTES, unsigned long long, LPTHREAD_START_ROUTINE, LPVOID, unsigned long, void*, int);	0x67934a0
+api-ms-win-core-processthreads-l1-1-0.dll	GetCurrentProcess	HANDLE GetCurrentProcess(void*);	0x67934a8
+api-ms-win-core-processthreads-l1-1-0.dll	GetCurrentProcessId	long GetCurrentProcessId(void);	0x67934b0
+api-ms-win-core-processthreads-l1-1-0.dll	GetCurrentThreadId	long GetCurrentThreadId(void);	0x67934b8
+api-ms-win-core-processthreads-l1-1-0.dll	GetProcessId	unsigned long GetProcessId(void*);	0x67934c0
+api-ms-win-core-processthreads-l1-1-0.dll	GetStartupInfoW	void GetStartupInfoW(void*);	0x67934c8
+api-ms-win-core-processthreads-l1-1-0.dll	GetThreadPriority	int GetThreadPriority(void*);	0x67934d0
+api-ms-win-core-processthreads-l1-1-0.dll	OpenThread	HANDLE OpenThread(unsigned long, WINBOOL, void*, WINBOOL);	0x67934d8
+api-ms-win-core-processthreads-l1-1-0.dll	ResumeThread	unsigned long ResumeThread(void*);	0x67934e0
+api-ms-win-core-processthreads-l1-1-0.dll	SetThreadPriority	WINBOOL SetThreadPriority(HANDLE, void*);	0x67934e8
+api-ms-win-core-processthreads-l1-1-0.dll	SuspendThread	unsigned long SuspendThread(void*);	0x67934f0
+api-ms-win-core-processthreads-l1-1-0.dll	TerminateProcess	WINBOOL TerminateProcess(HANDLE, unsigned int);	0x67934f8
+api-ms-win-core-libraryloader-l1-2-0.dll	FreeLibrary	long FreeLibrary(void*);	0x6793508
+api-ms-win-core-libraryloader-l1-2-0.dll	GetModuleFileNameA	unsigned long GetModuleFileNameA(HMODULE, char*, void*, unsigned short*, unsigned long);	0x6793510
+api-ms-win-core-libraryloader-l1-2-0.dll	GetModuleFileNameW	unsigned long GetModuleFileNameW(HMODULE, unsigned short*, unsigned long);	0x6793518
+api-ms-win-core-libraryloader-l1-2-0.dll	GetModuleHandleA	long GetModuleHandleA(void*);	0x6793520
+api-ms-win-core-libraryloader-l1-2-0.dll	GetModuleHandleW	HMODULE GetModuleHandleW(void*, const char*, HMODULE);	0x6793528
+api-ms-win-core-libraryloader-l1-2-0.dll	LoadLibraryExA	HMODULE LoadLibraryExA(const char*, HANDLE, void*, HANDLE, unsigned long);	0x6793538
+api-ms-win-core-libraryloader-l1-2-0.dll	LoadLibraryExW	HMODULE LoadLibraryExW(const unsigned short*, HANDLE, void*, HRSRC);	0x6793540
+api-ms-win-core-profile-l1-1-0.dll	QueryPerformanceCounter	WINBOOL QueryPerformanceCounter(void*);	0x6793550
+api-ms-win-core-profile-l1-1-0.dll	QueryPerformanceFrequency	WINBOOL QueryPerformanceFrequency(LARGE_INTEGER);	0x6793558
+api-ms-win-core-file-l1-1-0.dll	CreateDirectoryW	WINBOOL CreateDirectoryW(const unsigned short*, void*);	0x67938f8
+api-ms-win-core-file-l1-1-0.dll	CreateFileW	HANDLE CreateFileW(const unsigned short*, unsigned long, unsigned long, LPSECURITY_ATTRIBUTES, unsigned long, unsigned long, void*, LPDWORD);	0x6793900
+api-ms-win-core-file-l1-1-0.dll	DeleteFileW	WINBOOL DeleteFileW(void*);	0x6793908
+api-ms-win-core-file-l1-1-0.dll	FileTimeToLocalFileTime	WINBOOL FileTimeToLocalFileTime(CONST FILETIME, void*, LPWIN32_FIND_DATAA);	0x6793910
+api-ms-win-core-file-l1-1-0.dll	FindClose	long FindClose(hfind);	0x6793918
+api-ms-win-core-file-l1-1-0.dll	FindFirstFileW	HANDLE FindFirstFileW(const unsigned short*, void*, LPDWORD, LPDWORD, LPDWORD, LPDWORD);	0x6793920
+api-ms-win-core-file-l1-1-0.dll	FindNextFileW	WINBOOL FindNextFileW(HANDLE, void*);	0x6793928
+api-ms-win-core-file-l1-1-0.dll	FlushFileBuffers	WINBOOL FlushFileBuffers(void*, PULARGE_INTEGER, PULARGE_INTEGER, PULARGE_INTEGER);	0x6793930
+api-ms-win-core-file-l1-1-0.dll	GetDiskFreeSpaceExW	WINBOOL GetDiskFreeSpaceExW(const unsigned short*, PULARGE_INTEGER, PULARGE_INTEGER, void*, GET_FILEEX_INFO_LEVELS, LPVOID);	0x6793938
+api-ms-win-core-file-l1-1-0.dll	GetFileAttributesA	unsigned long GetFileAttributesA(void*, PLARGE_INTEGER);	0x6793940
+api-ms-win-core-file-l1-1-0.dll	GetFileAttributesExW	WINBOOL GetFileAttributesExW(const unsigned short*, GET_FILEEX_INFO_LEVELS, void*, unsigned long, unsigned long, unsigned long, unsigned long, LPOVERLAPPED);	0x6793948
+api-ms-win-core-file-l1-1-0.dll	GetFileAttributesW	unsigned long GetFileAttributesW(const unsigned short*);	0x6793950
+api-ms-win-core-file-l1-1-0.dll	GetFileSizeEx	WINBOOL GetFileSizeEx(HANDLE, void*, LPFILETIME, LPFILETIME, LPFILETIME);	0x6793958
+api-ms-win-core-file-l1-1-0.dll	LocalFileTimeToFileTime	WINBOOL LocalFileTimeToFileTime(CONST FILETIME, void*, unsigned long, unsigned long, unsigned long, unsigned long);	0x6793968
+api-ms-win-core-file-l1-1-0.dll	ReadFile	WINBOOL ReadFile(HANDLE, LPVOID, unsigned long, LPDWORD, void*);	0x6793970
+api-ms-win-core-file-l1-1-0.dll	RemoveDirectoryW	WINBOOL RemoveDirectoryW(void*);	0x6793978
+api-ms-win-core-file-l1-1-0.dll	SetEndOfFile	WINBOOL SetEndOfFile(void*, unsigned long);	0x6793980
+api-ms-win-core-file-l1-1-0.dll	SetFileAttributesW	WINBOOL SetFileAttributesW(const unsigned short*, void*, LARGE_INTEGER, PLARGE_INTEGER, unsigned long);	0x6793988
+api-ms-win-core-file-l1-1-0.dll	SetFilePointerEx	WINBOOL SetFilePointerEx(HANDLE, LARGE_INTEGER, PLARGE_INTEGER, void*, unsigned long, unsigned long, unsigned long, LPOVERLAPPED);	0x6793990
+api-ms-win-core-file-l1-1-0.dll	WriteFile	WINBOOL WriteFile(HANDLE, LPCVOID, unsigned long, LPDWORD, void*, char*);	0x67939a0
+api-ms-win-core-localization-l1-2-3.dll	GetUserDefaultGeoName	int GetUserDefaultGeoName(unsigned short*, void*, LPCPINFO);	0x67939b0
+api-ms-win-core-errorhandling-l1-1-0.dll	GetLastError	long GetLastError(void);	0x67939c0
+api-ms-win-core-errorhandling-l1-1-0.dll	SetUnhandledExceptionFilter	LPTOP_LEVEL_EXCEPTION_FILTER SetUnhandledExceptionFilter(LPTOP_LEVEL_EXCEPTION_FILTER);	0x67939c8
+api-ms-win-core-errorhandling-l1-1-0.dll	UnhandledExceptionFilter	long UnhandledExceptionFilter(_EXCEPTION_POINTERS);	0x67939d0
+api-ms-win-core-handle-l1-1-0.dll	CloseHandle	long CloseHandle(void*);	0x67939e0
+api-ms-win-core-processenvironment-l1-1-0.dll	GetCommandLineA	char* GetCommandLineA(void*);	0x67939f0
+api-ms-win-core-memory-l1-1-0.dll	VirtualAlloc	LPVOID VirtualAlloc(LPVOID, unsigned long long, unsigned long, unsigned long);	0x6793a68
+api-ms-win-core-memory-l1-1-0.dll	VirtualFree	WINBOOL VirtualFree(LPVOID, unsigned long long, unsigned long);	0x6793a70
+api-ms-win-core-memory-l1-1-0.dll	VirtualQueryEx	unsigned long long VirtualQueryEx(HANDLE, LPCVOID, PMEMORY_BASIC_INFORMATION, void*, LPCVOID, LPVOID, unsigned long long, unsigned long long);	0x6793a78
+api-ms-win-core-localization-l1-2-0.dll	FormatMessageA	unsigned long FormatMessageA(unsigned long, LPCVOID, unsigned long, unsigned long, char*, unsigned long, void*, LPCVOID, unsigned long, unsigned long, unsigned short*, unsigned long, va_list);	0x6793a88
+api-ms-win-core-localization-l1-2-0.dll	GetUserDefaultLocaleName	int GetUserDefaultLocaleName(unsigned short*, void*, int);	0x6793a90
+api-ms-win-core-localization-l1-2-0.dll	LocaleNameToLCID	LCID LocaleNameToLCID(const unsigned short*, unsigned long);	0x6793a98
+api-ms-win-core-synch-l1-1-0.dll	AcquireSRWLockExclusive	long AcquireSRWLockExclusive(void*);	0x6793aa8
+api-ms-win-core-synch-l1-1-0.dll	CreateEventA	HANDLE CreateEventA(LPSECURITY_ATTRIBUTES, WINBOOL, WINBOOL, void*, WINBOOL, WINBOOL, const unsigned short*);	0x6793ab0
+api-ms-win-core-synch-l1-1-0.dll	CreateEventW	HANDLE CreateEventW(LPSECURITY_ATTRIBUTES, WINBOOL, WINBOOL, void*, LARGE_INTEGER, long, PTIMERAPCROUTINE, LPVOID, WINBOOL);	0x6793ab8
+api-ms-win-core-synch-l1-1-0.dll	CreateMutexA	HANDLE CreateMutexA(LPSECURITY_ATTRIBUTES, WINBOOL, void*, WINBOOL, const unsigned short*);	0x6793ac0
+api-ms-win-core-synch-l1-1-0.dll	CreateSemaphoreExW	HANDLE CreateSemaphoreExW(LPSECURITY_ATTRIBUTES, long, long, const unsigned short*, unsigned long, unsigned long);	0x6793ac8
+api-ms-win-core-synch-l1-1-0.dll	DeleteCriticalSection	long DeleteCriticalSection(void*);	0x6793ad0
+api-ms-win-core-synch-l1-1-0.dll	EnterCriticalSection	long EnterCriticalSection(void*);	0x6793ad8
+api-ms-win-core-synch-l1-1-0.dll	InitializeCriticalSection	long InitializeCriticalSection(void);	0x6793ae0
+api-ms-win-core-synch-l1-1-0.dll	InitializeCriticalSectionAndSpinCount	WINBOOL InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION, void*, unsigned long);	0x6793ae8
+api-ms-win-core-synch-l1-1-0.dll	LeaveCriticalSection	long LeaveCriticalSection(void*);	0x6793af0
+api-ms-win-core-synch-l1-1-0.dll	ReleaseSRWLockExclusive	long ReleaseSRWLockExclusive(void*);	0x6793b00
+api-ms-win-core-synch-l1-1-0.dll	ReleaseSemaphore	WINBOOL ReleaseSemaphore(HANDLE, long, void*);	0x6793b08
+api-ms-win-core-synch-l1-1-0.dll	ResetEvent	long ResetEvent(void*);	0x6793b10
+api-ms-win-core-synch-l1-1-0.dll	SetEvent	long SetEvent(void*);	0x6793b18
+api-ms-win-core-synch-l1-1-0.dll	WaitForSingleObject	unsigned long WaitForSingleObject(HANDLE, void*, WINBOOL);	0x6793b20
+api-ms-win-core-synch-l1-1-0.dll	WaitForSingleObjectEx	long WaitForSingleObjectEx(void*, waitTime, void*);	0x6793b28
+api-ms-win-core-processthreads-l1-1-1.dll	GetCurrentThreadStackLimits	void GetCurrentThreadStackLimits(PULONG_PTR, void*, PROCESS_MITIGATION_POLICY, PVOID, unsigned long long);	0x6793b68
+api-ms-win-core-processthreads-l1-1-1.dll	IsProcessorFeaturePresent	WINBOOL IsProcessorFeaturePresent(unsigned long);	0x6793b70
+api-ms-win-core-processtopology-l1-1-0.dll	GetThreadGroupAffinity	WINBOOL GetThreadGroupAffinity(HANDLE, void*, CONST GROUP_AFFINITY, PGROUP_AFFINITY);	0x6793b80
+api-ms-win-core-processtopology-l1-1-0.dll	SetThreadGroupAffinity	WINBOOL SetThreadGroupAffinity(HANDLE, CONST GROUP_AFFINITY, PGROUP_AFFINITY);	0x6793b88
+api-ms-win-core-sysinfo-l1-1-0.dll	GetLocalTime	void GetLocalTime(void*);	0x6793ba8
+api-ms-win-core-sysinfo-l1-1-0.dll	GetLogicalProcessorInformation	WINBOOL GetLogicalProcessorInformation(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, void*, PVOID, unsigned long);	0x6793bb0
+api-ms-win-core-sysinfo-l1-1-0.dll	GetSystemTime	long GetSystemTime(void*);	0x6793bb8
+api-ms-win-core-sysinfo-l1-1-0.dll	GetSystemTimeAsFileTime	long GetSystemTimeAsFileTime(void*);	0x6793bc0
+api-ms-win-core-sysinfo-l1-1-0.dll	GetTickCount64	ULONGLONG GetTickCount64(void);	0x6793bc8
+api-ms-win-core-sysinfo-l1-1-0.dll	GlobalMemoryStatusEx	WINBOOL GlobalMemoryStatusEx(void*);	0x6793bd0
+api-ms-win-core-debug-l1-1-0.dll	IsDebuggerPresent	return IsDebuggerPresent(void);	0x6793be0
+api-ms-win-core-debug-l1-1-0.dll	OutputDebugStringA	void OutputDebugStringA(void*);	0x6793be8
+api-ms-win-core-windowserrorreporting-l1-1-0.dll	WerRegisterFile	long WerRegisterFile(PCWSTR, WER_REGISTER_FILE_TYPE, void*, unsigned long);	0x6793bf8
+d3d12_xs.dll	D3D12SerializeVersionedRootSignature	__stdcall D3D12SerializeVersionedRootSignature(D3D12_VERSIONED_ROOT_SIGNATURE_DESC, ID3DBlob, void*, D3D_FEATURE_LEVEL, REFIID, void);	0x6793c10
+ADVAPI32.dll	RegCloseKey	long RegCloseKey(void*);	0x6793c28
+ADVAPI32.dll	RegOpenKeyW	long RegOpenKeyW(HKEY, const unsigned short*, void*, const char*, char*, PLONG);	0x6793c30
+ADVAPI32.dll	RegQueryValueExW	long RegQueryValueExW(HKEY, const unsigned short*, LPDWORD, LPDWORD, LPBYTE, void*, const char*, unsigned long, unsigned long, CONST BYTE, unsigned long);	0x6793c38
+ext-ms-win-rtcore-ntuser-window-ansi-l1-1-0.dll	CreateWindowExA	HWND CreateWindowExA(unsigned long, const char*, const char*, unsigned long, int, int, int, int, HWND, HMENU, HINSTANCE, void*, const unsigned short*, const unsigned short*, unsigned long, int, int, int, int, HWND, HMENU, HINSTANCE, LPVOID);	0x6793c48
+ext-ms-win-rtcore-ntuser-window-ansi-l1-1-0.dll	DefWindowProcA	LRESULT DefWindowProcA(HWND, unsigned int, WPARAM, void*, unsigned int, WPARAM, LPARAM);	0x6793c50
+ext-ms-win-rtcore-ntuser-window-ansi-l1-1-0.dll	RegisterClassExA	ATOM RegisterClassExA(void*);	0x6793c58
+ext-ms-win-rtcore-ntuser-window-l1-1-0.dll	ShowWindow	WINBOOL ShowWindow(HWND, void*, unsigned long, unsigned long);	0x6793c68
+ext-ms-win-rtcore-ntuser-message-ansi-l1-1-0.dll	DispatchMessageA	LRESULT DispatchMessageA(void*);	0x6793c78
+ext-ms-win-rtcore-ntuser-message-ansi-l1-1-0.dll	PeekMessageA	WINBOOL PeekMessageA(LPMSG, HWND, unsigned int, unsigned int, void*, HWND, unsigned int, unsigned int, unsigned int);	0x6793c80
+ext-ms-win-rtcore-ntuser-message-l1-1-0.dll	TranslateMessage	WINBOOL TranslateMessage(void*);	0x6793c90
+WS2_32.dll	freeaddrinfo	WSAAPI freeaddrinfo(void*);	0x6793cd8
+WS2_32.dll	getaddrinfo	WSAAPI getaddrinfo(char, char, addrinfo, void*, PCWSTR, ADDRINFOW, PADDRINFOW);	0x6793ce0
+api-ms-win-core-string-l1-1-0.dll	MultiByteToWideChar	long MultiByteToWideChar(CP_ACP, void*, void*, void*, void*, void*);	0x6793d70
+api-ms-win-core-string-l1-1-0.dll	WideCharToMultiByte	int WideCharToMultiByte(unsigned int, unsigned long, LPCWCH, int, char*, int, LPCCH, LPBOOL);	0x6793d78
+api-ms-win-core-file-l2-1-0.dll	MoveFileExW	WINBOOL MoveFileExW(const unsigned short*, const unsigned short*, unsigned long);	0x6793d88
+api-ms-win-core-timezone-l1-1-0.dll	FileTimeToSystemTime	WINBOOL FileTimeToSystemTime(CONST FILETIME, void*, LPFILETIME);	0x6793d98
+api-ms-win-core-timezone-l1-1-0.dll	SystemTimeToFileTime	WINBOOL SystemTimeToFileTime(CONST SYSTEMTIME, void*);	0x6793da0
+api-ms-win-core-sysinfo-l1-2-0.dll	GetSystemTimePreciseAsFileTime	void GetSystemTimePreciseAsFileTime(void*);	0x6793db0
+api-ms-win-core-com-l1-1-0.dll	CoCreateGuid	WINOLEAPI CoCreateGuid(GUID);	0x6793dc0
+api-ms-win-core-com-l1-1-0.dll	CoCreateInstance	return CoCreateInstance(CLSID_ShellLibrary, NULL, CLSCTX_INPROC_SERVER, riid, ppv);	0x6793dc8
+api-ms-win-core-com-l1-1-0.dll	CoInitializeEx	WINOLEAPI CoInitializeEx(LPVOID, void*);	0x6793dd0
+api-ms-win-core-com-l1-1-0.dll	CoTaskMemFree	long CoTaskMemFree(void*);	0x6793dd8
+api-ms-win-core-com-l1-1-0.dll	PropVariantClear	WINOLEAPI PropVariantClear(void*, PROPVARIANT);	0x6793de8
+MFPlat.DLL	MFCreateAttributes	STDAPI MFCreateAttributes(IMFAttributes, void*, UINT8, unsigned int);	0x6793e00
+MFPlat.DLL	MFCreateMediaType	STDAPI MFCreateMediaType(IMFMediaType);	0x6793e08
+MFPlat.DLL	MFCreateSourceResolver	long MFCreateSourceResolver(void*);	0x6793e10
+MFPlat.DLL	MFGetSystemTime	MFTIME MFGetSystemTime(void*);	0x6793e18
+MFPlat.DLL	MFShutdown	STDAPI MFShutdown(void*);	0x6793e20
+MFReadWrite.dll	MFCreateSourceReaderFromMediaSource	long MFCreateSourceReaderFromMediaSource(IMFMediaSource, IMFAttributes, IMFSourceReader);	0x6793e38
+WINHTTP.dll	WinHttpAddRequestHeaders	WINBOOL WinHttpAddRequestHeaders(HINTERNET, const unsigned short*, unsigned long, void*, LPWSTR*);	0x6793e48
+WINHTTP.dll	WinHttpCloseHandle	WINBOOL WinHttpCloseHandle(void*, const unsigned short*, INTERNET_PORT, unsigned long);	0x6793e50
+WINHTTP.dll	WinHttpConnect	HINTERNET WinHttpConnect(HINTERNET, const unsigned short*, INTERNET_PORT, void*, unsigned long, unsigned long, LPURL_COMPONENTS);	0x6793e58
+WINHTTP.dll	WinHttpCrackUrl	WINBOOL WinHttpCrackUrl(const unsigned short*, unsigned long, unsigned long, void*, HINTERNET*);	0x6793e60
+WINHTTP.dll	WinHttpOpen	HINTERNET WinHttpOpen(const unsigned short*, unsigned long, const unsigned short*, const unsigned short*, void*, const unsigned short*, const unsigned short*, const unsigned short*, const unsigned short*, LPCWSTR*, unsigned long);	0x6793e68
+WINHTTP.dll	WinHttpOpenRequest	HINTERNET WinHttpOpenRequest(HINTERNET, const unsigned short*, const unsigned short*, const unsigned short*, const unsigned short*, LPCWSTR*, void*, unsigned long, LPVOID*);	0x6793e70
+WINHTTP.dll	WinHttpQueryDataAvailable	WINBOOL WinHttpQueryDataAvailable(HINTERNET, void*, unsigned long, const unsigned short*, LPVOID, LPDWORD, LPDWORD);	0x6793e78
+WINHTTP.dll	WinHttpQueryHeaders	WINBOOL WinHttpQueryHeaders(HINTERNET, unsigned long, const unsigned short*, LPVOID, LPDWORD, void*, unsigned long, LPVOID, LPDWORD);	0x6793e80
+WINHTTP.dll	WinHttpReadData	WINBOOL WinHttpReadData(HINTERNET, LPVOID, unsigned long, void*, PCWSTR, WINBOOL, WINBOOL, DWORD*, WINBOOL*, WINHTTP_PROXY_SETTINGS*);	0x6793e88
+WINHTTP.dll	WinHttpReceiveResponse	WINBOOL WinHttpReceiveResponse(HINTERNET, void*, unsigned long);	0x6793e90
+WINHTTP.dll	WinHttpSendRequest	WINBOOL WinHttpSendRequest(HINTERNET, const unsigned short*, unsigned long, LPVOID, unsigned long, unsigned long, void*);	0x6793e98
+WINHTTP.dll	WinHttpSetOption	WINBOOL WinHttpSetOption(HINTERNET, unsigned long, LPVOID, void*, WINHTTP_STATUS_CALLBACK, unsigned long, DWORD_PTR);	0x6793ea0
+WINHTTP.dll	WinHttpSetStatusCallback	WINHTTP_STATUS_CALLBACK WinHttpSetStatusCallback(HINTERNET, WINHTTP_STATUS_CALLBACK, unsigned long, void*, int, int, int, int);	0x6793ea8
+WINHTTP.dll	WinHttpSetTimeouts	WINBOOL WinHttpSetTimeouts(HINTERNET, int, int, int, void*, unsigned short*);	0x6793eb0
+WINHTTP.dll	WinHttpWriteData	WINBOOL WinHttpWriteData(HINTERNET, LPCVOID, unsigned long, void*, WINBOOL, WINHTTP_PROXY_SETTINGS*);	0x6793eb8
+api-ms-win-core-rtlsupport-l1-1-0.dll	RtlCaptureContext	long RtlCaptureContext(OUT PCONTEXT);	0x6793ec8
+api-ms-win-core-rtlsupport-l1-1-0.dll	RtlLookupFunctionEntry	NTAPI RtlLookupFunctionEntry(DWORD64, PDWORD64, void*, PVOID, PEXCEPTION_RECORD, PVOID, PCONTEXT, PUNWIND_HISTORY_TABLE);	0x6793ed0
+api-ms-win-core-rtlsupport-l1-1-0.dll	RtlVirtualUnwind	NTAPI RtlVirtualUnwind(unsigned long, DWORD64, DWORD64, PRUNTIME_FUNCTION, PCONTEXT, PVOID, PDWORD64, void*);	0x6793ed8
+api-ms-win-core-synch-l1-2-1.dll	CreateSemaphoreW	HANDLE CreateSemaphoreW(LPSECURITY_ATTRIBUTES, long, long, void*, WINBOOL, const unsigned short*);	0x6793ee8
+api-ms-win-core-synch-l1-2-1.dll	WaitForMultipleObjects	unsigned long WaitForMultipleObjects(unsigned long, CONST HANDLE, WINBOOL, unsigned long);	0x6793ef0
+api-ms-win-core-libraryloader-l1-2-1.dll	LoadLibraryW	long LoadLibraryW(void*);	0x6793f00
+api-ms-win-core-string-obsolete-l1-1-0.dll	lstrcmpW	int lstrcmpW(const unsigned short*, void*, const char*);	0x6793f20
+libHttpClient.GDK.dll	HCHttpCallDuplicateHandle	long HCHttpCallDuplicateHandle(void*);	0x6794008
+libHttpClient.GDK.dll	HCHttpCallResponseGetHeader	long HCHttpCallResponseGetHeader(m_callHandle, void*, void*);	0x67940b0
+libHttpClient.GDK.dll	HCHttpCallResponseGetHeaderAtIndex	long HCHttpCallResponseGetHeaderAtIndex(m_callHandle, i, void*, void*);	0x67940b8
+libHttpClient.GDK.dll	HCTraceImplMessage	long HCTraceImplMessage(m_area, m_level, void*, m_scope, m_id);	0x6794110
+api-ms-win-core-namedpipe-l1-1-0.dll	SetNamedPipeHandleState	WINBOOL SetNamedPipeHandleState(HANDLE, LPDWORD, LPDWORD, void*, LPVOID, unsigned long, LPDWORD, LPDWORD, LPDWORD);	0x6794128
+api-ms-win-core-namedpipe-l1-1-0.dll	WaitNamedPipeW	WINBOOL WaitNamedPipeW(const unsigned short*, unsigned long);	0x6794130
+api-ms-win-core-datetime-l1-1-1.dll	GetDateFormatEx	long GetDateFormatEx(LOCALE_NAME_INVARIANT, void*, void*, void*, void*, dateStr, void*, NULL);	0x6794280
+api-ms-win-core-datetime-l1-1-1.dll	GetTimeFormatEx	long GetTimeFormatEx(LOCALE_NAME_INVARIANT, void*, void*, void*, timeStr, void*);	0x6794288
+bcrypt.dll	BCryptCloseAlgorithmProvider	NTSTATUS BCryptCloseAlgorithmProvider(BCRYPT_ALG_HANDLE, void*);	0x6794298
+bcrypt.dll	BCryptGenRandom	NTSTATUS BCryptGenRandom(BCRYPT_ALG_HANDLE, PUCHAR, unsigned long, void*, BCRYPT_ALG_HANDLE, PUCHAR, unsigned long, unsigned long);	0x67942a0
+bcrypt.dll	BCryptOpenAlgorithmProvider	NTSTATUS BCryptOpenAlgorithmProvider(BCRYPT_ALG_HANDLE, const unsigned short*, const unsigned short*, void*, unsigned long, BCRYPT_ALGORITHM_IDENTIFIER, unsigned long);	0x67942a8
+api-ms-win-core-heap-l2-1-0.dll	LocalFree	HLOCAL LocalFree(void*, HINSTANCE, char*, int);	0x67942b8
+api-ms-win-core-interlocked-l1-1-0.dll	InitializeSListHead	void InitializeSListHead(void*);	0x67942c8
+VCRUNTIME140.dll	__C_specific_handler	EXCEPTION_DISPOSITION __C_specific_handler(_EXCEPTION_RECORD, unsigned __int64, unsigned __int64, _CONTEXT, _DISPATCHER_CONTEXT, unsigned __int64);	0x67942e0
+VCRUNTIME140.dll	_set_purecall_handler	_purecall_handler _set_purecall_handler(void*);	0x6794338
+VCRUNTIME140.dll	memchr	long memchr(void, int, void*, void, size_t);	0x6794348
+VCRUNTIME140.dll	memcmp	return memcmp(void*, void*, void*);	0x6794350
+VCRUNTIME140.dll	memcpy	long memcpy(void*, buffer, void*);	0x6794358
+VCRUNTIME140.dll	memmove	long memmove(void*, void*, void*);	0x6794360
+VCRUNTIME140.dll	memset	long memset(void*, void*, void*);	0x6794368
+VCRUNTIME140.dll	strchr	long strchr(char, void*, char);	0x6794370
+VCRUNTIME140.dll	strrchr	long strrchr(char, void*);	0x6794378
+VCRUNTIME140.dll	strstr	long strstr(char, char);	0x6794380
+VCRUNTIME140.dll	wcsrchr	long wcsrchr(wchar_t, void*, wchar_t);	0x6794388
+api-ms-win-crt-stdio-l1-1-0.dll	__acrt_iob_func	long __acrt_iob_func(unsigned);	0x67943a8
+api-ms-win-crt-stdio-l1-1-0.dll	__stdio_common_vfprintf	int __stdio_common_vfprintf(unsigned __int64, FILE, char, _locale_t, void*, char, size_t, char, _locale_t, va_list);	0x67943b8
+api-ms-win-crt-stdio-l1-1-0.dll	__stdio_common_vfwprintf	int __stdio_common_vfwprintf(unsigned __int64, FILE, wchar_t, _locale_t, void*, wchar_t, size_t, wchar_t, _locale_t, va_list);	0x67943c0
+api-ms-win-crt-stdio-l1-1-0.dll	__stdio_common_vsnwprintf_s	int __stdio_common_vsnwprintf_s(unsigned __int64, wchar_t, size_t, size_t, wchar_t, _locale_t, void*, FILE, wchar_t, _locale_t, va_list);	0x67943c8
+api-ms-win-crt-stdio-l1-1-0.dll	__stdio_common_vsprintf	int __stdio_common_vsprintf(unsigned __int64, char, size_t, char, _locale_t, void*, FILE, char, _locale_t, va_list);	0x67943d0
+api-ms-win-crt-stdio-l1-1-0.dll	__stdio_common_vsprintf_s	int __stdio_common_vsprintf_s(unsigned __int64, char, size_t, char, _locale_t, void*, char, size_t, char, _locale_t, va_list);	0x67943d8
+api-ms-win-crt-stdio-l1-1-0.dll	__stdio_common_vsscanf	int __stdio_common_vsscanf(unsigned __int64, char, size_t, char, _locale_t, void*, FILE, char, _locale_t, va_list);	0x67943e0
+api-ms-win-crt-stdio-l1-1-0.dll	__stdio_common_vswprintf	int __stdio_common_vswprintf(unsigned __int64, wchar_t, size_t, wchar_t, _locale_t, void*, FILE, wchar_t, _locale_t, va_list);	0x67943e8
+api-ms-win-crt-stdio-l1-1-0.dll	__stdio_common_vswprintf_s	int __stdio_common_vswprintf_s(unsigned __int64, wchar_t, size_t, wchar_t, _locale_t, void*, wchar_t, size_t, size_t, wchar_t, _locale_t, va_list);	0x67943f0
+api-ms-win-crt-stdio-l1-1-0.dll	__stdio_common_vswscanf	int __stdio_common_vswscanf(unsigned __int64, wchar_t, size_t, wchar_t, _locale_t, void*, FILE, wchar_t, _locale_t, va_list);	0x67943f8
+api-ms-win-crt-stdio-l1-1-0.dll	_fseeki64	int _fseeki64(FILE, __int64, void*);	0x6794400
+api-ms-win-crt-stdio-l1-1-0.dll	_set_fmode	errno_t _set_fmode(void*);	0x6794410
+api-ms-win-crt-stdio-l1-1-0.dll	fclose	int fclose(void*);	0x6794420
+api-ms-win-crt-stdio-l1-1-0.dll	fflush	int fflush(void*);	0x6794428
+api-ms-win-crt-stdio-l1-1-0.dll	fgetc	int fgetc(void*);	0x6794430
+api-ms-win-crt-stdio-l1-1-0.dll	fgetpos	int fgetpos(void*, void*, void*, void*);	0x6794438
+api-ms-win-crt-stdio-l1-1-0.dll	fopen	long fopen(void*, void*, void*);	0x6794440
+api-ms-win-crt-stdio-l1-1-0.dll	fputc	int fputc(int, void*);	0x6794448
+api-ms-win-crt-stdio-l1-1-0.dll	fread	size_t fread(void*, size_t, size_t, void*);	0x6794450
+api-ms-win-crt-stdio-l1-1-0.dll	fseek	int fseek(FILE, long, void*);	0x6794458
+api-ms-win-crt-stdio-l1-1-0.dll	fsetpos	int fsetpos(FILE, void*, fpos_t);	0x6794460
+api-ms-win-crt-stdio-l1-1-0.dll	ftell	long ftell(void*, __int64, int);	0x6794468
+api-ms-win-crt-stdio-l1-1-0.dll	fwrite	size_t fwrite(void*, size_t, size_t, void*);	0x6794470
+api-ms-win-crt-stdio-l1-1-0.dll	rewind	void rewind(void*);	0x6794478
+api-ms-win-crt-stdio-l1-1-0.dll	setvbuf	int setvbuf(void*, void*, int, size_t);	0x6794480
+api-ms-win-crt-runtime-l1-1-0.dll	__p___argc	long __p___argc(void*);	0x6794498
+api-ms-win-crt-runtime-l1-1-0.dll	__p___argv	long __p___argv(void*);	0x67944a0
+api-ms-win-crt-runtime-l1-1-0.dll	_c_exit	__MINGW_NOTHROW _c_exit(void);	0x67944a8
+api-ms-win-crt-runtime-l1-1-0.dll	_cexit	__MINGW_NOTHROW _cexit(void*);	0x67944b0
+api-ms-win-crt-runtime-l1-1-0.dll	_configure_narrow_argv	errno_t _configure_narrow_argv(void*);	0x67944b8
+api-ms-win-crt-runtime-l1-1-0.dll	_crt_atexit	int _crt_atexit(void*);	0x67944c0
+api-ms-win-crt-runtime-l1-1-0.dll	_errno	long _errno(void);	0x67944c8
+api-ms-win-crt-runtime-l1-1-0.dll	_get_errno	errno_t _get_errno(int);	0x67944d8
+api-ms-win-crt-runtime-l1-1-0.dll	_get_narrow_winmain_command_line	char* _get_narrow_winmain_command_line(void*);	0x67944e0
+api-ms-win-crt-runtime-l1-1-0.dll	_initialize_narrow_environment	int _initialize_narrow_environment(void*);	0x67944e8
+api-ms-win-crt-runtime-l1-1-0.dll	_initialize_onexit_table	int _initialize_onexit_table(void*, _onexit_t);	0x67944f0
+api-ms-win-crt-runtime-l1-1-0.dll	_initterm	void _initterm(_PVFV*, void*, _PIFV*);	0x67944f8
+api-ms-win-crt-runtime-l1-1-0.dll	_initterm_e	int _initterm_e(_PIFV*, _PIFV*);	0x6794500
+api-ms-win-crt-runtime-l1-1-0.dll	_invalid_parameter_noinfo	void _invalid_parameter_noinfo(void*);	0x6794508
+api-ms-win-crt-runtime-l1-1-0.dll	_invalid_parameter_noinfo_noreturn	void _invalid_parameter_noinfo_noreturn(void*, wchar_t, wchar_t, unsigned int, __UINTPTR_TYPE__);	0x6794510
+api-ms-win-crt-runtime-l1-1-0.dll	_register_onexit_function	int _register_onexit_function(_onexit_table_t*, void*);	0x6794518
+api-ms-win-crt-runtime-l1-1-0.dll	_register_thread_local_exe_atexit_callback	void _register_thread_local_exe_atexit_callback(void*);	0x6794520
+api-ms-win-crt-runtime-l1-1-0.dll	_set_app_type	void _set_app_type(_crt_app_type);	0x6794530
+api-ms-win-crt-runtime-l1-1-0.dll	_set_errno	errno_t _set_errno(void*);	0x6794538
+api-ms-win-crt-runtime-l1-1-0.dll	_set_invalid_parameter_handler	_invalid_parameter_handler _set_invalid_parameter_handler(void*);	0x6794540
+api-ms-win-crt-runtime-l1-1-0.dll	abort	long abort(void);	0x6794548
+api-ms-win-crt-runtime-l1-1-0.dll	terminate	long terminate(void);	0x6794558
+api-ms-win-crt-locale-l1-1-0.dll	_configthreadlocale	long _configthreadlocale(void*);	0x6794568
+api-ms-win-crt-locale-l1-1-0.dll	localeconv	long localeconv(void*);	0x6794570
+api-ms-win-crt-time-l1-1-0.dll	_difftime64	double _difftime64(__time64_t, __time64_t);	0x6794580
+api-ms-win-crt-time-l1-1-0.dll	_ftime64	void _ftime64(void*);	0x6794588
+api-ms-win-crt-time-l1-1-0.dll	_gmtime64	long _gmtime64(void*, __time64_t);	0x6794590
+api-ms-win-crt-time-l1-1-0.dll	_gmtime64_s	errno_t _gmtime64_s(tm, __time64_t);	0x6794598
+api-ms-win-crt-time-l1-1-0.dll	_localtime64_s	errno_t _localtime64_s(tm, void*);	0x67945a0
+api-ms-win-crt-time-l1-1-0.dll	_mkgmtime64	__time64_t _mkgmtime64(void*);	0x67945a8
+api-ms-win-crt-time-l1-1-0.dll	_mktime64	__time64_t _mktime64(void*);	0x67945b0
+api-ms-win-crt-time-l1-1-0.dll	_time64	__time64_t _time64(__time64_t);	0x67945b8
+api-ms-win-crt-time-l1-1-0.dll	strftime	long strftime(datetime_str, void*, void*, void*, void*, void*, datetime_str, buf);	0x67945c0
+api-ms-win-crt-math-l1-1-0.dll	__setusermatherr	void __setusermatherr(void*);	0x67945d0
+api-ms-win-crt-math-l1-1-0.dll	acos	long acos(void*);	0x67945f0
+api-ms-win-crt-math-l1-1-0.dll	acosf	float acosf(void*);	0x67945f8
+api-ms-win-crt-math-l1-1-0.dll	asin	double asin(void*);	0x6794600
+api-ms-win-crt-math-l1-1-0.dll	asinf	float asinf(void*);	0x6794608
+api-ms-win-crt-math-l1-1-0.dll	atan	double atan(void*, double);	0x6794610
+api-ms-win-crt-math-l1-1-0.dll	atan2	return atan2(__imag__, __real__);	0x6794618
+api-ms-win-crt-math-l1-1-0.dll	atan2f	return atan2f(__imag__, __real__);	0x6794620
+api-ms-win-crt-math-l1-1-0.dll	atanf	float atanf(void*);	0x6794628
+api-ms-win-crt-math-l1-1-0.dll	cbrtf	float cbrtf(void*);	0x6794630
+api-ms-win-crt-math-l1-1-0.dll	ceilf	float ceilf(void*);	0x6794638
+api-ms-win-crt-math-l1-1-0.dll	cos	double cos(void*);	0x6794640
+api-ms-win-crt-math-l1-1-0.dll	cosf	float cosf(void*);	0x6794648
+api-ms-win-crt-math-l1-1-0.dll	erff	float erff(void*);	0x6794650
+api-ms-win-crt-math-l1-1-0.dll	exp	double exp(void*);	0x6794658
+api-ms-win-crt-math-l1-1-0.dll	exp2	double exp2(void*);	0x6794660
+api-ms-win-crt-math-l1-1-0.dll	exp2f	float exp2f(void*);	0x6794668
+api-ms-win-crt-math-l1-1-0.dll	expf	float expf(float);	0x6794670
+api-ms-win-crt-math-l1-1-0.dll	fmod	double fmod(double, void*, double, double);	0x6794678
+api-ms-win-crt-math-l1-1-0.dll	fmodf	float fmodf(float, void*, long);	0x6794680
+api-ms-win-crt-math-l1-1-0.dll	log	double log(void*);	0x6794688
+api-ms-win-crt-math-l1-1-0.dll	log10f	float log10f(void*);	0x6794690
+api-ms-win-crt-math-l1-1-0.dll	log2	double log2(void*);	0x6794698
+api-ms-win-crt-math-l1-1-0.dll	log2f	float log2f(void*);	0x67946a0
+api-ms-win-crt-math-l1-1-0.dll	logf	float logf(void*);	0x67946a8
+api-ms-win-crt-math-l1-1-0.dll	lroundf	long lroundf(void*);	0x67946b0
+api-ms-win-crt-math-l1-1-0.dll	modf	double modf(double, void*, double);	0x67946b8
+api-ms-win-crt-math-l1-1-0.dll	modff	float modff(float, void*, long);	0x67946c0
+api-ms-win-crt-math-l1-1-0.dll	nextafterf	float nextafterf(float, void*, long);	0x67946c8
+api-ms-win-crt-math-l1-1-0.dll	nexttowardf	float nexttowardf(float, void*, long);	0x67946d0
+api-ms-win-crt-math-l1-1-0.dll	pow	long pow(void*, void*);	0x67946d8
+api-ms-win-crt-math-l1-1-0.dll	powf	float powf(float, float);	0x67946e0
+api-ms-win-crt-math-l1-1-0.dll	remainderf	float remainderf(float, void*, long);	0x67946e8
+api-ms-win-crt-math-l1-1-0.dll	sin	long sin(angle);	0x67946f0
+api-ms-win-crt-math-l1-1-0.dll	sinf	float sinf(void*);	0x67946f8
+api-ms-win-crt-math-l1-1-0.dll	sinhf	float sinhf(float);	0x6794700
+api-ms-win-crt-math-l1-1-0.dll	tan	double tan(void*);	0x6794708
+api-ms-win-crt-math-l1-1-0.dll	tanf	float tanf(void*);	0x6794710
+api-ms-win-crt-convert-l1-1-0.dll	_itoa	long _itoa(int, char, int);	0x6794720
+api-ms-win-crt-convert-l1-1-0.dll	_strtoi64	__int64 _strtoi64(char, char, void*, char, int, _locale_t);	0x6794728
+api-ms-win-crt-convert-l1-1-0.dll	_strtoui64	__int64 _strtoui64(char, char, void*, char, int, _locale_t);	0x6794730
+api-ms-win-crt-convert-l1-1-0.dll	atof	double atof(void*, _locale_t);	0x6794738
+api-ms-win-crt-convert-l1-1-0.dll	atoi	int atoi(void*, _locale_t);	0x6794740
+api-ms-win-crt-convert-l1-1-0.dll	atoll	long atoll(char);	0x6794748
+api-ms-win-crt-convert-l1-1-0.dll	strtod	return strtod(str, nullptr);	0x6794750
+api-ms-win-crt-convert-l1-1-0.dll	strtof	__MINGW_NOTHROW strtof(void*, void*, char **);	0x6794758
+api-ms-win-crt-convert-l1-1-0.dll	strtol	long strtol(void*, void*, void*, void*, int, _locale_t);	0x6794760
+api-ms-win-crt-convert-l1-1-0.dll	strtoll	long strtoll(char *, char **, void*, char **, int);	0x6794768
+api-ms-win-crt-convert-l1-1-0.dll	strtoul	long strtoul(void*, void*, void*, void*, int, _locale_t);	0x6794770
+api-ms-win-crt-convert-l1-1-0.dll	strtoull	return strtoull(void*, nullptr, void*);	0x6794778
+api-ms-win-crt-filesystem-l1-1-0.dll	_lock_file	void _lock_file(void*);	0x6794788
+api-ms-win-crt-filesystem-l1-1-0.dll	_unlock_file	void _unlock_file(FILE);	0x6794790
+api-ms-win-crt-filesystem-l1-1-0.dll	_wstat64	int _wstat64(wchar_t, _stat64);	0x6794798
+api-ms-win-crt-string-l1-1-0.dll	_stricmp	return _stricmp(left, right);	0x67947b0
+api-ms-win-crt-string-l1-1-0.dll	_strnicmp	int _strnicmp(char, char, void*, char, size_t, _locale_t);	0x67947b8
+api-ms-win-crt-string-l1-1-0.dll	_wcsicoll	int _wcsicoll(wchar_t, void*, wchar_t, _locale_t);	0x67947c0
+api-ms-win-crt-string-l1-1-0.dll	_wcsnicmp	int _wcsnicmp(wchar_t, wchar_t, void*, wchar_t, size_t, _locale_t);	0x67947c8
+api-ms-win-crt-string-l1-1-0.dll	isalnum	int isalnum(void*);	0x67947d0
+api-ms-win-crt-string-l1-1-0.dll	isalpha	int isalpha(void*);	0x67947d8
+api-ms-win-crt-string-l1-1-0.dll	isdigit	int isdigit(void*);	0x67947e0
+api-ms-win-crt-string-l1-1-0.dll	islower	int islower(void*);	0x67947e8
+api-ms-win-crt-string-l1-1-0.dll	isspace	int isspace(void*);	0x67947f0
+api-ms-win-crt-string-l1-1-0.dll	isxdigit	long isxdigit(ch_int);	0x67947f8
+api-ms-win-crt-string-l1-1-0.dll	strcat	long strcat(void*, void*, char);	0x6794800
+api-ms-win-crt-string-l1-1-0.dll	strcat_s	errno_t strcat_s(char, rsize_t, char *);	0x6794808
+api-ms-win-crt-string-l1-1-0.dll	strcmp	int strcmp(char, void*);	0x6794810
+api-ms-win-crt-string-l1-1-0.dll	strcpy	long strcpy(rstr, pszString);	0x6794818
+api-ms-win-crt-string-l1-1-0.dll	strcpy_s	return strcpy_s(destinationCharArr, sizeInWords, sourceCharArr);	0x6794820
+api-ms-win-crt-string-l1-1-0.dll	strcspn	size_t strcspn(char, char);	0x6794828
+api-ms-win-crt-string-l1-1-0.dll	strncat	long strncat(void*, void*, void*, char, size_t);	0x6794838
+api-ms-win-crt-string-l1-1-0.dll	strncmp	int strncmp(char, char, void*, char, size_t);	0x6794840
+api-ms-win-crt-string-l1-1-0.dll	strncpy	long strncpy(pname, pszNodeName, void*);	0x6794848
+api-ms-win-crt-string-l1-1-0.dll	strncpy_s	errno_t strncpy_s(char, size_t, char, void*, strncpy_s, char, _Dest, char, _Source, size_t, void*, size_t, char, size_t, _locale_t);	0x6794850
+api-ms-win-crt-string-l1-1-0.dll	strpbrk	long strpbrk(char, void*, int);	0x6794858
+api-ms-win-crt-string-l1-1-0.dll	strtok_s	long strtok_s(char, char, void*, char, char, _locale_t);	0x6794868
+api-ms-win-crt-string-l1-1-0.dll	tolower	long tolower(void*);	0x6794870
+api-ms-win-crt-string-l1-1-0.dll	toupper	int toupper(int);	0x6794878
+api-ms-win-crt-string-l1-1-0.dll	wcscat_s	errno_t wcscat_s(wchar_t, rsize_t, void*, wcscat_s, wchar_t, _Dest, wchar_t, void*, rsize_t, wchar_t);	0x6794880
+api-ms-win-crt-string-l1-1-0.dll	wcscmp	int wcscmp(wchar_t, wchar_t);	0x6794888
+api-ms-win-crt-string-l1-1-0.dll	wcscoll	int wcscoll(wchar_t, void*, wchar_t, _locale_t);	0x6794890
+api-ms-win-crt-string-l1-1-0.dll	wcslen	size_t wcslen(void*, size_t);	0x6794898
+api-ms-win-crt-utility-l1-1-0.dll	bsearch	long bsearch(void, void, size_t, size_t, void*, void*, size_t, size_t, void*, void);	0x67948b0
+api-ms-win-crt-utility-l1-1-0.dll	qsort	void qsort(void, size_t, size_t, void*, void);	0x67948b8
+api-ms-win-crt-utility-l1-1-0.dll	rand	int rand(void*);	0x67948c0
+api-ms-win-crt-utility-l1-1-0.dll	srand	void srand(unsigned int);	0x67948c8
+api-ms-win-crt-heap-l1-1-0.dll	_set_new_mode	int _set_new_mode(int);	0x67948d8
+api-ms-win-crt-heap-l1-1-0.dll	calloc	long calloc(size_t, void*);	0x67948e0
+api-ms-win-crt-heap-l1-1-0.dll	free	long free(tmp);	0x67948e8
+api-ms-win-crt-heap-l1-1-0.dll	malloc	long malloc(void*);	0x67948f0
+api-ms-win-crt-heap-l1-1-0.dll	realloc	long realloc(void, void*);	0x67948f8
+api-ms-win-core-libraryloader-l1-2-0.dll	GetProcAddress		0x6793530
+MSVCP140.dll	??0?$basic_ios@DU?$char_traits@D@std@@@std@@IEAA@XZ		0x6793568
+MSVCP140.dll	??0?$basic_iostream@DU?$char_traits@D@std@@@std@@QEAA@PEAV?$basic_streambuf@DU?$char_traits@D@std@@@1@@Z		0x6793570
+MSVCP140.dll	??0?$basic_iostream@_WU?$char_traits@_W@std@@@std@@QEAA@PEAV?$basic_streambuf@_WU?$char_traits@_W@std@@@1@@Z		0x6793578
+MSVCP140.dll	??0?$basic_istream@DU?$char_traits@D@std@@@std@@QEAA@PEAV?$basic_streambuf@DU?$char_traits@D@std@@@1@_N@Z		0x6793580
+MSVCP140.dll	??0?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAA@PEAV?$basic_streambuf@DU?$char_traits@D@std@@@1@_N@Z		0x6793588
+MSVCP140.dll	??0?$basic_streambuf@DU?$char_traits@D@std@@@std@@IEAA@XZ		0x6793590
+MSVCP140.dll	??0?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@IEAA@XZ		0x6793598
+MSVCP140.dll	??0_Locinfo@std@@QEAA@HPEBD@Z		0x67935a0
+MSVCP140.dll	??0_Lockit@std@@QEAA@H@Z		0x67935a8
+MSVCP140.dll	??0ios_base@std@@IEAA@XZ		0x67935b0
+MSVCP140.dll	??1?$basic_ios@DU?$char_traits@D@std@@@std@@UEAA@XZ		0x67935b8
+MSVCP140.dll	??1?$basic_ios@_WU?$char_traits@_W@std@@@std@@UEAA@XZ		0x67935c0
+MSVCP140.dll	??1?$basic_iostream@DU?$char_traits@D@std@@@std@@UEAA@XZ		0x67935c8
+MSVCP140.dll	??1?$basic_iostream@_WU?$char_traits@_W@std@@@std@@UEAA@XZ		0x67935d0
+MSVCP140.dll	??1?$basic_istream@DU?$char_traits@D@std@@@std@@UEAA@XZ		0x67935d8
+MSVCP140.dll	??1?$basic_ostream@DU?$char_traits@D@std@@@std@@UEAA@XZ		0x67935e0
+MSVCP140.dll	??1?$basic_streambuf@DU?$char_traits@D@std@@@std@@UEAA@XZ		0x67935e8
+MSVCP140.dll	??1?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@UEAA@XZ		0x67935f0
+MSVCP140.dll	??1_Locinfo@std@@QEAA@XZ		0x67935f8
+MSVCP140.dll	??1_Lockit@std@@QEAA@XZ		0x6793600
+MSVCP140.dll	??1ios_base@std@@UEAA@XZ		0x6793608
+MSVCP140.dll	??4?$_Yarn@D@std@@QEAAAEAV01@PEBD@Z		0x6793610
+MSVCP140.dll	??5?$basic_istream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@AEAH@Z		0x6793618
+MSVCP140.dll	??6?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@H@Z		0x6793620
+MSVCP140.dll	??6?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@I@Z		0x6793628
+MSVCP140.dll	??6?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@J@Z		0x6793630
+MSVCP140.dll	??6?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@M@Z		0x6793638
+MSVCP140.dll	??6?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@PEBX@Z		0x6793640
+MSVCP140.dll	??6?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@_K@Z		0x6793648
+MSVCP140.dll	??Bid@locale@std@@QEAA_KXZ		0x6793650
+MSVCP140.dll	??_7?$basic_ios@DU?$char_traits@D@std@@@std@@6B@		0x6793658
+MSVCP140.dll	??_7?$basic_ios@_WU?$char_traits@_W@std@@@std@@6B@		0x6793660
+MSVCP140.dll	??_7ios_base@std@@6B@		0x6793668
+MSVCP140.dll	?_Fiopen@std@@YAPEAU_iobuf@@PEBDHH@Z		0x6793670
+MSVCP140.dll	?_Fiopen@std@@YAPEAU_iobuf@@PEB_WHH@Z		0x6793678
+MSVCP140.dll	?_Getcat@?$codecvt@DDU_Mbstatet@@@std@@SA_KPEAPEBVfacet@locale@2@PEBV42@@Z		0x6793680
+MSVCP140.dll	?_Getcat@?$ctype@_W@std@@SA_KPEAPEBVfacet@locale@2@PEBV42@@Z		0x6793688
+MSVCP140.dll	?_Getgloballocale@locale@std@@CAPEAV_Locimp@12@XZ		0x6793690
+MSVCP140.dll	?_Gninc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@IEAAPEADXZ		0x6793698
+MSVCP140.dll	?_Id_cnt@id@locale@std@@0HA		0x67936a0
+MSVCP140.dll	?_Init@?$basic_streambuf@DU?$char_traits@D@std@@@std@@IEAAXXZ		0x67936a8
+MSVCP140.dll	?_Init@locale@std@@CAPEAV_Locimp@12@_N@Z		0x67936b0
+MSVCP140.dll	?_Ios_base_dtor@ios_base@std@@CAXPEAV12@@Z		0x67936b8
+MSVCP140.dll	?_Ipfx@?$basic_istream@DU?$char_traits@D@std@@@std@@QEAA_N_N@Z		0x67936c0
+MSVCP140.dll	?_Lock@?$basic_streambuf@DU?$char_traits@D@std@@@std@@UEAAXXZ		0x67936c8
+MSVCP140.dll	?_Lock@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@UEAAXXZ		0x67936d0
+MSVCP140.dll	?_Makeloc@_Locimp@locale@std@@CAPEAV123@AEBV_Locinfo@3@HPEAV123@PEBV23@@Z		0x67936d8
+MSVCP140.dll	?_New_Locimp@_Locimp@locale@std@@CAPEAV123@_N@Z		0x67936e0
+MSVCP140.dll	?_Osfx@?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAXXZ		0x67936e8
+MSVCP140.dll	?_Osfx@?$basic_ostream@_WU?$char_traits@_W@std@@@std@@QEAAXXZ		0x67936f0
+MSVCP140.dll	?_Pninc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@IEAAPEADXZ		0x67936f8
+MSVCP140.dll	?_Pninc@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@IEAAPEA_WXZ		0x6793700
+MSVCP140.dll	?_Random_device@std@@YAIXZ		0x6793708
+MSVCP140.dll	?_Syserror_map@std@@YAPEBDH@Z		0x6793710
+MSVCP140.dll	?_Throw_C_error@std@@YAXH@Z		0x6793718
+MSVCP140.dll	?_Unlock@?$basic_streambuf@DU?$char_traits@D@std@@@std@@UEAAXXZ		0x6793720
+MSVCP140.dll	?_Unlock@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@UEAAXXZ		0x6793728
+MSVCP140.dll	?_Winerror_map@std@@YAHH@Z		0x6793730
+MSVCP140.dll	?_Xbad_alloc@std@@YAXXZ		0x6793738
+MSVCP140.dll	?_Xbad_function_call@std@@YAXXZ		0x6793740
+MSVCP140.dll	?_Xinvalid_argument@std@@YAXPEBD@Z		0x6793748
+MSVCP140.dll	?_Xlength_error@std@@YAXPEBD@Z		0x6793750
+MSVCP140.dll	?_Xout_of_range@std@@YAXPEBD@Z		0x6793758
+MSVCP140.dll	?_Xruntime_error@std@@YAXPEBD@Z		0x6793760
+MSVCP140.dll	?always_noconv@codecvt_base@std@@QEBA_NXZ		0x6793768
+MSVCP140.dll	?classic@locale@std@@SAAEBV12@XZ		0x6793770
+MSVCP140.dll	?clear@?$basic_ios@DU?$char_traits@D@std@@@std@@QEAAXH_N@Z		0x6793778
+MSVCP140.dll	?flush@?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV12@XZ		0x6793780
+MSVCP140.dll	?flush@?$basic_ostream@_WU?$char_traits@_W@std@@@std@@QEAAAEAV12@XZ		0x6793788
+MSVCP140.dll	?getloc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@QEBA?AVlocale@2@XZ		0x6793790
+MSVCP140.dll	?getloc@ios_base@std@@QEBA?AVlocale@2@XZ		0x6793798
+MSVCP140.dll	?good@ios_base@std@@QEBA_NXZ		0x67937a0
+MSVCP140.dll	?id@?$codecvt@DDU_Mbstatet@@@std@@2V0locale@2@A		0x67937a8
+MSVCP140.dll	?id@?$ctype@_W@std@@2V0locale@2@A		0x67937b0
+MSVCP140.dll	?imbue@?$basic_ios@DU?$char_traits@D@std@@@std@@QEAA?AVlocale@2@AEBV32@@Z		0x67937b8
+MSVCP140.dll	?imbue@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAAXAEBVlocale@2@@Z		0x67937c0
+MSVCP140.dll	?imbue@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@MEAAXAEBVlocale@2@@Z		0x67937c8
+MSVCP140.dll	?in@?$codecvt@DDU_Mbstatet@@@std@@QEBAHAEAU_Mbstatet@@PEBD1AEAPEBDPEAD3AEAPEAD@Z		0x67937d0
+MSVCP140.dll	?init@?$basic_ios@DU?$char_traits@D@std@@@std@@IEAAXPEAV?$basic_streambuf@DU?$char_traits@D@std@@@2@_N@Z		0x67937d8
+MSVCP140.dll	?out@?$codecvt@DDU_Mbstatet@@@std@@QEBAHAEAU_Mbstatet@@PEBD1AEAPEBDPEAD3AEAPEAD@Z		0x67937e0
+MSVCP140.dll	?read@?$basic_istream@DU?$char_traits@D@std@@@std@@QEAAAEAV12@PEAD_J@Z		0x67937e8
+MSVCP140.dll	?sbumpc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@QEAAHXZ		0x67937f0
+MSVCP140.dll	?seekg@?$basic_istream@DU?$char_traits@D@std@@@std@@QEAAAEAV12@V?$fpos@U_Mbstatet@@@2@@Z		0x67937f8
+MSVCP140.dll	?seekg@?$basic_istream@DU?$char_traits@D@std@@@std@@QEAAAEAV12@_JH@Z		0x6793800
+MSVCP140.dll	?setbuf@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAAPEAV12@PEAD_J@Z		0x6793808
+MSVCP140.dll	?setbuf@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@MEAAPEAV12@PEA_W_J@Z		0x6793810
+MSVCP140.dll	?setstate@?$basic_ios@DU?$char_traits@D@std@@@std@@QEAAXH_N@Z		0x6793818
+MSVCP140.dll	?setstate@?$basic_ios@_WU?$char_traits@_W@std@@@std@@QEAAXH_N@Z		0x6793820
+MSVCP140.dll	?showmanyc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAA_JXZ		0x6793828
+MSVCP140.dll	?showmanyc@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@MEAA_JXZ		0x6793830
+MSVCP140.dll	?sputc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@QEAAHD@Z		0x6793838
+MSVCP140.dll	?sputc@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@QEAAG_W@Z		0x6793840
+MSVCP140.dll	?sync@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAAHXZ		0x6793848
+MSVCP140.dll	?sync@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@MEAAHXZ		0x6793850
+MSVCP140.dll	?tellg@?$basic_istream@DU?$char_traits@D@std@@@std@@QEAA?AV?$fpos@U_Mbstatet@@@2@XZ		0x6793858
+MSVCP140.dll	?tellp@?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAA?AV?$fpos@U_Mbstatet@@@2@XZ		0x6793860
+MSVCP140.dll	?uflow@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAAHXZ		0x6793868
+MSVCP140.dll	?uflow@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@MEAAGXZ		0x6793870
+MSVCP140.dll	?uncaught_exception@std@@YA_NXZ		0x6793878
+MSVCP140.dll	?unshift@?$codecvt@DDU_Mbstatet@@@std@@QEBAHAEAU_Mbstatet@@PEAD1AEAPEAD@Z		0x6793880
+MSVCP140.dll	?widen@?$ctype@_W@std@@QEBA_WD@Z		0x6793888
+MSVCP140.dll	?write@?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV12@PEBD_J@Z		0x6793890
+MSVCP140.dll	?xsgetn@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAA_JPEAD_J@Z		0x6793898
+MSVCP140.dll	?xsgetn@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@MEAA_JPEA_W_J@Z		0x67938a0
+MSVCP140.dll	?xsputn@?$basic_streambuf@DU?$char_traits@D@std@@@std@@MEAA_JPEBD_J@Z		0x67938a8
+MSVCP140.dll	?xsputn@?$basic_streambuf@_WU?$char_traits@_W@std@@@std@@MEAA_JPEB_W_J@Z		0x67938b0
+MSVCP140.dll	_Mtx_destroy_in_situ		0x67938b8
+MSVCP140.dll	_Mtx_init_in_situ		0x67938c0
+MSVCP140.dll	_Mtx_lock		0x67938c8
+MSVCP140.dll	_Mtx_unlock		0x67938d0
+MSVCP140.dll	_Query_perf_counter		0x67938d8
+MSVCP140.dll	_Query_perf_frequency		0x67938e0
+MSVCP140.dll	_Xtime_get_ticks		0x67938e8
+api-ms-win-core-file-l1-1-0.dll	GetFileTime		0x6793960
+api-ms-win-core-file-l1-1-0.dll	SetFileTime		0x6793998
+xmem.dll	XMemAlloc		0x6793a00
+xmem.dll	XMemAllocDefault		0x6793a08
+xmem.dll	XMemAllocatePhysicalPages		0x6793a10
+xmem.dll	XMemFree		0x6793a18
+xmem.dll	XMemFreeDefault		0x6793a20
+xmem.dll	XMemFreePhysicalPages		0x6793a28
+xmem.dll	XMemGetWorkingSetStatistics		0x6793a30
+xmem.dll	XMemIsToolsMemAvailable		0x6793a38
+xmem.dll	XMemMapPhysicalPages		0x6793a40
+xmem.dll	XMemMapPhysicalPagesScatter		0x6793a48
+xmem.dll	XMemTransferMemory		0x6793a50
+xmem.dll	XMemVirtualAlloc		0x6793a58
+api-ms-win-core-synch-l1-1-0.dll	ReleaseMutex		0x6793af8
+api-ms-win-core-psm-appnotify-l1-1-0.dll	RegisterAppStateChangeNotification		0x6793b38
+api-ms-win-core-psm-appnotify-l1-1-0.dll	UnregisterAppStateChangeNotification		0x6793b40
+api-ms-win-core-psm-appnotify-l1-1-1.dll	RegisterAppConstrainedChangeNotification		0x6793b50
+api-ms-win-core-psm-appnotify-l1-1-1.dll	UnregisterAppConstrainedChangeNotification		0x6793b58
+api-ms-win-core-synch-l1-2-0.dll	Sleep		0x6793b98
+d3d12_xs.dll	D3D12ConfigureVirtualMemoryX		0x6793c08
+d3d12_xs.dll	D3D12XboxCreateDevice		0x6793c18
+api-ms-win-core-com-l1-1-0.dll	CoUninitialize		0x6793de0
+api-ms-win-core-com-l1-1-0.dll	StringFromGUID2		0x6793df0
+MFPlat.DLL	MFStartup		0x6793e28
+chad.dll	XDspActivate		0x6793f30
+chad.dll	XDspConnectWithMaximumStreamLimit		0x6793f38
+chad.dll	XDspDeactivate		0x6793f40
+chad.dll	XDspDisconnect		0x6793f48
+chad.dll	XDspSubmitCommand		0x6793f50
+xg_xs.dll	XGCreateTextureComputer		0x6793f60
+xg_xs.dll	XGSuggestSwizzleMode		0x6793f68
+XboxBvhBuilder.dll	??0XboxBvhBuilder@@QEAA@PEAUID3D12Device11@@_N@Z		0x6793f78
+XboxBvhBuilder.dll	??1XboxBvhBuilder@@QEAA@XZ		0x6793f80
+XboxBvhBuilder.dll	?BuildRaytracingAccelerationStructureBatched2X@XboxBvhBuilder@@QEAAXPEAUID3D12GraphicsCommandList6@@IPEBUD3D12XBOX_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_BATCHED_DESC2@@@Z		0x6793f88
+XboxBvhBuilder.dll	?CopyRaytracingAccelerationStructure@XboxBvhBuilder@@QEAAXPEAUID3D12GraphicsCommandList4@@_K1W4D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE@@@Z		0x6793f90
+XboxBvhBuilder.dll	?GetRaytracingAccelerationStructurePrebuildInfo@XboxBvhBuilder@@QEAAXPEBUD3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS@@PEBUD3D12XBOX_XDXR_STREAM_DESC@@PEAUD3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO@@@Z		0x6793f98
+XboxBvhBuilder.dll	?RehydrateRaytracingAccelerationStructureBatched2X@XboxBvhBuilder@@QEAAJPEAUID3D12GraphicsCommandList8@@IPEBUD3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC@@PEB_K@Z		0x6793fa0
+XboxBvhBuilder.dll	?Set64BitMortonCodes@XboxBvhBuilder@@QEAAX_N@Z		0x6793fa8
+XCRDAPI.dll	DStorageGetFactory		0x6793fb8
+amd_fidelityfx_loader_xbox.dll	ffxCreateContext		0x6793fc8
+amd_fidelityfx_loader_xbox.dll	ffxDestroyContext		0x6793fd0
+amd_fidelityfx_loader_xbox.dll	ffxDispatch		0x6793fd8
+amd_fidelityfx_loader_xbox.dll	ffxQuery		0x6793fe0
+libHttpClient.GDK.dll	HCCleanupAsync		0x6793ff0
+libHttpClient.GDK.dll	HCHttpCallCloseHandle		0x6793ff8
+libHttpClient.GDK.dll	HCHttpCallCreate		0x6794000
+libHttpClient.GDK.dll	HCHttpCallGetRequestUrl		0x6794010
+libHttpClient.GDK.dll	HCHttpCallPerformAsync		0x6794018
+libHttpClient.GDK.dll	HCHttpCallRequestGetHeaderAtIndex		0x6794020
+libHttpClient.GDK.dll	HCHttpCallRequestGetNumHeaders		0x6794028
+libHttpClient.GDK.dll	HCHttpCallRequestGetRequestBodyBytes		0x6794030
+libHttpClient.GDK.dll	HCHttpCallRequestGetRetryAllowed		0x6794038
+libHttpClient.GDK.dll	HCHttpCallRequestGetRetryCacheId		0x6794040
+libHttpClient.GDK.dll	HCHttpCallRequestGetRetryDelay		0x6794048
+libHttpClient.GDK.dll	HCHttpCallRequestGetTimeout		0x6794050
+libHttpClient.GDK.dll	HCHttpCallRequestGetTimeoutWindow		0x6794058
+libHttpClient.GDK.dll	HCHttpCallRequestGetUrl		0x6794060
+libHttpClient.GDK.dll	HCHttpCallRequestSetHeader		0x6794068
+libHttpClient.GDK.dll	HCHttpCallRequestSetRequestBodyBytes		0x6794070
+libHttpClient.GDK.dll	HCHttpCallRequestSetRequestBodyString		0x6794078
+libHttpClient.GDK.dll	HCHttpCallRequestSetRetryAllowed		0x6794080
+libHttpClient.GDK.dll	HCHttpCallRequestSetRetryCacheId		0x6794088
+libHttpClient.GDK.dll	HCHttpCallRequestSetRetryDelay		0x6794090
+libHttpClient.GDK.dll	HCHttpCallRequestSetTimeout		0x6794098
+libHttpClient.GDK.dll	HCHttpCallRequestSetTimeoutWindow		0x67940a0
+libHttpClient.GDK.dll	HCHttpCallRequestSetUrl		0x67940a8
+libHttpClient.GDK.dll	HCHttpCallResponseGetNetworkErrorCode		0x67940c0
+libHttpClient.GDK.dll	HCHttpCallResponseGetNumHeaders		0x67940c8
+libHttpClient.GDK.dll	HCHttpCallResponseGetPlatformNetworkErrorMessage		0x67940d0
+libHttpClient.GDK.dll	HCHttpCallResponseGetResponseBodyBytes		0x67940d8
+libHttpClient.GDK.dll	HCHttpCallResponseGetResponseBodyBytesSize		0x67940e0
+libHttpClient.GDK.dll	HCHttpCallResponseGetResponseString		0x67940e8
+libHttpClient.GDK.dll	HCHttpCallResponseGetStatusCode		0x67940f0
+libHttpClient.GDK.dll	HCHttpCallSetTracing		0x67940f8
+libHttpClient.GDK.dll	HCInitialize		0x6794100
+libHttpClient.GDK.dll	HCSettingsGetTraceLevel		0x6794108
+libHttpClient.GDK.dll	HCTraceSetEtwEnabled		0x6794118
+xapu.dll	XApuConnect		0x6794140
+xapu.dll	XApuDequeueResult		0x6794148
+xapu.dll	XApuDisconnect		0x6794150
+xapu.dll	XApuEnqueueCommand		0x6794158
+xapu.dll	XApuGetResultCount		0x6794160
+AcpHal.dll	AcpHalAllocateShapeContexts		0x6794170
+AcpHal.dll	AcpHalCreate		0x6794178
+AcpHal.dll	AcpHalReleaseShapeContexts		0x6794180
+AcpHal.dll	ApuAlloc		0x6794188
+AcpHal.dll	ApuCreateHeap		0x6794190
+AcpHal.dll	ApuFree		0x6794198
+AcpHal.dll	ApuIsVirtualAddressValid		0x67941a0
+AcpHal.dll	ApuMapApuAddress		0x67941a8
+AcpHal.dll	ApuMapVirtualAddress		0x67941b0
+Bink2Scarlett.dll	BinkClose		0x67941c0
+Bink2Scarlett.dll	BinkDoFrame		0x67941c8
+Bink2Scarlett.dll	BinkDoFrameAsyncMulti		0x67941d0
+Bink2Scarlett.dll	BinkDoFrameAsyncWait		0x67941d8
+Bink2Scarlett.dll	BinkFreeGlobals		0x67941e0
+Bink2Scarlett.dll	BinkGetFrameBuffersInfo		0x67941e8
+Bink2Scarlett.dll	BinkGetKeyFrame		0x67941f0
+Bink2Scarlett.dll	BinkGetPlatformInfo		0x67941f8
+Bink2Scarlett.dll	BinkGoto		0x6794200
+Bink2Scarlett.dll	BinkNextFrame		0x6794208
+Bink2Scarlett.dll	BinkOpenWithOptions		0x6794210
+Bink2Scarlett.dll	BinkPause		0x6794218
+Bink2Scarlett.dll	BinkRegisterFrameBuffers		0x6794220
+Bink2Scarlett.dll	BinkRequestStopAsyncThreadsMulti		0x6794228
+Bink2Scarlett.dll	BinkSetMemory		0x6794230
+Bink2Scarlett.dll	BinkSetOSFileCallbacks		0x6794238
+Bink2Scarlett.dll	BinkSetSoundSystem		0x6794240
+Bink2Scarlett.dll	BinkSetVolume		0x6794248
+Bink2Scarlett.dll	BinkSetWillLoop		0x6794250
+Bink2Scarlett.dll	BinkShouldSkip		0x6794258
+Bink2Scarlett.dll	BinkStartAsyncThread		0x6794260
+Bink2Scarlett.dll	BinkWait		0x6794268
+Bink2Scarlett.dll	BinkWaitStopAsyncThreadsMulti		0x6794270
+VCRUNTIME140.dll	_CxxThrowException		0x67942d8
+VCRUNTIME140.dll	__CxxFrameHandler3		0x67942e8
+VCRUNTIME140.dll	__RTDynamicCast		0x67942f0
+VCRUNTIME140.dll	__current_exception		0x67942f8
+VCRUNTIME140.dll	__current_exception_context		0x6794300
+VCRUNTIME140.dll	__intrinsic_setjmp		0x6794308
+VCRUNTIME140.dll	__std_exception_copy		0x6794310
+VCRUNTIME140.dll	__std_exception_destroy		0x6794318
+VCRUNTIME140.dll	__std_terminate		0x6794320
+VCRUNTIME140.dll	__std_type_info_compare		0x6794328
+VCRUNTIME140.dll	_purecall		0x6794330
+VCRUNTIME140.dll	longjmp		0x6794340
+VCRUNTIME140_1.dll	__CxxFrameHandler4		0x6794398
+api-ms-win-crt-stdio-l1-1-0.dll	__p__commode		0x67943b0
+api-ms-win-crt-stdio-l1-1-0.dll	_get_stream_buffer_pointers		0x6794408
+api-ms-win-crt-stdio-l1-1-0.dll	_wfopen		0x6794418
+api-ms-win-crt-stdio-l1-1-0.dll	ungetc		0x6794488
+api-ms-win-crt-runtime-l1-1-0.dll	_exit		0x67944d0
+api-ms-win-crt-runtime-l1-1-0.dll	_seh_filter_exe		0x6794528
+api-ms-win-crt-runtime-l1-1-0.dll	exit		0x6794550
+api-ms-win-crt-math-l1-1-0.dll	_dtest		0x67945d8
+api-ms-win-crt-math-l1-1-0.dll	_fdsign		0x67945e0
+api-ms-win-crt-math-l1-1-0.dll	_fdtest		0x67945e8
+api-ms-win-crt-filesystem-l1-1-0.dll	remove		0x67947a0
+api-ms-win-crt-string-l1-1-0.dll	strlen		0x6794830
+api-ms-win-crt-string-l1-1-0.dll	strtok		0x6794860
+api-ms-win-crt-string-l1-1-0.dll	wcsncpy		0x67948a0

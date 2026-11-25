@@ -1,0 +1,394 @@
+// Recovered from game_scarlett_master.exe (GTA VI, Xbox Series X, PE32+ x64)
+// Address: 14003f890  size: 2079 bytes
+// Name:    FUN_14003f890
+// Subsystem: core
+//
+// Referenced strings (0 in this body, 0 including direct callees):
+// Callees: 
+//
+// Generated decompilation. Formatting follows MiscRef/GTAVSRC conventions;
+// identifiers are recovered, not original. See ../../../README.md.
+
+#include "gta6decomp/rage_types.h"
+
+
+void FUN_14003f890(longlong param_1,longlong param_2)
+
+{
+  short *psVar1;
+  ulonglong *puVar2;
+  uint uVar3;
+  byte bVar4;
+  longlong lVar5;
+  ulonglong uVar6;
+  ulonglong uVar7;
+  longlong lVar8;
+  short *psVar9;
+  undefined1 uVar10;
+  ulonglong uVar11;
+  ulonglong uVar12;
+  ulonglong uVar13;
+  ulonglong uVar14;
+  ulonglong uVar15;
+  ulonglong uVar16;
+  ulonglong uVar17;
+  ulonglong uVar18;
+  ulonglong uVar19;
+  ulonglong uVar20;
+  ulonglong uVar21;
+  ulonglong uVar22;
+  ulonglong uVar23;
+  ulonglong uVar24;
+  ulonglong uVar25;
+  ulonglong uVar26;
+  ulonglong uVar27;
+  ulonglong uVar28;
+  ulonglong uVar29;
+  ulonglong uVar30;
+  ulonglong uVar31;
+  ulonglong uVar32;
+  ulonglong uVar33;
+  ulonglong uVar34;
+  ulonglong uVar35;
+  ulonglong uVar36;
+  ulonglong uVar37;
+  ulonglong uVar38;
+  ulonglong uVar39;
+  ulonglong uVar40;
+  ulonglong uStack_298;
+  ulonglong uStack_290;
+  ulonglong uStack_288;
+  ulonglong uStack_280;
+  ulonglong uStack_278;
+  ulonglong uStack_270;
+  ulonglong uStack_268;
+  ulonglong uStack_260;
+  ulonglong uStack_258;
+  ulonglong uStack_250;
+  ulonglong uStack_248;
+  ulonglong uStack_240;
+  ulonglong uStack_238;
+  ulonglong uStack_230;
+  ulonglong uStack_228;
+  ulonglong uStack_220;
+  ulonglong uStack_218;
+  ulonglong uStack_210;
+  ulonglong uStack_208;
+  ulonglong uStack_200;
+  ulonglong uStack_1f8;
+  ulonglong uStack_1f0;
+  ulonglong uStack_1e8;
+  ulonglong uStack_1e0;
+  ulonglong uStack_1d8;
+  ulonglong uStack_1d0;
+  ulonglong uStack_1c8;
+  ulonglong uStack_1c0;
+  ulonglong uStack_1b8;
+  ulonglong uStack_1b0;
+  ulonglong uStack_1a8;
+  ulonglong uStack_1a0;
+  ulonglong uStack_198;
+  ulonglong uStack_190;
+  ulonglong uStack_188;
+  ulonglong uStack_180;
+  ulonglong uStack_178;
+  ulonglong uStack_170;
+  
+  uVar3 = *(uint *)(param_1 + 0x1864);
+  uVar11 = (ulonglong)uVar3;
+  if ((int)uVar3 < 1) {
+    *(undefined1 *)(param_2 + 0xf8) = 0;
+  }
+  else {
+    lVar8 = *(longlong *)(param_1 + 0x1868);
+    uVar6 = 0;
+    do {
+      if (*(short *)(lVar8 + uVar6 * 2) == *(short *)(param_2 + 0xce)) {
+        if (uVar3 - 1 != (uint)uVar6) {
+          *(undefined2 *)(lVar8 + (uVar6 & 0xffffffff) * 2) =
+               *(undefined2 *)(lVar8 + (ulonglong)(uVar3 - 1) * 2);
+          uVar6 = (ulonglong)(*(int *)(param_1 + 0x1864) - 1);
+        }
+        uVar11 = uVar6 & 0xffffffff;
+        *(int *)(param_1 + 0x1864) = (int)uVar6;
+        break;
+      }
+      uVar6 = uVar6 + 1;
+    } while (uVar11 != uVar6);
+    *(undefined1 *)(param_2 + 0xf8) = 0;
+    if (0 < (int)uVar11) {
+      psVar9 = *(short **)(param_1 + 0x1868);
+      lVar8 = *(longlong *)(param_1 + 0x1aa0);
+      func_0x000145f40560(param_1 + 0x1630,(ulonglong)(uint)(int)*psVar9 * 0x220 + lVar8,0x220);
+      lVar5 = 1;
+      if ((int)uVar11 != 1) {
+        uStack_178 = *(ulonglong *)(param_1 + 0x1630);
+        uStack_170 = *(ulonglong *)(param_1 + 0x1638);
+        uStack_188 = *(ulonglong *)(param_1 + 0x1740);
+        uStack_180 = *(ulonglong *)(param_1 + 0x1748);
+        uStack_1a8 = *(ulonglong *)(param_1 + 0x1760);
+        uStack_1a0 = *(ulonglong *)(param_1 + 0x1768);
+        uStack_1c8 = *(ulonglong *)(param_1 + 0x1780);
+        uStack_1c0 = *(ulonglong *)(param_1 + 0x1788);
+        uStack_1e8 = *(ulonglong *)(param_1 + 0x17a0);
+        uStack_1e0 = *(ulonglong *)(param_1 + 0x17a8);
+        uStack_208 = *(ulonglong *)(param_1 + 0x17c0);
+        uStack_200 = *(ulonglong *)(param_1 + 0x17c8);
+        uStack_228 = *(ulonglong *)(param_1 + 0x17e0);
+        uStack_220 = *(ulonglong *)(param_1 + 0x17e8);
+        uStack_248 = *(ulonglong *)(param_1 + 0x1800);
+        uStack_240 = *(ulonglong *)(param_1 + 0x1808);
+        uStack_268 = *(ulonglong *)(param_1 + 0x1820);
+        uStack_260 = *(ulonglong *)(param_1 + 0x1828);
+        uStack_288 = *(ulonglong *)(param_1 + 0x1840);
+        uStack_280 = *(ulonglong *)(param_1 + 0x1848);
+        uVar6 = *(ulonglong *)(param_1 + 0x16d0);
+        uVar32 = *(ulonglong *)(param_1 + 0x16d8);
+        uVar33 = *(ulonglong *)(param_1 + 0x16e0);
+        uVar34 = *(ulonglong *)(param_1 + 0x16e8);
+        uVar35 = *(ulonglong *)(param_1 + 0x16f0);
+        uVar36 = *(ulonglong *)(param_1 + 0x16f8);
+        uVar37 = *(ulonglong *)(param_1 + 0x1700);
+        uVar38 = *(ulonglong *)(param_1 + 0x1708);
+        uVar39 = *(ulonglong *)(param_1 + 0x1710);
+        uVar40 = *(ulonglong *)(param_1 + 0x1718);
+        uVar14 = *(ulonglong *)(param_1 + 0x1730);
+        uVar15 = *(ulonglong *)(param_1 + 0x1738);
+        uVar7 = 1;
+        uStack_198 = *(ulonglong *)(param_1 + 0x1640);
+        uStack_190 = *(ulonglong *)(param_1 + 0x1648);
+        uVar16 = *(ulonglong *)(param_1 + 0x1750);
+        uVar17 = *(ulonglong *)(param_1 + 0x1758);
+        uVar18 = *(ulonglong *)(param_1 + 6000);
+        uVar19 = *(ulonglong *)(param_1 + 0x1778);
+        uVar20 = *(ulonglong *)(param_1 + 0x1790);
+        uVar21 = *(ulonglong *)(param_1 + 0x1798);
+        uVar22 = *(ulonglong *)(param_1 + 0x17b0);
+        uVar23 = *(ulonglong *)(param_1 + 0x17b8);
+        uVar24 = *(ulonglong *)(param_1 + 0x17d0);
+        uVar25 = *(ulonglong *)(param_1 + 0x17d8);
+        uVar26 = *(ulonglong *)(param_1 + 0x17f0);
+        uVar27 = *(ulonglong *)(param_1 + 0x17f8);
+        uVar28 = *(ulonglong *)(param_1 + 0x1810);
+        uVar29 = *(ulonglong *)(param_1 + 0x1818);
+        uVar30 = *(ulonglong *)(param_1 + 0x1830);
+        uVar31 = *(ulonglong *)(param_1 + 0x1838);
+        uStack_1b8 = *(ulonglong *)(param_1 + 0x1650);
+        uStack_1b0 = *(ulonglong *)(param_1 + 0x1658);
+        uStack_1d8 = *(ulonglong *)(param_1 + 0x1660);
+        uStack_1d0 = *(ulonglong *)(param_1 + 0x1668);
+        uStack_1f8 = *(ulonglong *)(param_1 + 0x1670);
+        uStack_1f0 = *(ulonglong *)(param_1 + 0x1678);
+        uStack_218 = *(ulonglong *)(param_1 + 0x1680);
+        uStack_210 = *(ulonglong *)(param_1 + 0x1688);
+        uStack_238 = *(ulonglong *)(param_1 + 0x1690);
+        uStack_230 = *(ulonglong *)(param_1 + 0x1698);
+        uStack_258 = *(ulonglong *)(param_1 + 0x16a0);
+        uStack_250 = *(ulonglong *)(param_1 + 0x16a8);
+        uStack_278 = *(ulonglong *)(param_1 + 0x16b0);
+        uStack_270 = *(ulonglong *)(param_1 + 0x16b8);
+        uStack_298 = *(ulonglong *)(param_1 + 0x16c0);
+        uStack_290 = *(ulonglong *)(param_1 + 0x16c8);
+        uVar12 = *(ulonglong *)(param_1 + 0x1720);
+        uVar13 = *(ulonglong *)(param_1 + 0x1728);
+        do {
+          psVar1 = psVar9 + uVar7;
+          uVar7 = uVar7 + 1;
+          lVar5 = (ulonglong)(uint)(int)*psVar1 * 0x220;
+          uStack_178 = uStack_178 | *(ulonglong *)(lVar8 + lVar5);
+          uStack_170 = uStack_170 | ((ulonglong *)(lVar8 + lVar5))[1];
+          *(ulonglong *)(param_1 + 0x1630) = uStack_178;
+          *(ulonglong *)(param_1 + 0x1638) = uStack_170;
+          puVar2 = (ulonglong *)(lVar8 + 0x10 + lVar5);
+          uStack_198 = uStack_198 | *puVar2;
+          uStack_190 = uStack_190 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1640) = uStack_198;
+          *(ulonglong *)(param_1 + 0x1648) = uStack_190;
+          puVar2 = (ulonglong *)(lVar8 + 0x20 + lVar5);
+          uStack_1b8 = uStack_1b8 | *puVar2;
+          uStack_1b0 = uStack_1b0 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1650) = uStack_1b8;
+          *(ulonglong *)(param_1 + 0x1658) = uStack_1b0;
+          puVar2 = (ulonglong *)(lVar8 + 0x30 + lVar5);
+          uStack_1d8 = uStack_1d8 | *puVar2;
+          uStack_1d0 = uStack_1d0 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1660) = uStack_1d8;
+          *(ulonglong *)(param_1 + 0x1668) = uStack_1d0;
+          puVar2 = (ulonglong *)(lVar8 + 0x40 + lVar5);
+          uStack_1f8 = uStack_1f8 | *puVar2;
+          uStack_1f0 = uStack_1f0 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1670) = uStack_1f8;
+          *(ulonglong *)(param_1 + 0x1678) = uStack_1f0;
+          puVar2 = (ulonglong *)(lVar8 + 0x50 + lVar5);
+          uStack_218 = uStack_218 | *puVar2;
+          uStack_210 = uStack_210 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1680) = uStack_218;
+          *(ulonglong *)(param_1 + 0x1688) = uStack_210;
+          puVar2 = (ulonglong *)(lVar8 + 0x60 + lVar5);
+          uStack_238 = uStack_238 | *puVar2;
+          uStack_230 = uStack_230 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1690) = uStack_238;
+          *(ulonglong *)(param_1 + 0x1698) = uStack_230;
+          puVar2 = (ulonglong *)(lVar8 + 0x70 + lVar5);
+          uStack_258 = uStack_258 | *puVar2;
+          uStack_250 = uStack_250 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x16a0) = uStack_258;
+          *(ulonglong *)(param_1 + 0x16a8) = uStack_250;
+          puVar2 = (ulonglong *)(lVar8 + 0x80 + lVar5);
+          uStack_278 = uStack_278 | *puVar2;
+          uStack_270 = uStack_270 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x16b0) = uStack_278;
+          *(ulonglong *)(param_1 + 0x16b8) = uStack_270;
+          puVar2 = (ulonglong *)(lVar8 + 0x90 + lVar5);
+          uStack_298 = uStack_298 | *puVar2;
+          uStack_290 = uStack_290 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x16c0) = uStack_298;
+          *(ulonglong *)(param_1 + 0x16c8) = uStack_290;
+          puVar2 = (ulonglong *)(lVar8 + 0xa0 + lVar5);
+          uVar6 = uVar6 | *puVar2;
+          uVar32 = uVar32 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x16d0) = uVar6;
+          *(ulonglong *)(param_1 + 0x16d8) = uVar32;
+          puVar2 = (ulonglong *)(lVar8 + 0xb0 + lVar5);
+          uVar33 = uVar33 | *puVar2;
+          uVar34 = uVar34 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x16e0) = uVar33;
+          *(ulonglong *)(param_1 + 0x16e8) = uVar34;
+          puVar2 = (ulonglong *)(lVar8 + 0xc0 + lVar5);
+          uVar35 = uVar35 | *puVar2;
+          uVar36 = uVar36 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x16f0) = uVar35;
+          *(ulonglong *)(param_1 + 0x16f8) = uVar36;
+          puVar2 = (ulonglong *)(lVar8 + 0xd0 + lVar5);
+          uVar37 = uVar37 | *puVar2;
+          uVar38 = uVar38 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1700) = uVar37;
+          *(ulonglong *)(param_1 + 0x1708) = uVar38;
+          puVar2 = (ulonglong *)(lVar8 + 0xe0 + lVar5);
+          uVar39 = uVar39 | *puVar2;
+          uVar40 = uVar40 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1710) = uVar39;
+          *(ulonglong *)(param_1 + 0x1718) = uVar40;
+          puVar2 = (ulonglong *)(lVar8 + 0xf0 + lVar5);
+          uVar12 = uVar12 | *puVar2;
+          uVar13 = uVar13 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1720) = uVar12;
+          *(ulonglong *)(param_1 + 0x1728) = uVar13;
+          puVar2 = (ulonglong *)(lVar8 + 0x100 + lVar5);
+          uVar14 = uVar14 | *puVar2;
+          uVar15 = uVar15 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1730) = uVar14;
+          *(ulonglong *)(param_1 + 0x1738) = uVar15;
+          puVar2 = (ulonglong *)(lVar8 + 0x110 + lVar5);
+          uStack_188 = uStack_188 | *puVar2;
+          uStack_180 = uStack_180 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1740) = uStack_188;
+          *(ulonglong *)(param_1 + 0x1748) = uStack_180;
+          puVar2 = (ulonglong *)(lVar8 + 0x120 + lVar5);
+          uVar16 = uVar16 | *puVar2;
+          uVar17 = uVar17 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1750) = uVar16;
+          *(ulonglong *)(param_1 + 0x1758) = uVar17;
+          puVar2 = (ulonglong *)(lVar8 + 0x130 + lVar5);
+          uStack_1a8 = uStack_1a8 | *puVar2;
+          uStack_1a0 = uStack_1a0 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1760) = uStack_1a8;
+          *(ulonglong *)(param_1 + 0x1768) = uStack_1a0;
+          puVar2 = (ulonglong *)(lVar8 + 0x140 + lVar5);
+          uVar18 = uVar18 | *puVar2;
+          uVar19 = uVar19 | puVar2[1];
+          *(ulonglong *)(param_1 + 6000) = uVar18;
+          *(ulonglong *)(param_1 + 0x1778) = uVar19;
+          puVar2 = (ulonglong *)(lVar8 + 0x150 + lVar5);
+          uStack_1c8 = uStack_1c8 | *puVar2;
+          uStack_1c0 = uStack_1c0 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1780) = uStack_1c8;
+          *(ulonglong *)(param_1 + 0x1788) = uStack_1c0;
+          puVar2 = (ulonglong *)(lVar8 + 0x160 + lVar5);
+          uVar20 = uVar20 | *puVar2;
+          uVar21 = uVar21 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1790) = uVar20;
+          *(ulonglong *)(param_1 + 0x1798) = uVar21;
+          puVar2 = (ulonglong *)(lVar8 + 0x170 + lVar5);
+          uStack_1e8 = uStack_1e8 | *puVar2;
+          uStack_1e0 = uStack_1e0 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x17a0) = uStack_1e8;
+          *(ulonglong *)(param_1 + 0x17a8) = uStack_1e0;
+          puVar2 = (ulonglong *)(lVar8 + 0x180 + lVar5);
+          uVar22 = uVar22 | *puVar2;
+          uVar23 = uVar23 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x17b0) = uVar22;
+          *(ulonglong *)(param_1 + 0x17b8) = uVar23;
+          puVar2 = (ulonglong *)(lVar8 + 400 + lVar5);
+          uStack_208 = uStack_208 | *puVar2;
+          uStack_200 = uStack_200 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x17c0) = uStack_208;
+          *(ulonglong *)(param_1 + 0x17c8) = uStack_200;
+          puVar2 = (ulonglong *)(lVar8 + 0x1a0 + lVar5);
+          uVar24 = uVar24 | *puVar2;
+          uVar25 = uVar25 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x17d0) = uVar24;
+          *(ulonglong *)(param_1 + 0x17d8) = uVar25;
+          puVar2 = (ulonglong *)(lVar8 + 0x1b0 + lVar5);
+          uStack_228 = uStack_228 | *puVar2;
+          uStack_220 = uStack_220 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x17e0) = uStack_228;
+          *(ulonglong *)(param_1 + 0x17e8) = uStack_220;
+          puVar2 = (ulonglong *)(lVar8 + 0x1c0 + lVar5);
+          uVar26 = uVar26 | *puVar2;
+          uVar27 = uVar27 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x17f0) = uVar26;
+          *(ulonglong *)(param_1 + 0x17f8) = uVar27;
+          puVar2 = (ulonglong *)(lVar8 + 0x1d0 + lVar5);
+          uStack_248 = uStack_248 | *puVar2;
+          uStack_240 = uStack_240 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1800) = uStack_248;
+          *(ulonglong *)(param_1 + 0x1808) = uStack_240;
+          puVar2 = (ulonglong *)(lVar8 + 0x1e0 + lVar5);
+          uVar28 = uVar28 | *puVar2;
+          uVar29 = uVar29 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1810) = uVar28;
+          *(ulonglong *)(param_1 + 0x1818) = uVar29;
+          puVar2 = (ulonglong *)(lVar8 + 0x1f0 + lVar5);
+          uStack_268 = uStack_268 | *puVar2;
+          uStack_260 = uStack_260 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1820) = uStack_268;
+          *(ulonglong *)(param_1 + 0x1828) = uStack_260;
+          puVar2 = (ulonglong *)(lVar8 + 0x200 + lVar5);
+          uVar30 = uVar30 | *puVar2;
+          uVar31 = uVar31 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1830) = uVar30;
+          *(ulonglong *)(param_1 + 0x1838) = uVar31;
+          puVar2 = (ulonglong *)(lVar8 + 0x210 + lVar5);
+          uStack_288 = uStack_288 | *puVar2;
+          uStack_280 = uStack_280 | puVar2[1];
+          *(ulonglong *)(param_1 + 0x1840) = uStack_288;
+          *(ulonglong *)(param_1 + 0x1848) = uStack_280;
+        } while (uVar11 != uVar7);
+        lVar5 = (longlong)*(int *)(param_1 + 0x1864);
+        if (lVar5 < 1) {
+          uVar10 = 1;
+          goto LAB_14003f963;
+        }
+        psVar9 = *(short **)(param_1 + 0x1868);
+      }
+      lVar8 = 0;
+      do {
+        psVar1 = psVar9 + lVar8;
+        lVar8 = lVar8 + 1;
+        uVar10 = 1;
+        bVar4 = ~(byte)*psVar1 & 0x3f;
+        puVar2 = (ulonglong *)(param_1 + 0x1630 + (ulonglong)((uint)(int)*psVar1 >> 6) * 8);
+        *puVar2 = *puVar2 & (-2L << bVar4 | 0xfffffffffffffffeU >> 0x40 - bVar4);
+      } while (lVar5 != lVar8);
+      goto LAB_14003f963;
+    }
+  }
+  uVar10 = 0;
+  func_0x000145f40580(param_1 + 0x1630,0,0x220);
+LAB_14003f963:
+  *(undefined1 *)(param_1 + 0x1851) = uVar10;
+  *(undefined1 *)(param_1 + 0x1850) = 1;
+  return;
+}
+

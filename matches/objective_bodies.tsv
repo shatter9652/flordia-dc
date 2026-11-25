@@ -1,0 +1,11 @@
+objective	literal	rva	section	via	xref_rva	func_rva	func_size
+rpf	callgraph:open	00fc21c0	.text	call	00fc21c0	00fc21c0	113
+rpf	callgraph:initialise	00fc2240	.text	call	00fc2240	00fc2240	591
+rpf	callgraph:destroy	056dd530	.text	call	056dd530	056dd530	188
+rpf	callgraph:mount	00fc20d0	.text	call	00fc20d0	00fc20d0	230
+rpf	callgraph:packfile-alloc	00fc2490	.text	call	00fc2490	00fc2490	158
+rpf	callgraph:packfile-ctor	00fc2540	.text	call	00fc2540	00fc2540	370
+rpf	callgraph:read-header	01fb2600	.text	call	01fb2600	01fb2600	372
+rpf	callgraph:path-resolver	0056eb30	.text	call	0056eb30	0056eb30	307
+rpf	callgraph:index-ctor	01fb2780	.text	call	01fb2780	01fb2780	56
+rpf	callgraph:index-build	0087aec0	.text	call	0087aec0	0087aec0	126
