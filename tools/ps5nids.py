@@ -194,6 +194,7 @@ def cmd_imports(args):
     table = load_table(args.symbols) if os.path.isfile(args.symbols) else {}
 
     resolved = 0
+    modules_only = 0
     with open(args.out, "w", encoding="utf-8") as handle:
         handle.write("va\tnid\tlibrary\tsymbol\tsource\n")
         for va, library, nid, raw in stubs:
@@ -201,8 +202,9 @@ def cmd_imports(args):
             if nid in db:
                 symbol, source = db[nid], "GhidraProspero/nid_db.xml"
             elif nid in map_symbols:
-                symbol = map_symbols[nid]
-                source = "ps5-nid-map/%s" % map_libraries.get(nid, "?")
+                # The ps5-nid-map files list NIDs only, not names: the entry says
+                # which module exports it, and that is all it knows.
+                source = "ps5-nid-map/%s (module only)" % map_libraries.get(nid, "?")
             elif nid in table:
                 symbol = ", ".join(sorted(table[nid]))
                 source = "SDK headers"
@@ -210,9 +212,12 @@ def cmd_imports(args):
                 library = map_libraries.get(nid, library) or library
             if symbol:
                 resolved += 1
+            elif "ps5-nid-map" in source:
+                modules_only += 1
             handle.write("%s\t%s\t%s\t%s\t%s\n" % (va, nid, library, symbol, source))
-    print("wrote %s: %d stubs, %d named, %d left as NIDs"
-          % (args.out, len(stubs), resolved, len(stubs) - resolved))
+    print("wrote %s: %d stubs, %d named, %d module-only, %d unknown"
+          % (args.out, len(stubs), resolved, modules_only,
+             len(stubs) - resolved - modules_only))
     return 0
 
 

@@ -270,14 +270,18 @@ program, and `tools/ps5nids.py imports --log <analyzeHeadless log>` joins those
 NIDs against the three sources:
 
 ```
-wrote names/ps5_eboot_imports.tsv: 730 stubs, 730 named, 0 left as NIDs
+wrote names/ps5_eboot_imports.tsv: 730 stubs, 713 named, 17 module-only, 0 unknown
 ```
 
-| source | stubs |
-| --- | --- |
-| GhidraProspero `nid_db.xml` | 713 |
-| `ps5-nid-map` corpus | 17 |
-| SDK headers | 0 |
+| source | stubs | gives |
+| --- | --- | --- |
+| GhidraProspero `nid_db.xml` | 713 | symbol |
+| `ps5-nid-map` corpus | 17 | module only (that corpus lists NIDs, not names) |
+| SDK headers | 0 | — |
+
+`tools/ApplyImports.java` then renames those stubs in the project itself:
+`IMPORTS_APPLIED|730|skipped=0`, and a second run reports 706 of them
+`already named`, so the renames persist.
 
 The file is `va`, `nid`, `library`, `symbol`, `source`, so a stub address in the
 image maps straight to the symbol the loader would bind.

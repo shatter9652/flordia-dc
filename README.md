@@ -194,7 +194,7 @@ evidence tiers are in `docs/layout.md`.
 | objdiff units | **4,626**, of which 3 have built clang-cl base objects (`packfile.obj`, `aes.obj`, `FUN_14087b0f0.obj`) and **0** have a retail target object |
 | Byte-identical functions | **0** (no rebuild to diff yet) |
 | PS5 symbol pass | `REFS` line produced with `-noanalysis`: **46** libraries, **7** RAGE structs, **43** fields, **27,903** GTA V classes; `renamed_total=0` because no match file exists yet (`docs/ps5-build.md`) |
-| PS5 eboot imports named | **730 of 730** (`names/ps5_eboot_imports.tsv`), 713 from the GhidraProspero NID database and 17 from the `ps5-nid-map` corpus |
+| PS5 eboot imports named | **730 stubs, 713 named** from the GhidraProspero NID database and **17 module-only** from the `ps5-nid-map` corpus (`names/ps5_eboot_imports.tsv`); all 730 applied into the Ghidra project, 0 skipped |
 | PS5 import names | **3,407** `sce*` symbols encoded to NIDs from the Sony 11.000 and payload SDK headers (`tools/ps5nids.py`); encoder verified 3/3 against the AnyDevKit NID map |
 | PS5 packfile index | keyed, not name-sorted: 4 constant record keys, `id = (packfileIndex << 16)` OR the entry id, TOC offset `entryId << 4` (`docs/ps5-build.md`) |
 

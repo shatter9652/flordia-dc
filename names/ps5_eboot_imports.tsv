@@ -606,15 +606,15 @@ va	nid	library	symbol	source
 10610308	eE4Szl8sil8	libkernel	sceKernelAprSubmitCommandBuffer	GhidraProspero/nid_db.xml
 10610310	ASoW5WE-UPo	libkernel	sceKernelAprSubmitCommandBufferAndGetResult	GhidraProspero/nid_db.xml
 10610318	rqwFKI4PAiM	libkernel	sceKernelAprWaitCommandBuffer	GhidraProspero/nid_db.xml
-10610328	o+NM86gEwFE	libScePsml_mfsr2	o+NM86gEwFE	ps5-nid-map/libScePsml_mfsr2
-10610330	1ic5q-kdOsc	libScePsml_mfsr2	1ic5q-kdOsc	ps5-nid-map/libScePsml_mfsr2
-10610338	gMduXCLYrNg	libScePsml_mfsr2	gMduXCLYrNg	ps5-nid-map/libScePsml_mfsr2
-10610340	0GAw7SmkwII	libScePsml_mfsr2	0GAw7SmkwII	ps5-nid-map/libScePsml_mfsr2
-10610348	5z2gBlqxJ+0	libScePsml_mfsr2	5z2gBlqxJ+0	ps5-nid-map/libScePsml_mfsr2
-10610350	m9JLPc3wOQw	libScePsml_mfsr2	m9JLPc3wOQw	ps5-nid-map/libScePsml_mfsr2
-10610358	Kyy1baXgaVU	libScePsml_mfsr2	Kyy1baXgaVU	ps5-nid-map/libScePsml_mfsr2
-10610360	ZLL31lzzxr4	libScePsml_mfsr2	ZLL31lzzxr4	ps5-nid-map/libScePsml_mfsr2
-10610368	lrJwpLjKXRc	libScePsml_mfsr2	lrJwpLjKXRc	ps5-nid-map/libScePsml_mfsr2
+10610328	o+NM86gEwFE	libScePsml_mfsr2		ps5-nid-map/libScePsml_mfsr2 (module only)
+10610330	1ic5q-kdOsc	libScePsml_mfsr2		ps5-nid-map/libScePsml_mfsr2 (module only)
+10610338	gMduXCLYrNg	libScePsml_mfsr2		ps5-nid-map/libScePsml_mfsr2 (module only)
+10610340	0GAw7SmkwII	libScePsml_mfsr2		ps5-nid-map/libScePsml_mfsr2 (module only)
+10610348	5z2gBlqxJ+0	libScePsml_mfsr2		ps5-nid-map/libScePsml_mfsr2 (module only)
+10610350	m9JLPc3wOQw	libScePsml_mfsr2		ps5-nid-map/libScePsml_mfsr2 (module only)
+10610358	Kyy1baXgaVU	libScePsml_mfsr2		ps5-nid-map/libScePsml_mfsr2 (module only)
+10610360	ZLL31lzzxr4	libScePsml_mfsr2		ps5-nid-map/libScePsml_mfsr2 (module only)
+10610368	lrJwpLjKXRc	libScePsml_mfsr2		ps5-nid-map/libScePsml_mfsr2 (module only)
 10610370	8aI7R7WaOlc	libSceAmpr	sceAmprCommandBufferConstructor	GhidraProspero/nid_db.xml
 10610378	GuchCTefuZw	libSceAmpr	sceAmprCommandBufferDestructor	GhidraProspero/nid_db.xml
 10610380	baQO9ez2gL4	libSceAmpr	sceAmprCommandBufferReset	GhidraProspero/nid_db.xml
@@ -646,13 +646,13 @@ va	nid	library	symbol	source
 10610450	EotR8a3ASf4	libScePosix	pthread_self	GhidraProspero/nid_db.xml
 10610458	Xs9hdiD7sAA	libScePosix	pthread_setschedparam	GhidraProspero/nid_db.xml
 10610460	2JtWUUiYBXs	libSceAgc	sceAgcGetRegisterDefaults2	GhidraProspero/nid_db.xml
-10610468	23LRUSvYu1M	libSceAgc	23LRUSvYu1M	ps5-nid-map/libSceAgc
+10610468	23LRUSvYu1M	libSceAgc		ps5-nid-map/libSceAgc (module only)
 10610470	wRbq6ZjNop4	libSceAgc	sceAgcGetRegisterDefaults2Internal	GhidraProspero/nid_db.xml
 10610478	BfBDZGbti7A	libSceAgc	sceAgcGetIsTrinityMode	GhidraProspero/nid_db.xml
 10610480	UglJIZjGssM	libSceAgcDriver	sceAgcDriverSubmitDcb	GhidraProspero/nid_db.xml
 10610488	gSRnr79F8tQ	libSceAgcDriver	sceAgcDriverSubmitAcb	GhidraProspero/nid_db.xml
 10610490	h9z6+0hEydk	libSceAgc	sceAgcSuspendPoint	GhidraProspero/nid_db.xml
-10610498	Ikfdt-rIqCE	libSceAgc	Ikfdt-rIqCE	ps5-nid-map/libSceAgc
+10610498	Ikfdt-rIqCE	libSceAgc		ps5-nid-map/libSceAgc (module only)
 106104a0	vcmNN+AAXnY	libSceAgc	sceAgcSetCxRegIndirectPatchSetAddress	GhidraProspero/nid_db.xml
 106104a8	d-6uF9sZDIU	libSceAgc	sceAgcSetCxRegIndirectPatchAddRegisters	GhidraProspero/nid_db.xml
 106104b0	6lNcCp+fxi4	libSceAgc	sceAgcSetUcRegIndirectPatchSetAddress	GhidraProspero/nid_db.xml
@@ -661,7 +661,7 @@ va	nid	library	symbol	source
 106104c8	k-JpyR2dYAM	libSceAgc	sceAgcAsyncCondExecPatchSetEnd	GhidraProspero/nid_db.xml
 106104d0	ziVA3whp3p4	libSceAgc	sceAgcRewindPatchSetRewindState	GhidraProspero/nid_db.xml
 106104d8	K2mciNVxUCE	libSceAgc	sceAgcSetNop	GhidraProspero/nid_db.xml
-106104e0	V++UgBtQhn0	libSceAgc	V++UgBtQhn0	ps5-nid-map/libSceAgc
+106104e0	V++UgBtQhn0	libSceAgc		ps5-nid-map/libSceAgc (module only)
 106104e8	0fWWK5uG9rQ	libSceAgc	sceAgcQueueEndOfPipeActionPatchAddress	GhidraProspero/nid_db.xml
 106104f0	MlEw1feXcjg	libSceAgc	sceAgcQueueEndOfPipeActionPatchData	GhidraProspero/nid_db.xml
 106104f8	W0WEyog0f74	libSceAgc	sceAgcAcquireMemSetEngine	GhidraProspero/nid_db.xml
@@ -671,9 +671,9 @@ va	nid	library	symbol	source
 10610518	MM4IZSEYytQ	libSceAgcDriver	sceAgcDriverSetHsOffchipParam	GhidraProspero/nid_db.xml
 10610520	T6xuVw0KUJo	libSceAgc	sceAgcDebugRaiseException	GhidraProspero/nid_db.xml
 10610528	f3dg2CSgRKY	libSceAgc	sceAgcCreateShader	GhidraProspero/nid_db.xml
-10610530	dolOmWH+huQ	libSceAgc	dolOmWH+huQ	ps5-nid-map/libSceAgc
-10610538	fd5Bp5tGTgo	libSceAgc	fd5Bp5tGTgo	ps5-nid-map/libSceAgc
-10610540	dbOlWdppb4o	libSceAgc	dbOlWdppb4o	ps5-nid-map/libSceAgc
+10610530	dolOmWH+huQ	libSceAgc		ps5-nid-map/libSceAgc (module only)
+10610538	fd5Bp5tGTgo	libSceAgc		ps5-nid-map/libSceAgc (module only)
+10610540	dbOlWdppb4o	libSceAgc		ps5-nid-map/libSceAgc (module only)
 10610548	D9sr1xGUriE	libSceAgc	sceAgcCreatePrimState	GhidraProspero/nid_db.xml
 10610550	k3GhuSNmBLU	libSceAgc	sceAgcCbDispatch	GhidraProspero/nid_db.xml
 10610558	wr23dPKyWc0	libSceAgc	sceAgcCbReleaseMem	GhidraProspero/nid_db.xml
@@ -696,7 +696,7 @@ va	nid	library	symbol	source
 106105e0	Y-5vneiBtzk	libSceAgc	sceAgcAcbEventWriteGetSize	GhidraProspero/nid_db.xml
 106105e8	0ZOG0jc9nRg	libSceAgc	sceAgcAcbRewindGetSize	GhidraProspero/nid_db.xml
 106105f0	57labkp+rSQ	libSceAgc	sceAgcDcbAcquireMem	GhidraProspero/nid_db.xml
-106105f8	qj7QZpgr9Uw	libSceAgc	qj7QZpgr9Uw	ps5-nid-map/libSceAgc
+106105f8	qj7QZpgr9Uw	libSceAgc		ps5-nid-map/libSceAgc (module only)
 10610600	BIPexNBSGog	libSceAgc	sceAgcDcbCondExec	GhidraProspero/nid_db.xml
 10610608	xSAR0LTcRKM	libSceAgc	sceAgcDcbJump	GhidraProspero/nid_db.xml
 10610610	WmAc2MEj6Io	libSceAgc	sceAgcDcbDmaData	GhidraProspero/nid_db.xml
@@ -713,7 +713,7 @@ va	nid	library	symbol	source
 10610668	t1vNu082-jM	libSceAgc	sceAgcDcbDrawIndexIndirect	GhidraProspero/nid_db.xml
 10610670	aJf+j5yntiU	libSceAgc	sceAgcDcbEventWrite	GhidraProspero/nid_db.xml
 10610678	RmaJwLtc8rY	libSceAgc	sceAgcDcbSetBaseIndirectArgs	GhidraProspero/nid_db.xml
-10610680	-KRzWekV120	libSceAgc	-KRzWekV120	ps5-nid-map/libSceAgc
+10610680	-KRzWekV120	libSceAgc		ps5-nid-map/libSceAgc (module only)
 10610688	l4fM9K-Lyks	libSceAgc	sceAgcDcbSetIndexBuffer	GhidraProspero/nid_db.xml
 10610690	8N2tmT3jmC8	libSceAgc	sceAgcDcbSetIndexCount	GhidraProspero/nid_db.xml
 10610698	tSBxhAPyytQ	libSceAgc	sceAgcDcbSetNumInstances	GhidraProspero/nid_db.xml

@@ -59,6 +59,9 @@ def main(argv):
     ap.add_argument("--window", action="append", default=[],
                     help="START:END virtual range to convert (repeatable); "
                          "defaults to the span of --addrs plus 0x1000 either side")
+    ap.add_argument("--script",
+                    help="run another script instead of DumpC, e.g. "
+                         "'Blocks.java 0 12' or 'Xrefs.java 0x8e0ce8 --decompile'")
     ap.add_argument("--ghidra", help="Ghidra install directory")
     ap.add_argument("--timeout", type=int, default=600)
     args = ap.parse_args(argv)
@@ -85,9 +88,13 @@ def main(argv):
             cmd += ["--window", window]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
 
+        if args.script:
+            parts = args.script.split()
+            post = ["-postScript", parts[0]] + parts[1:]
+        else:
+            post = ["-postScript", "DumpC.java", ",".join(addrs)]
         run = [headless, project_dir, "dump", "-import", elf,
-               "-scriptPath", HERE, "-postScript", "DumpC.java", ",".join(addrs),
-               "-deleteProject"]
+               "-scriptPath", HERE] + post + ["-deleteProject"]
         result = subprocess.run(run, check=False, text=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
