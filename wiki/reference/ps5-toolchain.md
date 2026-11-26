@@ -27,11 +27,16 @@ updated: 2026-11-25
    looks empty.
 3. **PS5 vtable bytes are zero on disk** — rebuild from the `---` segment
    pointer table.
-4. **`ApplyPs5.java` does not complete** on the 195 MB eboot: 3 GB RAM, a 941 MB
-   project and `MAXMEM=6000M` add up to an OOM kill right after `Opening
-   project`, with no `REFS|` line. Blocked, not passing. A 1800 MB retry is the
-   last thing this host can try.
-5. Use the **SELF**, not the converted ELF.
+4. **`ApplyPs5.java` needs `-noanalysis`** on this host: with analysis the JVM
+   is killed (3 GB RAM, 941 MB project, 195 MB image); without it the post-script
+   runs in seconds and prints
+   `REFS|ps5_libraries=46|rage_structs=7|rage_fields=43|gtav_classes=27903`.
+   Pass the **project directory** as the project path, and use 12.1.4 (12.2
+   refuses this 12.1.4 project).
+5. Use the **SELF**, not the converted ELF — except for REA, which rejects SELF
+   as an unsupported format and can only open the converted ELF.
+6. Windowed analysis is cheap (**~12 s** for a 196 KB window), so callers are
+   chased by window import, not by whole-image analysis.
 
 ## Reference trees
 

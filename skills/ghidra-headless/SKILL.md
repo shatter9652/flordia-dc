@@ -1,9 +1,13 @@
 # Ghidra headless skill (this project)
 
-Ghidra **12.1.4** at `/home/nate/ghidra/ghidra_12.1.4_PUBLIC`. REA's Ghidra
-provider refuses it (it wants ≥ 12.2), so every Ghidra step here goes through
-`analyzeHeadless` directly. This page is the working recipe plus the MCP options,
-so the same commands do not have to be rediscovered.
+Ghidra **12.1.4** at `/home/nate/ghidra/ghidra_12.1.4_PUBLIC`, and **12.2** at
+`/home/nate/ghidra/ghidra_12.2_PUBLIC`. REA now reports the 12.2 provider, but it
+rejects the SELF as an unsupported format and a 195 MB import does not finish
+inside an MCP tool deadline, so native work still goes through `analyzeHeadless`
+directly. This page is the working recipe plus the MCP options, so the same
+commands do not have to be rediscovered. 12.1.4 needs
+`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`; 12.2 needs a 25+ JDK
+(`/usr/lib/jvm/java-27-jdk` is installed).
 
 ## 1. Full-image analysis (Xbox PE) and symbol pass
 
@@ -30,9 +34,21 @@ MAXMEM=6000M "$HL" /home/nate/Port2PS4/ghidra_proj/gta6_full gta6_full \
 ```
 
 `ApplyPs5.java` prints the `REFS|...` line that `tools/progress.py` reads.
-**It has not completed on this machine**: the run reaches `Opening project` and
-the JVM exits without a report or a `REFS|` line, on a 195 MB image. Treat the
-PS5 symbol pass as blocked, not as passing.
+**Run it with `-noanalysis`** once the project is analysed — the post-script then
+finishes in seconds and prints the line:
+
+```sh
+JAVA_HOME=/usr/lib/jvm/java-21-openjdk "$HL" \
+  /home/nate/Port2PS4/ghidra_proj/gta6_full gta6_full \
+  -process eboot.bin -noanalysis -scriptPath tools \
+  -postScript ApplyPs5.java "$PWD"
+# REFS|ps5_libraries=46|rage_structs=7|rage_fields=43|gtav_classes=27903|string_named=0|renamed_total=0
+```
+
+With analysis enabled instead, the JVM is killed on this 3 GB host (and a 1800 MB
+retry was still analysing at 15 minutes). Two path details: the project argument
+is the **project directory**, not its parent, and 12.2 refuses this 12.1.4
+project with `Could not find project`.
 
 Do not open the project with two processes at once: Ghidra writes a lock into
 the `.rep`, and the second run dies right after `Opening project`, which is
@@ -97,7 +113,30 @@ declaration is matched.
 uses and joins them against the eboot's imports. It is verified against the
 AnyDevKit NID map (3/3 test symbols). See `docs/ps5-symbols.md`.
 
-## 5. MCP options
+## 5. Imports and callers (both `-noanalysis`)
+
+```sh
+# every external/thunk of the program, as IMPORT|<va>|<library>|<name>
+"$HL" "$PROJ" gta6_full -process eboot.bin -noanalysis -scriptPath tools \
+  -postScript DumpImports.java
+
+# callers of addresses, optionally decompiled
+"$HL" "$PROJ" gta6_full -process eboot.bin -noanalysis -scriptPath tools \
+  -postScript Xrefs.java 0x8401550,0x8401440 --decompile
+```
+
+Then `python3 tools/ps5nids.py imports --log <that log>` writes
+`names/ps5_eboot_imports.tsv` (730 stubs, all named).
+
+A program with no analysed functions returns **no** xrefs — that is not
+"nothing calls it". For a body the project has not analysed, cut a window and
+analyse it (`tools/ghidra_dump.py --window 0x8df0000:0x8e20000`): a 196 KB
+window analyses in about **12 seconds**, so callers are chased this way.
+
+If the project is missing functions where you expect them, check that you passed
+the project directory (`.../ghidra_proj/gta6_full`) and not its parent.
+
+## 6. MCP options
 
 There is no Ghidra MCP server installed here (`ghidra-mcp`, `mcp-server-ghidra`
 are absent), and the REA bridge cannot host 12.1.4. The options, in order of how

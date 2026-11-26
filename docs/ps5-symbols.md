@@ -250,6 +250,38 @@ GhidraProspero's own `NIDAnalyzer` also runs during `analyzeHeadless` and
 resolves the eboot's stubs in place, which is where the three names above were
 first observed.
 
+### The ps5-nid-map corpus
+
+`ps5ref/AnyDevKit/3rdparty/ps5-nid-map/data/Modules/*.inc` is the third source
+and the largest:
+
+* **541** module files, **777** `PS5_NID_MAP_LIBRARY` blocks, **328,561** NIDs,
+  each `"NID"` string inside the library block it belongs to;
+* it is the only source here that also names the *module* for a NID, e.g.
+  `libSceAgc`, `libScePsml_mfsr2` — the two modules that carry the 17 stubs the
+  GhidraProspero database does not have.
+
+`tools/ps5nids.py` reads it automatically (`--nid-map` overrides the path).
+
+### The eboot's imports, named in bulk
+
+`tools/DumpImports.java` prints every external/thunk function of the analysed
+program, and `tools/ps5nids.py imports --log <analyzeHeadless log>` joins those
+NIDs against the three sources:
+
+```
+wrote names/ps5_eboot_imports.tsv: 730 stubs, 730 named, 0 left as NIDs
+```
+
+| source | stubs |
+| --- | --- |
+| GhidraProspero `nid_db.xml` | 713 |
+| `ps5-nid-map` corpus | 17 |
+| SDK headers | 0 |
+
+The file is `va`, `nid`, `library`, `symbol`, `source`, so a stub address in the
+image maps straight to the symbol the loader would bind.
+
 ### The generated table
 
 ```sh

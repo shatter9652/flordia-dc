@@ -127,6 +127,10 @@ def load_table(path):
     return table
 
 
+DEFAULT_NID_MAP = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "..", "ps5ref", "AnyDevKit", "3rdparty", "ps5-nid-map", "data", "Modules")
+
 DEFAULT_DB = os.path.expanduser(
     "~/.config/ghidra/ghidra_12.1.4_PUBLIC/Extensions/GhidraProspero/data/nid_db.xml")
 
@@ -136,6 +140,80 @@ def find_db(explicit=None):
         if candidate and os.path.isfile(candidate):
             return candidate
     return None
+
+
+def load_nid_map(directory):
+    """ps5-nid-map's Modules/*.inc: PS5_NID_MAP_LIBRARY("lib", { "NID", ... }).
+
+    Returns (nid -> symbol, nid -> library). The corpus is the largest of the
+    three sources (542 modules, ~328k NIDs) and is the one the AnyDevKit tree
+    vendors, so it names imports the SDK headers never see.
+    """
+    symbols = {}
+    libraries = {}
+    if not os.path.isdir(directory):
+        return symbols, libraries
+    library_re = re.compile(r'PS5_NID_MAP_LIBRARY\("([^"]+)"\s*,\s*\{(.*?)\}\)', re.S)
+    for name in sorted(os.listdir(directory)):
+        if not name.endswith(".inc"):
+            continue
+        with open(os.path.join(directory, name), "r", encoding="utf-8", errors="ignore") as handle:
+            text = handle.read()
+        for match in library_re.finditer(text):
+            library = match.group(1)
+            for nid in re.findall(r'"([^"\s]+)"', match.group(2)):
+                if len(nid) != 11:
+                    continue
+                symbols.setdefault(nid, nid)
+                libraries.setdefault(nid, library)
+    return symbols, libraries
+
+
+def cmd_imports(args):
+    """Join the eboot's import stubs with every name corpus, in one TSV."""
+    stubs = []
+    with open(args.log, "r", encoding="utf-8", errors="ignore") as handle:
+        for line in handle:
+            marker = "IMPORT|"
+            at = line.find(marker)
+            if at < 0:
+                continue
+            fields = line[at + len(marker):].split("|")
+            if len(fields) < 3:
+                continue
+            va, library, raw = fields[0].strip(), fields[1].strip(), fields[2]
+            raw = raw.split(" ")[0].strip()
+            nid = raw.split("#")[0]
+            stubs.append((va, library, nid, raw))
+
+    db = {}
+    db_path = find_db(args.db)
+    if db_path:
+        db = load_db(db_path)
+    map_symbols, map_libraries = load_nid_map(args.nid_map)
+    table = load_table(args.symbols) if os.path.isfile(args.symbols) else {}
+
+    resolved = 0
+    with open(args.out, "w", encoding="utf-8") as handle:
+        handle.write("va\tnid\tlibrary\tsymbol\tsource\n")
+        for va, library, nid, raw in stubs:
+            symbol, source = "", ""
+            if nid in db:
+                symbol, source = db[nid], "GhidraProspero/nid_db.xml"
+            elif nid in map_symbols:
+                symbol = map_symbols[nid]
+                source = "ps5-nid-map/%s" % map_libraries.get(nid, "?")
+            elif nid in table:
+                symbol = ", ".join(sorted(table[nid]))
+                source = "SDK headers"
+            if library == "<EXTERNAL>":
+                library = map_libraries.get(nid, library) or library
+            if symbol:
+                resolved += 1
+            handle.write("%s\t%s\t%s\t%s\t%s\n" % (va, nid, library, symbol, source))
+    print("wrote %s: %d stubs, %d named, %d left as NIDs"
+          % (args.out, len(stubs), resolved, len(stubs) - resolved))
+    return 0
 
 
 def load_db(path):
@@ -221,6 +299,14 @@ def main():
     p.add_argument("--symbols", default="names/ps5_nid_symbols.tsv")
     p.add_argument("--db", default=None, help="GhidraProspero nid_db.xml")
     p.set_defaults(func=cmd_lookup)
+
+    p = sub.add_parser("imports", help="name the eboot's import stubs from a headless log")
+    p.add_argument("--log", required=True, help="analyzeHeadless log with DumpImports.java output")
+    p.add_argument("--out", default="names/ps5_eboot_imports.tsv")
+    p.add_argument("--symbols", default="names/ps5_nid_symbols.tsv")
+    p.add_argument("--nid-map", default=DEFAULT_NID_MAP)
+    p.add_argument("--db", default=None, help="GhidraProspero nid_db.xml")
+    p.set_defaults(func=cmd_imports)
 
     p = sub.add_parser("export-db", help="write the shipped NID database as a TSV")
     p.add_argument("--out", default="names/ps5_nid_db.tsv")

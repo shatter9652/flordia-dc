@@ -49,6 +49,11 @@ public class DumpC extends GhidraScript {
 
             Function function = getFunctionAt(address);
             if (function == null) {
+                // A call site inside an analysed body: decompile its owner rather
+                // than creating a fragment function at the call instruction.
+                function = getFunctionContaining(address);
+            }
+            if (function == null) {
                 if (getInstructionAt(address) == null) {
                     disassemble(address);
                 }

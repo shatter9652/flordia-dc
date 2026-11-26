@@ -244,19 +244,41 @@ still unrecovered; what is proven is that a 16-byte read is gated on it and that
 only gated handles ever reach the array `fiPackEntry_Handle` indexes. The entry
 slots in the keyed index point into exactly this array.
 
-## The symbol pass is blocked, not passing
+## The symbol pass: `-noanalysis` is the whole trick
 
 `ApplyPs5.java` runs under `analyzeHeadless` and prints the `REFS|...` line that
-`tools/progress.py` consumes. On this machine the run reaches `Opening project`
-and the JVM exits with no report and no `REFS|` line, twice, on a 195 MB image.
-The host is the limit: **3 GB of RAM (about 1 GB free + 9.8 GB swap)**, a
-941 MB Ghidra project and a 195 MB image. The earlier attempts asked for
-`MAXMEM=6000M`, which cannot be honoured here, and the JVM disappeared right
-after `Opening project` — that is an out-of-memory kill, not a script error. A
-stale `gta6_full.lock` from the killed run was also present and has been removed.
+`tools/progress.py` consumes. Running it *with* analysis on this host does not
+work: **3 GB of RAM (about 1 GB free + 9.8 GB swap)**, a 941 MB Ghidra project
+and a 195 MB image. The attempts that asked for `MAXMEM=6000M` had the JVM
+disappear right after `Opening project` — an out-of-memory kill, not a script
+error — and a bounded `MAXMEM=1800M timeout 900` retry was still analysing at
+15 minutes when it was killed.
 
-A retry bounded to the host was made: `MAXMEM=1800M`, `timeout 900`,
-`-process eboot.bin -postScript ApplyPs5.java`. Result, measured:
+Once the project is analysed, the pass does not need the analysis again. Running
+headless with
+`-noanalysis` and the post-script executes in seconds. That is the recipe
+below (note the project path is the project directory itself):
+
+```
+JAVA_HOME=/usr/lib/jvm/java-21-openjdk \
+  analyzeHeadless /home/nate/Port2PS4/ghidra_proj/gta6_full gta6_full \
+    -process eboot.bin -noanalysis -scriptPath tools \
+    -postScript ApplyPs5.java /home/nate/Port2PS4/gta6decomp
+```
+
+```
+REFS|ps5_libraries=46|rage_structs=7|rage_fields=43|gtav_classes=27903|
+     string_named=0|renamed_total=0
+```
+
+Read it as: the eboot imports **46** PS5 libraries, the dataset contributes
+**7** RAGE structs and **43** fields, and **27,903** GTA V class declarations
+are registered as opaque types. `string_named=0` and `renamed_total=0` are not
+a failure of the run: the script only renames from explicit evidence files
+(`matches/ps5_string_names.tsv`, a `va<TAB>name` list), and neither exists yet,
+so it renames nothing and says so.
+
+Earlier attempts with analysis enabled, recorded for the host finding:
 
 * the project opened and the file was reached (`REPORT: Processing project file: /eboot.bin`)
 * GhidraProspero's `NIDAnalyzer` resolved **736** import NIDs in place, e.g.
@@ -265,6 +287,14 @@ A retry bounded to the host was made: `MAXMEM=1800M`, `timeout 900`,
 * auto-analysis of the 195 MB image did not finish inside 15 minutes, so the
   run was killed and **`ApplyPs5` never ran** — **no `REFS|` line was produced**
 
-The PS5 symbol pass therefore stays "not produced" in `docs/ps5-symbols.md`.
-It needs a host with more RAM and a longer wall clock, not a different script.
-The 736 resolved NIDs are the one durable result of the attempt.
+So the PS5 symbol pass **produces its line**; it is analysis, not the script,
+that this host cannot finish in one go. With analysis enabled it needs more RAM
+and a longer wall clock, not a different script.
+
+Two operational details that cost time:
+
+* the project path argument is the **project directory itself**
+  (`.../ghidra_proj/gta6_full`), not its parent — with the parent, Ghidra answers
+  `Could not find project ... should already exist in -process mode`;
+* Ghidra 12.2 will not open this 12.1.4 project (same message), so the pass runs
+  on 12.1.4 with `JAVA_HOME=/usr/lib/jvm/java-21-openjdk`.

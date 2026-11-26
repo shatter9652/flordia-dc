@@ -35,6 +35,7 @@ out.txt
 # GhidraProspero extension by `tools/ps5nids.py export-db`, so the TSV is not
 # tracked, only the small SDK-header table and the tool.
 names/ps5_nid_db.tsv
+tools/shadertool/shadertool
 
 # --- keys and keyrings -----------------------------------------------------
 # The archive key is project data, not source. tools/rpf9crypt.cpp and
