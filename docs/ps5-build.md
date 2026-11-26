@@ -255,6 +255,16 @@ The host is the limit: **3 GB of RAM (about 1 GB free + 9.8 GB swap)**, a
 after `Opening project` — that is an out-of-memory kill, not a script error. A
 stale `gta6_full.lock` from the killed run was also present and has been removed.
 
-A retry bounded to the host (`MAXMEM=1800M`, `timeout 900`) is the last attempt
-this machine can make; if it prints no `REFS|` line, the PS5 symbol pass stays
-"not produced" in `docs/ps5-symbols.md` and needs a host with more memory.
+A retry bounded to the host was made: `MAXMEM=1800M`, `timeout 900`,
+`-process eboot.bin -postScript ApplyPs5.java`. Result, measured:
+
+* the project opened and the file was reached (`REPORT: Processing project file: /eboot.bin`)
+* GhidraProspero's `NIDAnalyzer` resolved **736** import NIDs in place, e.g.
+  `f7uOxY9mM1U` → `__stack_chk_guard` (libkernel.prx),
+  `2sWzhYqFH4E` → `_Stdout` (libc.prx); zero unresolved
+* auto-analysis of the 195 MB image did not finish inside 15 minutes, so the
+  run was killed and **`ApplyPs5` never ran** — **no `REFS|` line was produced**
+
+The PS5 symbol pass therefore stays "not produced" in `docs/ps5-symbols.md`.
+It needs a host with more RAM and a longer wall clock, not a different script.
+The 736 resolved NIDs are the one durable result of the attempt.

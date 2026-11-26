@@ -193,6 +193,7 @@ evidence tiers are in `docs/layout.md`.
 | Archive TOC encryption | cipher block located at `FUN_0215f06c` (tables `TE0 0x5fc1b20`, `TD0 0x5fc2b50`, `rcon 0x5fc2b20`) and reconstructed over `[0x40, tocEnd)`; header geometry matches byte-exactly on all 4 archives; the packfile open path never calls it, its only callers are the HTTP stack, and 7,210,119 aligned key windows find no key (`docs/rpf-crypto.md`) |
 | objdiff units | **4,626**, of which 3 have built clang-cl base objects (`packfile.obj`, `aes.obj`, `FUN_14087b0f0.obj`) and **0** have a retail target object |
 | Byte-identical functions | **0** (no rebuild to diff yet) |
+| PS5 import NIDs resolved by GhidraProspero | **736**, 0 unresolved, in place during the last `analyzeHeadless` run — but `ApplyPs5` itself never ran, so there is still no `REFS|` line |
 | PS5 import names | **3,407** `sce*` symbols encoded to NIDs from the Sony 11.000 and payload SDK headers (`tools/ps5nids.py`); encoder verified 3/3 against the AnyDevKit NID map |
 | PS5 packfile index | keyed, not name-sorted: 4 constant record keys, `id = (packfileIndex << 16)` OR the entry id, TOC offset `entryId << 4` (`docs/ps5-build.md`) |
 
