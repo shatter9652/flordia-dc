@@ -36,6 +36,9 @@ out.txt
 # tracked, only the small SDK-header table and the tool.
 names/ps5_nid_db.tsv
 tools/shadertool/shadertool
+# ps_shader_dc trees are generated decompiler output (tens of MB per binary);
+# ps_shader_dc/README.md and tools/DumpAll.java are the tracked parts.
+ps_shader_dc/*/
 
 # --- keys and keyrings -----------------------------------------------------
 # The archive key is project data, not source. tools/rpf9crypt.cpp and

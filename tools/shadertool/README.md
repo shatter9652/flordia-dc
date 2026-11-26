@@ -62,10 +62,20 @@ ps5ref/AnyDevKit/3rdparty/opengnm-psbc/libpsbc
   SPIR-V -> GCN shader binary with a GnmShaderFileHeader   (compile direction)
 ```
 
-Build one of them and pass `--recompiler PATH`; `shadertool decompile` then runs
-it and nothing else. Without it the command exits non-zero and says what is
-missing, because emitting plausible-looking PSSL from a header alone would be
-invention.
+Neither tree ships a decompiler **CLI**: in AnyPS5 the recompiler is a CMake
+function (`add_shader_recompiler(shader_recompiler_agc_driver libc)` in
+`core/libs/prx/libSceAgcDriver/CMakeLists.txt`) producing a library that the
+runtime links, with the entry point in the `ShaderRecompiler` namespace of
+`core/shader/recompiler/Recompiler.hpp`. A `--recompiler` binary therefore has
+to be written against that library; configuring AnyPS5 with
+`-DANYPS5_RELINKER_ONLY=ON` builds only `relinker` and contains no shader code
+at all, and a full configure pulls SDL2, ffmpeg, glslang, SPIR-V and Mesa-like
+PSBC sources — a runtime build, not a tool build.
+
+Pass `--recompiler PATH` once such a wrapper exists; `shadertool decompile`
+runs it and nothing else. Without it the command exits non-zero and says what
+is missing, because emitting plausible-looking PSSL from a header alone would
+be invention.
 
 ## Status
 
@@ -74,4 +84,6 @@ invention.
 * `compile`: implemented as a resolver plus Wine invocation. Not exercised here:
   Wine is installed and the compilers are present, but running a Sony Windows
   binary needs its own prefix and licence acceptance, which is a host decision.
-* `decompile`: not implemented; dispatch only.
+* `decompile`: dispatch only. AnyPS5 configures in relinker-only mode on this
+  host (5 s) but that target contains no shader code; a full configure starts
+  resolving SDL2/ffmpeg/glslang and is a runtime build.
