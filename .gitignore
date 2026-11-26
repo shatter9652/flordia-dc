@@ -30,6 +30,12 @@ strings2.txt
 rdata_strings.txt
 out.txt
 
+# --- generated tables ------------------------------------------------------
+# The NID database is 154,478 rows of names; it is regenerated from the
+# GhidraProspero extension by `tools/ps5nids.py export-db`, so the TSV is not
+# tracked, only the small SDK-header table and the tool.
+names/ps5_nid_db.tsv
+
 # --- keys and keyrings -----------------------------------------------------
 # The archive key is project data, not source. tools/rpf9crypt.cpp and
 # tools/rpf9keyhunt.cpp read it from here at run time; the repo ships the

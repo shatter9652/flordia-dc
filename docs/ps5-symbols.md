@@ -182,10 +182,107 @@ reads either build. The script compiles against Ghidra 12.1.4
 
 ## Still unknown
 
-* **NID to name.** No table in the eboot, the game's modules, or the encrypted
-  firmware maps a function NID to a name, so import stubs can be grouped by
-  library but not named individually.
+* ~~**NID to name.**~~ **Solved by generation.** No table ships the mapping, but
+  a NID is `f(symbol)` — `sha1(symbol + salt)` folded into 11 characters — so
+  names are produced by encoding SDK symbols and joining on equality, not by
+  searching for a table. `tools/ps5nids.py` does this; see the section below.
+  Import stubs can now be named wherever the SDK declares the symbol.
 * **Decrypted system modules.** Every firmware module is encrypted; the module
   manifest is all that tree contributes.
 * **RPF9 TOC contents.** Unchanged from Xbox: no key constant in either image,
   and the PS5 build reaches AES through AES-NI rather than the RAGE tables.
+
+## NID = sha1(symbol + salt)
+
+An 11-character NID is a *hash of the symbol name*, not an opaque id:
+
+```
+digest = sha1(name + 518d64a635ded8c1e6b039b1c3e55230)   # 16-byte salt
+digest[0:8] = digest[0:8] byte-swapped
+digest[8:16] = 0
+take three 24-bit groups -> 11 chars of
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-"
+```
+
+So the direction that matters is **name → NID**, and a NID is named by encoding
+the candidate symbols and looking for a match. `tools/ps5nids.py` implements it
+and is byte-identical to `/opt/ps5-payload-sdk/bin/prospero-nid`.
+
+### Verification
+
+Encoded names are checked against the AnyDevKit NID map
+(`ps5ref/AnyDevKit/3rdparty/ps5-nid-map/data/Modules/*.inc`, 546 modules):
+
+```
+$ python3 tools/ps5nids.py verify
+sceKernelGetProcessTime                  4J2sUJmuHZQ  in NID map
+sceSystemServiceGetStatus                rPo6tV8D9bM  in NID map
+sceSaveDataMount                         32HQAQdwM2o  in NID map
+3/3 symbols found in the AnyDevKit NID map
+```
+
+That is a real join, not a self-test: the `.inc` files were written by a
+different tool from the salt alone.
+
+### The shipped database (better than generating)
+
+GhidraProspero — the PS5 loader extension installed in Ghidra here — ships a
+`DynlibDatabase` of **154,478** NID→symbol pairs, including libc, libkernel,
+SCE C++ and inspector symbols:
+
+```
+~/.config/ghidra/ghidra_12.1.4_PUBLIC/Extensions/GhidraProspero/data/nid_db.xml
+  <Entry obf="f7uOxY9mM1U" sym="__stack_chk_guard"/>
+```
+
+`tools/ps5nids.py lookup` reads it automatically (it resolves `f7uOxY9mM1U` to
+`__stack_chk_guard`, `2sWzhYqFH4E` to `_Stdout`, `4J2sUJmuHZQ` to
+`sceKernelGetProcessTime`, all three confirmed by the loader at analysis time).
+`export-db` writes it as a TSV; the 16 MB file is generated, not committed
+(`names/ps5_nid_db.tsv` is ignored). So the order of preference is:
+
+1. the shipped database, when GhidraProspero is installed;
+2. the generated SDK-header table, for symbols the database names differently
+   or not at all;
+3. nothing — an unresolved NID stays a number.
+
+GhidraProspero's own `NIDAnalyzer` also runs during `analyzeHeadless` and
+resolves the eboot's stubs in place, which is where the three names above were
+first observed.
+
+### The generated table
+
+```sh
+python3 tools/ps5nids.py scan \
+  --sdk ../SonySDKS/PS5/11.000/target/include \
+  --sdk /opt/ps5-payload-sdk/target/include \
+  --out names/ps5_nid_symbols.tsv
+# wrote names/ps5_nid_symbols.tsv: 3407 symbols from 2 header roots
+```
+
+`names/ps5_nid_symbols.tsv` is `nid`, `symbol`, `source` (3,407 rows, tracked
+because it is small and reproducible). Look up either way:
+
+```sh
+python3 tools/ps5nids.py encode sceSaveDataMount
+python3 tools/ps5nids.py lookup 4J2sUJmuHZQ
+```
+
+Sources scanned:
+
+| Tree | Role |
+|---|---|
+| `SonySDKS/PS5/11.000/target/include` | Sony's own 11.000 headers, 987 files — the authoritative names and signatures |
+| `/opt/ps5-payload-sdk/target/include` | payload SDK, 2,598 files, broader libc/kernel coverage |
+| `ps5ref/AnyDevKit/3rdparty/{AnyPS5,ps5-nid-map}` | NID lists per module; used to **verify** the encoder, not to name |
+| `ps5ref/KytyPS5/src/loader` | symbol database + runtime linker, shows how a loader consumes NIDs |
+| `ps5ref/ps5-tools/{self-tools,backport,orphan-scan}` | `resolve_call.py`, `fw_exports.py` — NID joins by library/module |
+
+### Limits
+
+* A NID absent from the table means "not declared by these headers", never "not
+a PS5 import". Aliases are a real gap: 11.000 declares `sceSaveDataMount3` and
+the plain `sceSaveDataMount` exists only as a macro in older SDKs.
+* The join names *imports*. A statically linked internal function has no NID.
+* Neither SDK contains the game's own symbols, so this cannot name a `sub_...`
+body — only the system calls its imports target.

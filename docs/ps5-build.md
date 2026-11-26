@@ -172,3 +172,89 @@ The PS5 addresses are PS5 addresses. They are recorded because they are the
 evidence, not because they map to anything in `GTA5.exe`'s tree or in the Xbox
 image. Where a body is named in `packfile.cpp`, the comment says which build its
 address came from.
+
+## Entry lookup: a keyed index, not a name search
+
+The single most important PS5 finding for objective 1. On Xbox, `FindEntry`
+(`GTAVSRC packfile.cpp:881`) binary-searches a name-sorted array of 16-byte
+`fiPackEntry` records, lowercasing each path component inline and comparing
+against `m_NameHeap + (m_Entries[mid].m_NameOffset << m_NameShift)`. **None of
+that exists in the PS5 bodies that were decompiled.** There is no `0x41`/`0x5A`
+range test, no `+0x20` lowercase and no `>> 1` midpoint in the 50 bodies of the
+packfile cluster (`0x83fda90`–`0x8403dc0`) that decompiled successfully; a
+handful of vtable slots outside that cluster did not answer in the windowed
+decompile, so "all 116" is not claimed.
+
+Instead every entry question is a lookup by `(64-bit key, 32-bit id)` through
+vtable slot **+0x400**, and the four keys are constants:
+
+| Key | Record | Fields the recovered bodies read |
+|---|---|---|
+| `0xba180afb232d1b4b` | head | `+0x0C` u32 offset; `+0x11` compressed flag; packed span in `+0x00` |
+| `0x33f70dfaf2c50989` | body | low 40 bits of `+0x00` = offset; `+0x06` flag |
+| `0x4eaa16dd829995bc` | tail | `+0x04` u32 offset; `+0x08` low 48 bits; `+0x0F` flag |
+| `0xcbb68ff7b7078db7` | handle | `+0x00` u32 slot into the handle array; `0xFFFFFFFF` = none |
+
+The interface around them, taken from the call sites:
+
+| Slot | Shape | Reading |
+|---|---|---|
+| `+0x3c8` | `u32 f()` | `GetPackfileIndex` — high half of every lookup id |
+| `+0x3d8` | `u16 f()` | the object's own context id |
+| `+0x3f8` | `bool f(obj, key, id)` | per-entry flag query |
+| `+0x400` | `void* f(obj, key, id)` | record lookup, null = no such record |
+
+An id is `(packfileIndex << 16) | entryId`, built in `FUN_08401440` from the two
+slots above; the read state stores the composed value at `+0x10008`. A record's
+TOC offset is always `entryId << 4`, which is what ties the keyed store back to
+the 16-byte `fiPackEntry` of the Xbox build.
+
+Bodies transcribed in `packfile.cpp`:
+
+| Address | Name | What it does |
+|---|---|---|
+| `0x08401440` | `fiPackEntry_Handle` | id -> (offset, read handle); handle table or the pack's own handle |
+| `0x08401550` | `fiPackEntry_Offset` | id -> TOC byte offset, all three record shapes |
+| `0x084015e0` | `fiPackEntry_IsCompressed` | the flag byte of whichever shape answered |
+| `0x08401690` | `fiPackEntry_Read` | read with whence semantics; span = `(hi32 & 0xFFFFFFF0) + (lo32 & 0x7FFFFFF0)` |
+
+### Where the names went
+
+If the index is keyed, a path lookup has to become an id somewhere above it. The
+caller-side hash is **not yet recovered**: the eboot's own `atStringHash64`-like
+function has not been identified, so "`common:/data/x.ymt` becomes id N" is an
+open question, not a result. Recorded as an unknown in `wiki/findings/ps5-entry-index.md`.
+
+## Directory iteration: `0x03544790`
+
+The other half of objective 1's index work. `fiFile_ScanDirectory` in
+`packfile.cpp` walks a device find list of **0x108-byte** records and, per record:
+
+1. builds `path = *atString(file + 0x38) + '/' + record.name` (name at `+0x2C`)
+2. opens it through device vtable **+0x30**
+3. reads **16 bytes** through **+0x68**
+4. compares the first 8 against `0x5250465639000000` and closes through
+   **+0x98** on a mismatch
+5. keeps the handle in the growable array at `file + 0x50` (capacity `+0x48`,
+   count `+0x4C`, doubling growth)
+
+The 8-byte tag is the big-endian pair **`RPFV` / `9`**, not the RPF9 header magic
+(`0x52504639`, a 32-bit compare inside `Open`). What sub-format `RPFV` names is
+still unrecovered; what is proven is that a 16-byte read is gated on it and that
+only gated handles ever reach the array `fiPackEntry_Handle` indexes. The entry
+slots in the keyed index point into exactly this array.
+
+## The symbol pass is blocked, not passing
+
+`ApplyPs5.java` runs under `analyzeHeadless` and prints the `REFS|...` line that
+`tools/progress.py` consumes. On this machine the run reaches `Opening project`
+and the JVM exits with no report and no `REFS|` line, twice, on a 195 MB image.
+The host is the limit: **3 GB of RAM (about 1 GB free + 9.8 GB swap)**, a
+941 MB Ghidra project and a 195 MB image. The earlier attempts asked for
+`MAXMEM=6000M`, which cannot be honoured here, and the JVM disappeared right
+after `Opening project` — that is an out-of-memory kill, not a script error. A
+stale `gta6_full.lock` from the killed run was also present and has been removed.
+
+A retry bounded to the host (`MAXMEM=1800M`, `timeout 900`) is the last attempt
+this machine can make; if it prints no `REFS|` line, the PS5 symbol pass stays
+"not produced" in `docs/ps5-symbols.md` and needs a host with more memory.

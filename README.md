@@ -23,6 +23,46 @@ bar a decomp.dev / objdiff project shows. The ring measures **bodies written out
 starts**, because there is no source to compare against — it is coverage, not accuracy. The bar measures
 **byte-identical functions**, which is 0 until a rebuild exists (see `docs/objdiff.md`).
 
+## Current objective
+
+**Objective 1 — RPF loading / extracting / streaming — level 5 of 10 ("Index").**
+The open path is readable C on both builds and the entry index is now recovered
+from the PS5 build as a keyed store (`fiPackEntry_Offset`, `fiPackEntry_Handle`,
+`fiPackEntry_IsCompressed`, `fiPackEntry_Read`) together with the directory scan
+that fills its handle array (`fiFile_ScanDirectory`). Level 6 needs the TOC
+contents and the decompression hand-off, which are still open.
+
+`docs/progress-scale.md` defines the scale. Levels, in one list:
+
+| Level | Name | Meaning |
+|---|---|---|
+| 1 | Nothing | no code |
+| 2 | Anchors | literals/magics/entry candidates located, no body explained |
+| 3 | Layout | structures proven field by field |
+| 4 | Open path | construction path is readable C |
+| 5 | Index | lookup layer is readable C |
+| 6 | Read path | reading/decompressing is readable C |
+| 7 | Write path | creating/packing is readable C |
+| 8 | Streaming | async, prefetch, dependent archives |
+| 9 | Integration | wired into the engine the way the build wires it |
+| 10 | Finished | human-readable, evidence-backed, **byte-identical rebuild** |
+
+| # | Objective | Level | Name |
+|---|---|---|---|
+| 1 | RPF loading / extracting / streaming | **5** | Index |
+| 2 | Fuel | 2 | Anchors |
+| 3 | Police & wanted | 2 | Anchors |
+| 4 | Taunt / aggravate / diffuse / threaten | 1 | Nothing |
+| 5 | Cameras (incl. vehicle slow-mo injury camera) | 2 | Anchors |
+| 6 | Remaining subsystems | 1 | Nothing |
+| 7 | Byte matching | 2 | Anchors (tooling built, 0 matched) |
+
+The isle-style and objdiff images above are rendered artifacts; regenerating
+them needs the Xbox image, which is not on this machine any more
+(`tools/progress.py` reads `6RE/DUMP/game_scarlett_master.exe`), so they are
+shown as last generated rather than recomputed. The objdiff base objects do
+rebuild: `make -f objdiff.build.mk`.
+
 ## Objectives
 
 The build order, in full, is in `docs/objectives.md`. Each objective ends with readable C for one
@@ -30,7 +70,7 @@ subsystem; byte matching is last because it is the only step that proves the C i
 
 | # | Objective | State |
 |---|---|---|
-| 1 | **RPF loading / extracting / streaming** | started — `RPF9` magic found in `.text` |
+| 1 | **RPF loading / extracting / streaming** | started — `RPF9` magic found in `.text`; PS5 entry index and directory scan recovered (level 5) |
 | 2 | **Fuel** (tank, consumption, low-fuel state) | anchor only (`LOW_FUELH`) |
 | 3 | **Police & wanted** (crime tracking, wanted level, dispatch) | anchors only (`Crime*`, `Wanted Tuning`) |
 | 4 | **Taunt / aggravate / diffuse / threaten** | no string anchor; reached through the task tree |
@@ -124,6 +164,8 @@ gta6decomp/
 ├── objdiff.json                                 objdiff unit inventory
 ├── attic/                                       earlier export layouts, kept for comparison
 ├── tools/                                       PE/ELF readers, matchers, generators, Ghidra scripts
+├── skills/ghidra-headless/                      the working Ghidra recipes + MCP options
+├── wiki/                                        project memory (Obsidian-compatible pages)
 └── docs/                                        objectives, layout, matching toolchain, reports
 ```
 
@@ -151,6 +193,8 @@ evidence tiers are in `docs/layout.md`.
 | Archive TOC encryption | cipher block located at `FUN_0215f06c` (tables `TE0 0x5fc1b20`, `TD0 0x5fc2b50`, `rcon 0x5fc2b20`) and reconstructed over `[0x40, tocEnd)`; header geometry matches byte-exactly on all 4 archives; the packfile open path never calls it, its only callers are the HTTP stack, and 7,210,119 aligned key windows find no key (`docs/rpf-crypto.md`) |
 | objdiff units | **4,626**, of which 3 have built clang-cl base objects (`packfile.obj`, `aes.obj`, `FUN_14087b0f0.obj`) and **0** have a retail target object |
 | Byte-identical functions | **0** (no rebuild to diff yet) |
+| PS5 import names | **3,407** `sce*` symbols encoded to NIDs from the Sony 11.000 and payload SDK headers (`tools/ps5nids.py`); encoder verified 3/3 against the AnyDevKit NID map |
+| PS5 packfile index | keyed, not name-sorted: 4 constant record keys, `id = (packfileIndex << 16)` OR the entry id, TOC offset `entryId << 4` (`docs/ps5-build.md`) |
 
 The old project `ghidra_proj/game_scarlett_master` is superseded: it was built from `.pdata` only, so it
 had **0 external symbols** and no import typing. `gta6_full` is the project to use.

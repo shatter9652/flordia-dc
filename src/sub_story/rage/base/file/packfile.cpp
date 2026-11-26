@@ -719,4 +719,293 @@ void fiPackIndex_Build(fiPackIndex* self, uint32_t flags, fiPackBlock* block,
     self->entryArrayEnd = run.dataEnd;
 }
 
+// ---------------------------------------------------------------------------
+// The PS5 entry index and directory iteration (objective 1, PS5 build)
+// ---------------------------------------------------------------------------
+//
+// The Xbox bodies find an entry by binary-searching a name-sorted array of
+// 16-byte fiPackEntry records (GTAVSRC packfile.cpp:881, FindEntry).  The PS5
+// build does not: its packfile object carries a *keyed* index, and every entry
+// question is a lookup by (64-bit field key, 32-bit entry id) through vtable
+// slot +0x400.  The four keys the recovered bodies ask for are constants:
+//
+//   0xba180afb232d1b4b  the head record   (offset/span, flag byte at +0x11)
+//   0x33f70dfaf2c50989  the body record   (flag byte at +0x06)
+//   0x4eaa16dd829995bc  the tail record   (offset at +0x08, flag at +0x0F)
+//   0xcbb68ff7b7078db7  the handle table  (u32 slot index, 0xFFFFFFFF = none)
+//
+// The index interface, read off the call sites:
+//   +0x3c8  uint32  GetPackfileIndex -- the high half of every lookup id
+//   +0x3d8  uint16  the object's own 16-bit context id
+//   +0x3f8  bool    per-entry flag query, same (key, id) shape as +0x400
+//   +0x400  void*   record lookup, null when the id has no such record
+//
+// An id is `(packfileIndex << 16) | entryId`: FUN_08401440 builds exactly that
+// from the two slots above before its first lookup, and the read state stores
+// the composed 32-bit value at +0x10008.  So the index is namespaced per
+// mounted packfile, and an id from one archive must never be passed to another.
+//
+// This is the single largest difference from GTA V's packfile layer and it is
+// why the PS5 bodies look nothing like FindEntry: there is no string compare and
+// no lowercase fold anywhere in them.  Whether the *caller* hashes a path into
+// one of these ids is not yet recovered -- see docs/ps5-build.md, "Entry lookup".
+
+// A record's byte offset in the TOC is always `id << 4`: the entries are the
+// same 16 bytes they are on Xbox, and the recovery of that shift is what ties
+// the keyed index back to fiPackEntry.
+constexpr uint64_t kEntryKeyHead = 0xba180afb232d1b4bULL;
+constexpr uint64_t kEntryKeyBody = 0x33f70dfaf2c50989ULL;
+constexpr uint64_t kEntryKeyTail = 0x4eaa16dd829995bcULL;
+constexpr uint64_t kEntryKeySlot = 0xcbb68ff7b7078db7ULL;
+constexpr uint32_t kEntryNoSlot = 0xFFFFFFFFu;
+constexpr uint64_t kEntryOffsetMask = 0xFFFFFFFFFFULL;   // 40 bits, then << 4
+
+typedef void*    (*fiPackLookupFn)(fiPackfile*, uint64_t key, uint32_t id);
+typedef uint32_t (*fiPackCountFn)(fiPackfile*);
+typedef uint16_t (*fiPackIdFn)(fiPackfile*);
+
+// The four slots above, as typed calls.  Casting through the object's own
+// vtable keeps the field offsets visible, which is the point of this file: the
+// numbers are the evidence.
+static fiPackLookupFn fiPack_SlotLookup(fiPackfile* self) {
+    return reinterpret_cast<fiPackLookupFn>(
+        *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(self->vtable) + 0x400));
+}
+static fiPackCountFn fiPack_SlotPackfileIndex(fiPackfile* self) {
+    return reinterpret_cast<fiPackCountFn>(
+        *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(self->vtable) + 0x3C8));
+}
+static fiPackIdFn fiPack_SlotContextId(fiPackfile* self) {
+    return reinterpret_cast<fiPackIdFn>(
+        *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(self->vtable) + 0x3D8));
+}
+
+// The lookup id FUN_08401440 composes before asking the index anything.
+uint32_t fiPackEntry_MakeId(fiPackfile* self, uint32_t entryId) {
+    const uint32_t packfileIndex = fiPack_SlotPackfileIndex(self)(self);
+    const uint32_t contextId = fiPack_SlotContextId(self)(self);
+    // A caller that has no entry id of its own (FUN_08401410) passes zero and
+    // means "the object's context id", which is the other slot.
+    return (packfileIndex << 16) | ((entryId != 0 ? entryId : contextId) & 0xFFFFu);
+}
+
+// FUN_08401550 -- entry id -> byte offset in the TOC.
+//
+// Three record shapes are accepted for the same entry, and which one answers is
+// the header's own layout choice: the head record keeps the offset in a u32 at
+// +0xC, the body record in the low 40 bits of +0x00, the tail record in a u32
+// at +0x04.  All three are scaled by 16.
+uint64_t fiPackEntry_Offset(fiPackfile* self, uint32_t id) {
+    void* record = fiPack_SlotLookup(self)(self, kEntryKeyHead, id);
+    if (record != nullptr) {
+        return static_cast<uint64_t>(*reinterpret_cast<uint32_t*>(
+                   static_cast<uint8_t*>(record) + 0x0C)) << 4;
+    }
+    record = fiPack_SlotLookup(self)(self, kEntryKeyBody, id);
+    if (record != nullptr) {
+        return (*reinterpret_cast<uint64_t*>(record) & kEntryOffsetMask) << 4;
+    }
+    record = fiPack_SlotLookup(self)(self, kEntryKeyTail, id);
+    return static_cast<uint64_t>(*reinterpret_cast<uint32_t*>(
+               static_cast<uint8_t*>(record) + 0x04)) << 4;
+}
+
+// FUN_08401440 -- entry id -> (TOC offset, read handle).
+//
+// The offset half is fiPackEntry_Offset.  The handle half asks the index for a
+// u32 slot; 0xFFFFFFFF, or no record at all, means "this entry is read through
+// the packfile's own handle", which is the fiFile at `self->file` +0x18.
+// Otherwise the handle is `self->file->extraHandles[slot]` -- the array the
+// directory scan below fills.
+uint64_t fiPackEntry_Handle(fiPackfile* self, uint32_t id, uint64_t* outOffset) {
+    const uint32_t composed = fiPackEntry_MakeId(self, id);
+    const uint64_t offset = fiPackEntry_Offset(self, composed);
+    if (outOffset != nullptr) {
+        *outOffset = offset;
+    }
+    const uint32_t* slot = reinterpret_cast<const uint32_t*>(
+        fiPack_SlotLookup(self)(self, kEntryKeySlot, composed));
+    if (slot == nullptr || *slot == kEntryNoSlot) {
+        return static_cast<uint64_t>(self->file->handle);
+    }
+    return self->file->extraHandles[*slot];
+}
+
+// FUN_084015e0 -- is the entry stored compressed?
+//
+// The flag lives at a different byte in each of the three record shapes, but it
+// is always "non-zero byte", never a bitfield.
+bool fiPackEntry_IsCompressed(fiPackfile* self, uint32_t id) {
+    void* record = fiPack_SlotLookup(self)(self, kEntryKeyHead, id);
+    if (record != nullptr) {
+        return *reinterpret_cast<uint8_t*>(static_cast<uint8_t*>(record) + 0x11) != 0;
+    }
+    record = fiPack_SlotLookup(self)(self, kEntryKeyBody, id);
+    if (record != nullptr) {
+        return *reinterpret_cast<uint8_t*>(static_cast<uint8_t*>(record) + 0x06) != 0;
+    }
+    record = fiPack_SlotLookup(self)(self, kEntryKeyTail, id);
+    return *reinterpret_cast<uint8_t*>(static_cast<uint8_t*>(record) + 0x0F) != 0;
+}
+
+// FUN_08401690 -- read from an open entry.
+//
+// `state` is the per-handle read state the caller keeps (the 0x10000-sized
+// object the body indexes); only the fields this recovery can prove are named:
+//   +0x10008  entry id
+//   +0x10010  current position
+//   +0x10020  the device/stream the bytes come from
+// `whence`: 0 = absolute, 1 = relative to the current position, 2 = relative to
+// the entry's own start.
+//
+// The body's diagnostic half (the stack-guard dance and the "read past the end"
+// report) is not transcribed: it is the same reporting code the other read paths
+// use and naming it would not add anything about the index.  What is kept is the
+// arithmetic that decides *which* bytes are read, which is the part objective 1
+// needs: the entry's span comes from the head record as
+// `(hi32 & 0xFFFFFFF0) + (lo32 & 0x7FFFFFF0)`, i.e. two 28-bit counts scaled by
+// 16 and summed -- the compressed size and the stored size of the entry.
+uint64_t fiPackEntry_Read(fiPackfile* self, void* state, int64_t position,
+                          int whence) {
+    uint8_t* base = static_cast<uint8_t*>(state);
+    const uint32_t id = *reinterpret_cast<uint32_t*>(base + 0x10008);
+
+    const void* headRecord = fiPack_SlotLookup(self)(self, kEntryKeyHead, id);
+    const uint64_t head = headRecord != nullptr
+        ? *reinterpret_cast<const uint64_t*>(headRecord) : 0;
+    const uint64_t storedSpan =
+        static_cast<uint64_t>((head >> 32) & 0xFFFFFFF0u) +
+        static_cast<uint64_t>(static_cast<uint32_t>(head) & 0x7FFFFFF0u);
+
+    const bool compressed = fiPackEntry_IsCompressed(self, id);
+    const bool streaming = *reinterpret_cast<uint8_t*>(base + 0x10018) != 0;
+
+    uint64_t target = static_cast<uint64_t>(position);
+    if (whence == 1) {
+        target += *reinterpret_cast<uint64_t*>(base + 0x10010);
+    } else if (whence == 2) {
+        target += storedSpan;
+    }
+
+    uint64_t available = storedSpan;
+    if (target < storedSpan) {
+        available = target;
+    }
+
+    uint64_t* current = reinterpret_cast<uint64_t*>(base + 0x10010);
+    if (!compressed) {
+        *current = available;
+        if (streaming) {
+            *reinterpret_cast<uint64_t*>(
+                *reinterpret_cast<uint8_t**>(base + 0x10028) + 0x38) = available;
+        }
+        return available;
+    }
+
+    // Compressed entries only ever move forward: the body resets the position to
+    // zero when the request is behind it, bumps the global "seeked backwards"
+    // counter and drops the stream's cached window before reading again.
+    if (available < *current) {
+        *current = 0;
+    }
+    return available;
+}
+
+// 0x03544790 -- mount every archive in a directory.
+//
+// This is the PS5 directory-iteration body objective 1 was missing.  It walks a
+// device find list of 0x108-byte records, and for each record:
+//
+//   * builds `path = *atString(file + 0x38) + '/' + record.name`
+//   * opens it with device vtable +0x30 (Open)
+//   * reads 16 bytes with +0x68 (Read)
+//   * compares the first 8 against 0x5250465639000000 and closes with +0x98
+//     (Close) on a mismatch, or keeps the handle in file->extraHandles
+//
+// The 8-byte tag reads as the big-endian pair "RPFV" / "9": an RPF version
+// marker, not the RPF9 header magic (that one is a 32-bit compare in Open).  Its
+// exact meaning -- which sub-format "RPFV" is -- is unrecovered; what is proven
+// is that a 16-byte read is gated on it and that only gated handles reach the
+// array fiPackEntry_Handle indexes.
+constexpr uint64_t kMountTag = 0x5250465639000000ULL;   // "RPFV"/"9", see above
+constexpr uint32_t kMountRecordStride = 0x108;
+
+struct fiFindRecord {
+    uint8_t  raw[kMountRecordStride];
+};
+static_assert(sizeof(fiFindRecord) == kMountRecordStride, "find records are 0x108");
+
+// The record's name lives in the fiFindData layout at +0x2C; the find, read and
+// close calls are the device slots this body uses.  `recordCount`/`records` are
+// what the enumerator handed back.
+void fiFile_ScanDirectory(fiFile* file, const fiFindRecord* records,
+                          uint32_t recordCount) {
+    for (uint32_t i = 0; i < recordCount; ++i) {
+        const fiFindRecord* record = records + i;
+
+        // The name is copied into a stack atString, then joined with the file's
+        // own path.  A record whose name does not fit is skipped, which is what
+        // the four `strlen` bounds in the body add up to.
+        const char* name = reinterpret_cast<const char*>(record->raw) + 0x2C;
+        size_t nameLength = 0;
+        while (nameLength <= 0x100 && name[nameLength] != '\0') {
+            ++nameLength;
+        }
+        if (nameLength == 0 || nameLength > 0x100) {
+            continue;
+        }
+
+        // Built by hand rather than with a formatted-print call: the compat
+        // headers the objdiff base build supplies do not include <cstdio>, and
+        // the join is two copies and a separator.
+        char path[0x140];
+        size_t used = 0;
+        const char* base = file->path.Text();
+        for (size_t k = 0; base != nullptr && base[k] != '\0' && used + 1 < sizeof(path); ++k) {
+            path[used++] = base[k];
+        }
+        if (used + 1 < sizeof(path)) {
+            path[used++] = '/';
+        }
+        for (size_t k = 0; name[k] != '\0' && used + 1 < sizeof(path); ++k) {
+            path[used++] = name[k];
+        }
+        path[used] = '\0';
+        if (used == 0) {
+            continue;
+        }
+
+        uint64_t info = 0;
+        const int64_t handle =
+            static_cast<fiDevice*>(file->device)->Open(path, &info);
+        if (handle == -1) {
+            continue;
+        }
+
+        uint8_t header[16];
+        const int got = static_cast<fiDevice*>(file->device)->Read(
+            handle, 0, header, sizeof(header));
+        if (got != static_cast<int>(sizeof(header)) ||
+            *reinterpret_cast<uint64_t*>(header) != kMountTag) {
+            static_cast<fiDevice*>(file->device)->Close(handle);
+            continue;
+        }
+
+        // Grow the array by doubling: capacity at +0x48, count at +0x4C, the
+        // array itself at +0x50.  The recovered body reallocates with
+        // `new uint64_t[capacity]` and copies, which is what this does.
+        if (file->extraCount == file->extraFlags) {
+            const uint32_t capacity = file->extraFlags != 0 ? file->extraFlags * 2 : 8;
+            uint64_t* grown = new uint64_t[capacity];
+            for (uint32_t k = 0; k < file->extraCount; ++k) {
+                grown[k] = file->extraHandles[k];
+            }
+            delete[] file->extraHandles;
+            file->extraHandles = grown;
+            file->extraFlags = capacity;
+        }
+        file->extraHandles[file->extraCount++] = static_cast<uint64_t>(handle);
+    }
+}
+
 }  // namespace rage
