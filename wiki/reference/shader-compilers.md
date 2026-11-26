@@ -21,7 +21,9 @@ so no PS5 loader is involved in reading them:
 Output lives in `ps_shader_dc/<binary>/`: one `.c` per function plus
 `index.tsv` (`va`, `size`, `name`, `file`, `program`, `sha256`), produced by
 `tools/DumpAll.java`. Measured on this host: **`orbis-psslc.exe` — 11,662
-functions written, 3 failed** (`DUMPALL|written=11662|failed=3`), 69 MB. The
+functions written, 3 failed** (`DUMPALL|written=11662|failed=3`, 69 MB) and
+**`prospero-wave-psslc.exe` — 15,571 functions written, 3 failed**
+(`DUMPALL|written=15571|failed=3`, 86 MB). The
 `.c` files are decompiler output with the function's address, size and
 signature in the header — evidence, not recovered source.
 The trees are generated, so they are not committed; the recipe is.

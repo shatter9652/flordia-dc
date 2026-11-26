@@ -52,7 +52,7 @@ nothing is renamed and nothing is claimed to be the original.
 | binary | functions dumped | state |
 | --- | --- | --- |
 | `orbis-psslc.exe` | **11,662** written, 3 failed (69 MB) | complete — `DUMPALL|written=11662|failed=3` |
-| `prospero-wave-psslc.exe` | in progress at the time of writing | run still going |
+| `prospero-wave-psslc.exe` | **15,571** written, 3 failed (86 MB) | complete — `DUMPALL|written=15571|failed=3` |
 | `orbis-wave-psslc.exe` | not started | same command, swap the input |
 
 `index.tsv` in each subdirectory is the authority on how many functions were
