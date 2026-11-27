@@ -324,3 +324,132 @@ build or the port has a defect. `cargo test` plus
 `cargo run --example cli -- ../../DUMPS/PS5Dump/common.rpf --list` would settle
 it in one step, but that run was interrupted before producing output — this is
 an open check, not a negative result.
+
+## The real spec was in `6RE/tools/SixNG` all along
+
+`crates/sixng-core/src/rpf9toc.rs` documents the table of contents as a column
+store, and `gamecipher.rs` shows how the game itself decrypts it. Both match the
+PS5 geometry exactly, so the spec below is the one to build against. (The old
+`6RE/tools/rpf9` has been deleted; its model was a guess at this one.)
+
+### Header fields that matter
+
+| offset | meaning |
+|---|---|
+| `+0x04` | `toc_end` — size of the table of contents |
+| `+0x08` | `idx_end` — end of the column data region |
+| `+0x1A` | `u16 nsec` — section count |
+| `+0x1C` | `u32 bsz` — size of block B |
+| `+0x20` | `u16 ncol` — column count |
+| `+0x22` | `u16 n22` — direct (flag-1) columns |
+| `+0x24` | `u32 rows` |
+| `+0x2C` | `u8 w` — row-index element width, 1..4 |
+| **`+0x2E`** | **`u8 crypto selector`** |
+| `+0x30` | `u32 tail` |
+
+The selector byte is `+0x2E`, **not** `+0x2D`. These archives read `0x07`:
+
+```
+shaders.rpf  2c=01 2d=0f 2e=07 30=0x16
+common.rpf   2c=02 2d=0f 2e=07 30=0x16
+```
+
+`mode = (selector & 1) + 1` must be 2 (CBC), and `key = selector >> 1`. So PS5
+selects **key 3**; SixNG's Windows table lists selectors 1 and 4, which is why
+borrowing a Windows key id would fail.
+
+### Layout
+
+```
+A = 0x40                    section table: nsec x { u16 id, u16, u32 offset from B }
+B = A + r16(nsec * 8)       block of bsz bytes
+C = r16(B + bsz)            column table: ncol x 24 bytes
+D = C + ncol * 24           row index: indexed*rows elements of w bytes
+T = align8(D + ...)         column data; flag-1 columns start at idx_end
+```
+
+Verified on the two archives without decrypting anything structural:
+
+| file | toc_end | idx_end | nsec | bsz | ncol | n22 | rows | w | tail | C | T |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| shaders.rpf | 0x280 | 0x260 | 4 | 0x150 | 4 | 1 | 2 | 1 | 0x10 | 0x1b0 | 0x218 |
+| common.rpf | 0x6260 | 0x5200 | 4 | 0x150 | 5 | 1 | 418 | 2 | 0x10 | 0x1b0 | 0xf38 |
+
+`B + bsz == C == 0x1b0` in both, and `T <= toc_end`, `idx_end <= toc_end`. That
+is four independent constants agreeing, which is what makes this spec credible
+where the earlier model was not.
+
+### Decrypt order
+
+1. `[A, B)` then `[B, B+bsz-tail)` — **one chained CBC run**, header key.
+2. Section 1, at `B + offset`, is `{ u32 key_id, u16 type, 16-byte IV at +6 }`.
+3. `[B+bsz-tail, B+bsz)` then `[B+bsz, idx_end)` — chained with that key, IV
+   reset between the two when `type` is 3..5.
+4. `[idx_end, toc_end)` is not encrypted.
+
+Columns: `33f70dfaf2c50989` file entry (24 B: offset/16 in the low 40 bits with
+flags above, stored/16, unpacked), `ba180afb232d1b4b` resource entry (20 B),
+`286030a358a789fb` crypto record (64 B: key id, type `0x11` = stream, IV, five
+pattern u64), `73bcb72dce74f11f` file id (MurmurHash3 x64-128 low half of the
+lower-case name).
+
+## Where the key comes from — and there is no 32-byte expansion at runtime
+
+`gamecipher.rs` never derives a key. It loads a **key list** and calls the
+game's own `BLOCK_SETKEY(blob, iv, &ctx)`, so the blobs are pre-expanded
+schedules. The PS5 image matches that exactly: nineteen blobs with magic
+`8e9b3b4e` sit at `0x9e67670`, `0x9e68770`, `0x9e68790`, `0x9e69890`,
+`0x9e6a990`, … `0x9e7ec90`, i.e. stride `0x1000` with one pair `0x20` apart, and
+each is `0x10f4` bytes:
+
+```
++0x000  4  magic 8e9b3b4e
++0x004 240  60 round-key words  (AES-256 schedule)
++0x0f4 0x1000  16 per-key S-boxes
+```
+
+The expansion routine I decompiled at `0x438806e` exists in the image, but the
+archive path does not reach it: it uses the stored schedules. So "recover the
+key" means *read the blob*, not *invert the schedule* — and the blob cannot be
+reduced to a 32-byte AES key, because its S-boxes are key-dependent.
+
+The selector→key-id table itself is not a flat stride-24 array (the array at
+`0xe7e2560` turned out to be a name/address registration list, not keys). The
+PS5 mapping for selector 3 still needs to be read out of the code that consumes
+`header[0x2E]`.
+
+## The 0x1a0-byte cipher context (`0xb08740`), mapped
+
+The handle the caller owns (`in_RDI`, `uint *`) is a small state record; the
+cipher object hangs off it and is created lazily, then cached:
+
+| handle | type | meaning |
+|---|---|---|
+| `+0x00` | `u32` | mode (`1` at every RPF9 call site) |
+| `+0x04` | `u32` | algorithm/selector id |
+| `+0x08` | `void *` | cipher object, built on first use |
+| `+0x10` | `u32` | additional value from the descriptor |
+
+```c
+if (ctx->obj == NULL || ctx->algo != param_1) {   /* build once */
+    ... switch on param_1 -> 0x1a0-byte object ...
+}
+ctx->[4] = in_ECX;      /* +0x10 */
+ctx->[0] = in_ESI;      /* +0x00 mode  */
+ctx->[1] = param_1;     /* +0x08 algo  */
+```
+
+The object the switch allocates (cases 1 and 2, same 0x1a0 bytes):
+
+| offset | content |
+|---|---|
+| `+0x00` | vtable `0xa3b1f18` |
+| `+0x08` | mode byte — `2` for algo 1, `1` for algo 2 |
+| `+0x10`..`+0x30` | zeroed (`VXORPS`/`VMOVUPS`) |
+| `+0x40` | sub-object, vtable `0xa3b1eb8`, reset by `0x438b830(sub, 0, -2)` |
+| rest | AES round keys (240 B) and the 0x1000 S-box set, per the blob layout |
+
+For the downport, none of this needs reproducing: the reader only needs
+`(key blob, IV) → CBC block decrypt`, and the blob layout above is the contract.
+`0x438b830` is the same reset that lives in the AES module at `0x4388xxx`, which
+is why the factory call and the primitive line up.
