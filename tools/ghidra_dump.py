@@ -50,6 +50,36 @@ def find_headless(explicit):
     raise SystemExit("analyzeHeadless not found; pass --ghidra DIR")
 
 
+def choose_entry(self_file, addr):
+    """Pick an entry point that is provably an instruction boundary.
+
+    The windowed ELF's `e_entry` is what Ghidra's `Disassemble Entry Points`
+    analyzer decodes from, and it is also what seeds function-start search. If
+    it is interior to an instruction, x86 decoding silently invents an
+    instruction there and the whole dump inherits the shift. So only ever seed
+    analysis on an address a backwards scan can vouch for; otherwise leave the
+    image's own entry point alone.
+    """
+    try:
+        if HERE not in sys.path:
+            sys.path.insert(0, HERE)
+        import boundary
+        import ps5elf
+        image = ps5elf.load_image(self_file)
+        va = int(addr, 0)
+        start, exact = boundary.prove(image, va)
+        if exact:
+            return start
+        # Interior: the spanning instruction's start is a candidate, but only
+        # use it if it is itself provable from further back.
+        inner, inner_exact = boundary.prove(image, start)
+        if inner_exact and inner < va:
+            return inner
+        return None
+    except Exception:
+        return None
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -63,6 +93,11 @@ def main(argv):
                     help="run another script instead of DumpC, e.g. "
                          "'Blocks.java 0 12' or 'Xrefs.java 0x8e0ce8 --decompile'")
     ap.add_argument("--ghidra", help="Ghidra install directory")
+    ap.add_argument("--noanalysis", action="store_true",
+                    help="skip import-time auto-analysis. Deterministic, but a "
+                         "range that starts mid-instruction can no longer be "
+                         "detected, because nothing has been decoded yet; "
+                         "leave analysis on unless you need a pure sweep")
     ap.add_argument("--timeout", type=int, default=600)
     args = ap.parse_args(argv)
 
@@ -82,8 +117,14 @@ def main(argv):
     os.makedirs(project_dir)
     elf = os.path.join(work, "window.elf")
     try:
-        cmd = [sys.executable, PS5ELF, "convert", args.self_file, elf,
-               "--entry", addrs[0]]
+        cmd = [sys.executable, PS5ELF, "convert", args.self_file, elf]
+        entry = choose_entry(args.self_file, addrs[0])
+        if entry is not None:
+            cmd += ["--entry", "%#x" % entry]
+        else:
+            print("// note: %s is not a proven instruction boundary; leaving "
+                  "the image entry point as the analysis seed" % addrs[0],
+                  file=sys.stderr)
         for window in windows:
             cmd += ["--window", window]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
@@ -93,13 +134,35 @@ def main(argv):
             post = ["-postScript", parts[0]] + parts[1:]
         else:
             post = ["-postScript", "DumpC.java", ",".join(addrs)]
-        run = [headless, project_dir, "dump", "-import", elf,
-               "-scriptPath", HERE] + post + ["-deleteProject"]
+
+        # Headless sends GhidraScript.println to the application log, not to
+        # this process's stdout, so a script's output never reaches the caller
+        # through the pipe. DumpAsm can write to a file instead; ask it to, and
+        # print that file. Without this the run looks like it produced nothing.
+        script_name = post[1]
+        script_out = None
+        if script_name == "DumpAsm.java" and not any(
+                a.startswith("out=") for a in post[2:]):
+            script_out = os.path.join(work, "script.out")
+            post.append("out=" + script_out)
+
+        run = [headless, project_dir, "dump", "-import", elf]
+        if args.noanalysis:
+            run.append("-noanalysis")
+        run += ["-scriptPath", HERE] + post + ["-deleteProject"]
         result = subprocess.run(run, check=False, text=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 timeout=args.timeout)
         text = result.stdout
+        if script_out and os.path.isfile(script_out):
+            with open(script_out, "r", encoding="utf-8", errors="replace") as fh:
+                print(fh.read(), end="")
+            if result.returncode != 0:
+                print("// analyzeHeadless exit %d" % result.returncode,
+                      file=sys.stderr)
+                return result.returncode
+            return 0
         # Keep only the decompiler's own lines; the Ghidra banner and the
         # analyzer's INFO lines are noise around the evidence.
         keep = []

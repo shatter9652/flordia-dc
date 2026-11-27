@@ -624,3 +624,86 @@ Open: the encodings. The next probe that can actually make progress is a runtime
 one — hook the key lookup at load time and dump the 0x1a0-byte context the
 factory fills, because that context is where the decoded tables and the final
 round keys live.
+
+## The 0x1a0 context, dumped by running the init natively
+
+The previous section left a runtime hook as the only way forward. That turned out
+to be half right: the *console* is not needed, because the cipher init is
+ordinary x86-64 position-independent code that only wants memory. It can be run
+on this host, and `tools/rpf9ctx.py` does exactly that — the same observation a
+load-time hook would make, minus Orbis.
+
+### Locating the init
+
+The vtable slots read as zero in the file because they are filled by relocation
+at load, so the decode routine looked unreachable. It is not: the relocated
+values survive in the stride-`0xd8` fixup records at `0xf425c78`, `0xf425d50`,
+`0xf425e28`, `0xf425f00`, each a list of `{slot, size, value}`:
+
+| vtable | slot | value |
+| --- | --- | --- |
+| `0xa3b1eb8` | `+0x00` | `0x8478780` |
+| `0xa3b1eb8` | `+0x10` | **`0x84787a0`** (cipher init) |
+| `0xa3b1eb8` | `+0x40` | `0x8e8e20` |
+
+`0x84787a0(ctx, blob, blob_len, iv, iv_len, flag)` stores the blob at `+0x10`
+and its length at `+0x18`, copies the IV to `+0x20` (length at `+0x30`), stores
+the flag at `+0x190`, then calls `0x43879d0(ctx+0x40, blob, blob_len, iv, flag)`.
+That routine rejects any `blob_len` above `0x20` (`cmp edx,0x20; ja` →
+`0xffffff53`) and any length outside `{0x10,0x18,0x20}` (bitmask `0x101010000`),
+writes `key_len/4 + 6` round keys at `sub+0xf0`, the key length at `sub+0xf4`,
+copies the IV to `sub+0x100`, and expands; the 32-byte case lands on the AES-256
+expander at `0x438806e`.
+
+### Running it
+
+`tools/rpf9ctx.py` maps each `PT_LOAD` at `DELTA + p_vaddr` (`DELTA = 1 << 32`,
+because segment 0 starts at VA 0 and `mmap_min_addr` refuses that), patches the
+`memcpy` import thunk at `0x8f67840` with an absolute jump to a host
+implementation (the stub's indirect slot is zero without a loader), points the
+stack-guard global `0xa3e9fa8` at a zero qword, and calls the init through
+ctypes. With a 32-byte key it returns 1 and fills the context.
+
+Observed layout for a 32-byte key (`mode = 2`):
+
+```
++0x00  mode/algo word        0
++0x04  algo id               0
++0x08  mode byte             2
++0x10  blob pointer
++0x18  blob length           0x20
++0x20  IV                    16 bytes
++0x30  IV length             0x10
++0x40  key schedule          240 bytes (15 x 16), sub-object base
++0x130 round count           14
++0x134 key length            0x20
++0x140 IV copy               16 bytes
++0x180 flag
++0x190 flag
+```
+
+The sub-object at `+0x40` is `0x150` bytes and is zeroed by `0x438b830` before
+use, which is why the schedule fields appear at `ctx+0x40+offset`.
+
+### The schedule is not AES
+
+`tools/check_schedule.py` compares the 240 bytes at `ctx+0x40` with a standard
+AES-256 expansion. It does not match for the key as passed, for the permuted
+copy stored at `ctx+0x110`/`ctx+0x120`, or for either half order: the schedule
+starts `24fc79cc…` while the key starts `00010203…`. The last 32 bytes of the
+schedule are the key bytes *permuted* — the permutation is an involution
+(`0↔10, 1↔15, 2↔8, 3↔13, 4↔14, 5↔11, 6↔12, 7↔9`) applied to the second half.
+
+So the earlier white-box conclusion is now confirmed from the inside rather than
+inferred: this is not AES-256 with a hidden key, it is a permuted-table AES
+variant with its own schedule. Plain-AES hypotheses cannot score on the oracle
+because the schedule they would use is never the one the game builds.
+
+### What is still missing
+
+The init needs a 16/24/32-byte key, and the key list entry for `0x10000005`
+carries `ptr = 0`, `len = 0x10f4` — a blob descriptor, not key material. The
+0x10f4 blobs are rejected outright by the `cmp edx,0x20` check, so the key is
+produced by whatever the cache lookup at `0x8477e00` resolves, and that table is
+empty in the file. The harness can now be pointed at the real key the moment it
+is recovered, and it will produce the exact context the game would.
