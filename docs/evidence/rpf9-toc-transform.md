@@ -707,3 +707,149 @@ carries `ptr = 0`, `len = 0x10f4` — a blob descriptor, not key material. The
 produced by whatever the cache lookup at `0x8477e00` resolves, and that table is
 empty in the file. The harness can now be pointed at the real key the moment it
 is recovered, and it will produce the exact context the game would.
+
+## Correction: the pointer is filled by the ordinary RELA table
+
+The section above concluded that the id→blob route was closed because
+`PT_SCE_RELA` could not resolve it. That was the wrong relocation table. The
+image also carries a plain `PT_DYNAMIC` with a standard `DT_RELA`, and *that*
+table patches the key list.
+
+| dynamic tag | value |
+| --- | --- |
+| `DT_RELA` | `0xe7d14c8` |
+| `DT_RELASZ` | `0xe3a4c8` |
+| entries | 621619 |
+| `DT_RELACOUNT` | `0x97c2d` |
+
+Every entry is `R_X86_64_RELATIVE` (type 8), so the loader writes the addend
+into the slot. The table is fully readable from the dump, so all 24 key-list
+pointers resolve statically. No runtime hook is needed.
+
+### The list is 24 records, not a stride
+
+`0xb094a4` calls `0x396d390(store, 0x9ed4620, 0x18)`. The `0x18` is a **count**,
+not a stride: the list spans `0x9ed4620`–`0x9ed4860` as 24 records of 24 bytes.
+
+```
++0x00  u64  key = (id << 32) | (flags << 24)
++0x08  u64  ptr            <- zero in the file, filled by RELA
++0x10  u64  len
+```
+
+### id → blob, resolved
+
+| id | flags | blob | len | magic |
+| --- | --- | --- | --- | --- |
+| `0x00000001` | `02` | `0x9e67670` | `0x10f4` | `4e3b9b8e` |
+| `0x00000003` | `02` | `0x9e67670` | `0x10f4` | `4e3b9b8e` |
+| `0xfffffffe` | `00` | `0x9e68770` | `0x0020` | `4fa9efeb` |
+| `0x10000008` | `02` | `0x9e68790` | `0x10f4` | `4131537e` |
+| `0x1000000f` | `02` | `0x9e69890` | `0x10f4` | `4e3b9b8e` |
+| `0x10000010` | `02` | `0x9e6a990` | `0x10f4` | `4e3b9b8e` |
+| `0x10000011` | `02` | `0x9e6ba90` | `0x10f4` | `4e3b9b8e` |
+| `0x10000012` | `02` | `0x9e6cb90` | `0x10f4` | `4e3b9b8e` |
+| `0x10000013` | `02` | `0x9e6dc90` | `0x10f4` | `4e3b9b8e` |
+| `0x10000014` | `02` | `0x9e6ed90` | `0x10f4` | `4e3b9b8e` |
+| **`0x10000005`** | `02` | **`0x9e6fe90`** | `0x10f4` | **`4e3b9b8e`** |
+| `0x10000006` | `02` | `0x9e70f90` | `0x10f4` | `4e3b9b8e` |
+| `0x10000021`–`0x10000028` | `02` | `0x9e72090` … `0x9e79790` | `0x10f4` | `2718ce5d` |
+| `0x1000000e` | `02` | `0x9e7a890` | `0x10f4` | `5e864f50` |
+| `0x1000000e` | `03` | `0x9e7b990` | `0x10f4` | `6f24ab44` |
+| `0x000000c3` | `02` | `0x9e7ca90` | `0x10f4` | `3ff44bfb` |
+| `0x000000c3` | `03` | `0x9e7db90` | `0x10f4` | `57aa38aa` |
+
+So the key the RPF9 header asks for is the blob at **`0x9e6fe90`**, length
+`0x10f4`.
+
+### Each blob magic names exactly one class
+
+Searching the executable segments for each magic as a 32-bit immediate gives
+exactly one compare site per magic. That site names the routine which consumes
+the blob:
+
+| magic | check site | consumer |
+| --- | --- | --- |
+| `4e3b9b8e` | `0x255a3ef` | `0x255a3b0` — RPF9 white-box AES-256 |
+| `4131537e` | `0x436a253` | `0x436a220` |
+| `2718ce5d` | `0x3985c48` | `0x3985bf0` — stream cipher |
+| `6f24ab44` | `0x436eb4f` | `0x436eb10` |
+| `35853740` | `0x436c833` | `0x436c800` |
+| `57aa38aa` | `0x4371078` | `0x4371020` |
+| `3ff44bfb` | `0x4373a38` | `0x43739e0` |
+| `5e864f50` | `0x226ebaf` | `0x226eb00` |
+
+`0x255a3b0` is reached from vtable `0xa397be0` (`+0x10 = 0x255a390`,
+`+0x18 = 0x2ae0870`), and that vtable is what jump-table index 16 of the cipher
+factory builds — **algo `0x10`**. This is the resolution of the earlier
+mismatch: the 0x10f4 blobs never belonged to the algo `0x12` class at
+`0x436a220` at all, which is why the `cmp edx,0x20` rejection there never
+applied to them.
+
+### `0x255a3b0` decodes the blob into white-box tables
+
+```
+0x255a3c4  call 0x43697c0            ; global guard, expects 0x24a187b9
+0x255a3eb  cmp  [blob], 0x4e3b9b8e   ; reject anything else
+0x255a402  mov  edi, 0x1100
+0x255a407  call 0x36696a0            ; allocate the decoded table set
+0x255a420  loop rdx = 0 .. 0xf0 step 4:
+             out[rdx] = blob[4+rdx] << 24 | blob[5+rdx] << 16
+                      | blob[6+rdx] << 8 | blob[7+rdx]
+0x255a467  copy 0x1000 bytes from blob+0xf4
+```
+
+So the decode is: **60 big-endian dwords** starting at `blob+4`, then **sixteen
+256-byte tables** starting at `blob+0xf4`. For `0x10000005`:
+
+```
+rk[ 0]  b55d79c2 0ef94ebb 5f1cee61 a2d44ce3
+rk[ 1]  eab1a275 ab2ad6cb d6559a9c 7af1fc87
+...
+rk[14]  6e71c27d 8a367ae7 b6d0cf88 908388cf
+
+sbox[0] 3ec8515328e04188...   (permutation)
+sbox[1] 855c215a78d9b291...   (permutation)
+```
+
+All **16/16** tables are permutations of `0..255`, and this holds for all ten
+`4e3b9b8e` blobs in the list. That is the objective confirmation: a white-box
+AES-256 table set is 60 round-key words plus bijective key-dependent S-box
+layers, and that is exactly what these blobs contain.
+
+The earlier "the blob is not round-key material" result stands, but its
+conclusion does not: the values are not meant to be read raw. They are stored
+big-endian and offset by four, and the S-box region starts at `blob+0xf4`, not
+at the start of the blob. Reading them at the right offset with the right byte
+order turns an opaque blob into a well-formed table set.
+
+The schedule is still not a standard AES-256 expansion of the first eight words
+— it is stored post-expansion and encoding-permuted, which is what a white-box
+build looks like. Decryption therefore goes through the vtable's `+0x18` slot,
+`0x2ae0870` — a wrapper that shifts `(this, blob, src, dst, len)` down to
+`0x2ae0890(blob, src, dst, len)` and returns `0x24a187b9` on success — not
+through `0x43879d0`.
+
+### Tooling
+
+`tools/rpf9key.py` does the whole resolution: it parses `PT_DYNAMIC`, applies
+`DT_RELA`, prints every id with its blob and magic family, and decodes and
+verifies the table sets.
+
+```
+python3 tools/rpf9key.py --list
+python3 tools/rpf9key.py --id 0x10000005 --decode
+python3 tools/rpf9key.py --verify      # 10/10 blobs, 16/16 permutations each
+```
+
+### The one remaining lead on a plain key
+
+Entry `0xfffffffe` (flags `0`) is the only record whose blob is 32 bytes rather
+than `0x10f4`, and its payload is
+
+```
+ebefa94f 0627b8ea 0a69d82a a5e23ef1 55fa8e9e de97e002 a43f4295 b9767d40
+```
+
+That is a 4-byte magic followed by 28 bytes, not a clean 32-byte key, but it is
+the only candidate in the list for the plain-AES path at `0x43879d0`.
