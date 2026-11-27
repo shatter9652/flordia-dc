@@ -540,3 +540,87 @@ than guessing at them.
 What is now settled: selector → key id `0x10000005`, IV, CBC mode, span layout,
 key blob layout, and that the S-boxes are per-key. What is open: the round
 function's exact use of those tables.
+
+## Round function: transcribed instructions, and the correction
+
+The two addresses I had been calling "AES table references" were right, but the
+Ghidra window dump showed them desynced (it printed `MOV RCX,[R14+8]` at
+`0x438c639`). Extracting the raw bytes and disassembling linearly gives the real
+instructions:
+
+```
+0x438c639: lea r8,[rip+0x58c19b0]      # 0x9c4dff0 = Td0
+0x438d237: lea rdx,[rip+0x58c1db2]      # 0x9c4eff0 = inverse S-box
+0x438806e: lea r9,[rip+0x58c4f4b]       # 0x9c4cfc0 = Te0
+0x4388075: lea r10,[rip+0x58c5f44]      # 0x9c4dfc0 = rcon table
+0x4388a66: lea rdx,[rip+0x58c4553]      # Te0 (as the byte S-box source)
+0x4388a6d: lea rsi,[rip+0x58c557c]      # Td0
+```
+
+What the code at those sites actually does:
+
+- **`0x438806e`** is the AES-256 key expansion. It is reached with
+  `cmp r15d,0x20` (256-bit key) and runs 60 words, with the standard S-box read
+  byte-wise out of the *Te1* view (`[r9 + idx*4 + 0x400]`, `+0x803`, `+0xc02`)
+  and `rcon` from `0x9c4dfc0`. This confirms 14 rounds and a standard expander.
+- **`0x4388a66`/`0x4388a6d`** rewrite the expanded key in place at `rbx+0x1c`,
+  gated by `cmp dword [rbx+0xf0], 2`. The body is
+  `Td0[S(b2)] ^ Td1[S(b3)] ^ Td2[S(b1)] ^ Td3[S(b0)]`, i.e. the equivalent
+  inverse cipher key transform. So the context holds *decryption* round keys.
+- **`0x438c639`** is the block decrypt: a vectorized T-table InvCipher. State
+  words arrive via `movbe` (so the schedule and state are big-endian dwords),
+  rounds index `[r8 + idx*4 + 0x400/0x800/0xc00]` (Td1/Td2/Td3 rotations), round
+  keys are plain dwords at `[r13 + 0xc4]` … `[r13 + 0xdc]`, and the result is
+  finished with `vpxor` + `vpshufb` against `0x9abbcc0` for byte order.
+- **`0x438d237`** is a byte-wise companion that assembles a 16-byte vector with
+  `vpinsrb`/`vpsllvd`/`vpshufb` from the inverse S-box — a setup/init path, not
+  a second cipher.
+
+So the *algorithm* is plain AES-256 InvCipher on standard tables. What is not
+plain is the key material.
+
+## Retest: the blob is not round-key material
+
+Following the transcribed code:
+
+- The schedule invariant (`w[i] = w[i-8] ^ f(w[i-1])`) fails for **every** 4-byte
+  offset in **every** blob, in both little- and big-endian word order. So the
+  `0x10f4` blob contains no forward AES-256 schedule at any alignment.
+- The `0x1000` region is not 16 byte permutations (all 16 blocks of all 9 blobs
+  fail a permutation test), and neither its strided dwords nor its low bytes
+  form a permutation either.
+- Running the transcribed equivalent-inverse InvCipher, `[A,B)` as CBC, over
+  9 blobs × 3 candidate key offsets (0x1004, 0xf4, 0x4) × 2 byte orders × 2 IV
+  forms = 108 further hypotheses scores **0** on the section-table oracle.
+
+Conclusion: the blob's tables are *encoded* — the values are not the plain
+round-key or T-table bytes the loop consumes at runtime, which is what a
+white-box construction looks like from the outside. Feeding `0x9c4xxx`-style
+arithmetic at these blobs cannot work, and no amount of re-ordering will fix it.
+
+## PT_SCE_RELA cannot resolve the blob at all
+
+The image does carry `PT_SCE_RELA` (`p_filesz = 0x283a`, 429 entries), but:
+
+- no relocation entry targets the key-list window `0x9ed4000`–`0x9ed5000`, so
+  the zero address field is **not** loader-patched by this table; and
+- the segment has `p_vaddr = 0`, is not matched to a SELF block by length
+  (`read_self_blocks` yields 12 blocks, none of length `0x283a`), so its bytes
+  are not readable from the dump at all — the relocation payload sits in a
+  protected block.
+
+That closes the id→blob route statically: the key list's address field is
+genuinely zero in the shipped image and the relocation data needed to fill it is
+in an encrypted block. Resolving `0x10000005` to a blob has to come from the
+runtime (a hook on the key-lookup), not from the file.
+
+## Where this leaves objective 1
+
+Settled: selector byte, selector→id `0x10000005`, IV, CBC, span layout and
+chaining, the full decrypt algorithm, and that the cipher is white-box with
+encoded tables.
+
+Open: the encodings. The next probe that can actually make progress is a runtime
+one — hook the key lookup at load time and dump the 0x1a0-byte context the
+factory fills, because that context is where the decoded tables and the final
+round keys live.
