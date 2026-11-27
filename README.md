@@ -25,42 +25,52 @@ starts**, because there is no source to compare against — it is coverage, not 
 
 ## Current objective
 
-**Objective 1 — RPF loading / extracting / streaming — level 5 of 10 ("Indexes").**
-Under the working scale in `docs/progress-scale.md`, level 5 means real archives
-list their real entries and every field of an entry is measured. That is met: the
-table of contents decrypts on all 18 retail archives, and the column store behind
-it parses into entries — offset, stored and unpacked size, flags, crypto record,
-64-bit file id, and the 32-bit key the archive searches on. The C++ parse agrees
-with an independent one on 1,081 entries.
+**Objective 1 — RPF loading / extracting / streaming — level 7 of 10 ("Decompresses").**
+Under the working scale in `docs/progress-scale.md`, levels 5–7 are met: the table
+of contents decrypts on all 18 retail archives, the column store parses into real
+entries (offset, stored and unpacked size, flags, crypto record, 64-bit file id,
+32-bit key), and entry payloads now decrypt and inflate at their recorded sizes.
+The C++ parse agrees with an independent one on 1,081 entries.
 
-Level 6 ("Decrypts") is blocked and located. Entry payloads are encrypted as well
-as deflated: stored bytes do not inflate, and the crypto record names a key id and
-a per-file IV. Those ids are live in the image's key list but belong to a
-different white-box family (`0x2718ce5d`) than the TOC (`0x4e3b9b8e`), whose table
-loader rejects them. That family's initialiser is `0x3985bf0`; its call shape and its IV slot
-(`state+0x1101`) are now measured from the decompiler, but it faults when driven
-outside the game's own initialisation, so 6 is not claimed — and 7 through 10
-depend on it. The name heap is still encrypted, so entries are addressed by id
-rather than by path.
+The payload cipher is the white-box CTR registered at vtable `0xa397c20`:
+`+0x10 → 0x3985bc0` initialises a `0x1120`-byte state from a `0x2718ce5d` key blob
+and a 16-byte seed (`state+0x10f0`, block size `0x10`), and `+0x18 → 0x2ae0a50`
+XORs the message against the keystream block at `state+0x1101`, regenerating it
+and advancing the seed as a big-endian counter. `0x43697c0` turned out not to be a
+gate: it is a lazy global-table loader that returns the fixed success token
+`0x24a187b9`, and setting its readiness byte `0xac6e511` is all the cipher needs
+outside the game. The fault that blocked it was an unpatched `memset` import at
+`0x84783b0`.
+
+`tools/rpf9payload.py` runs the chain natively: `appdata0` decrypts and inflates
+2/2 rows to their exact sizes with readable `PSIN`/`SUB_STORY` content; `common`
+returns 123 encrypted plus 269 stored rows and `data` 109 plus 384. Level 8
+("Extracts") is what remains: entries whose crypto record carries a non-zero
+pattern (`0x400, 0x400, 0x1c00, 0, 4`) — three known cases — use a chunked framing
+that is still undecoded. The name heap is still encrypted, so entries are
+addressed by id rather than by path.
+
+`docs/evidence/rpf9-toc-transform.md` has the addresses, the state layout and the
+measurements.
 
 `docs/progress-scale.md` defines the scale. Levels, in one list:
 
 | Level | Name | Meaning |
 |---|---|---|
-| 1 | Nothing | no code |
-| 2 | Anchors | literals/magics/entry candidates located, no body explained |
-| 3 | Layout | structures proven field by field |
-| 4 | Open path | construction path is readable C |
-| 5 | Index | lookup layer is readable C |
-| 6 | Read path | reading/decompressing is readable C |
-| 7 | Write path | creating/packing is readable C |
-| 8 | Streaming | async, prefetch, dependent archives |
-| 9 | Integration | wired into the engine the way the build wires it |
-| 10 | Finished | human-readable, evidence-backed, **byte-identical rebuild** |
+| 1 | Not even close | Nothing identified |
+| 2 | Located | entry points, literals and data anchored to addresses |
+| 3 | Layout | on-disk structures proven field by field |
+| 4 | Opens | a real archive's header is read and its geometry resolved |
+| 5 | Indexes | real archives list their real entries |
+| 6 | Decrypts | entry payloads come back decrypted |
+| 7 | Decompresses | decrypted entries inflate to their recorded size |
+| 8 | Extracts | a whole archive extracts, every size verified |
+| 9 | Streams | partial and seekable reads, dependent archives resolve |
+| 10 | Works | end to end on every retail archive |
 
 | # | Objective | Level | Name |
 |---|---|---|---|
-| 1 | RPF loading / extracting / streaming | **5** | Index |
+| 1 | RPF loading / extracting / streaming | **7** | Decompresses |
 | 2 | Fuel | 2 | Anchors |
 | 3 | Police & wanted | 2 | Anchors |
 | 4 | Taunt / aggravate / diffuse / threaten | 1 | Nothing |
@@ -145,9 +155,10 @@ dwords and 16 S-box tables, and all ten blobs decode to 16/16 bijective
 permutations.
 
 No key is committed. `tools/rpf9key.py` resolves ids and verifies the tables,
-`tools/rpf9wb.py` runs the game's own decryptor natively, and `tools/rpf9cols.py`
-dumps the decrypted table of contents; `docs/evidence/rpf9-toc-transform.md` is
-the full record.
+`tools/rpf9wb.py` runs the game's own decryptor natively, `tools/rpf9cols.py`
+dumps the decrypted table of contents, and `tools/rpf9payload.py` runs the payload
+cipher (init plus CTR decrypt) and inflates entries; the same file holds the full
+record.
 
 What the plaintext buys is the store behind it. The table of contents is not an
 entry array but a **column store**: a section table, a column table, a row index

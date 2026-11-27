@@ -43,6 +43,7 @@ DECRYPT = 0x2AE0890       # CBC decrypt over the table set
 READY_FLAG = 0xAC6E511    # 0x43697c0 returns success immediately when non-zero
 MEMCPY_INTERNAL = 0x1A1D5F0
 MEMCPY_IMPORT = 0x8F67840
+MEMSET_IMPORT = 0x84783B0
 ALLOC = 0x36696A0
 STACK_GUARD = 0xA3E9FA8
 
@@ -157,6 +158,21 @@ class Image:
         mc = ctypes.cast(self._memcpy_cb, ctypes.c_void_p).value
         self._jump_stub(MEMCPY_INTERNAL, mc)
         self._jump_stub(MEMCPY_IMPORT, mc)
+
+        # The stream-cipher init (0x3985bf0) clears its keystream buffer with
+        # 0x84783b0(state+0x1101, 0, 16). That is an import thunk like memcpy,
+        # so without a host body it jumps through a zero slot and faults --
+        # which is exactly how the earlier direct calls died.
+        MEMSET_T = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p,
+                                    ctypes.c_int, ctypes.c_size_t)
+
+        def host_memset(dst, value, n):
+            ctypes.memset(dst, value & 0xFF, n)
+            return dst
+
+        self._memset_cb = MEMSET_T(host_memset)
+        self._jump_stub(MEMSET_IMPORT,
+                        ctypes.cast(self._memset_cb, ctypes.c_void_p).value)
 
         MALLOC_T = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_size_t)
 

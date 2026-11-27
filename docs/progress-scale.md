@@ -45,26 +45,41 @@ store behind it parses into real entries. Offset, stored and unpacked size,
 flags, crypto record, 64-bit file id and the 32-bit search key all resolve, and
 the C++ parse agrees with an independent one on 1,081 entries across four
 archives (`docs/evidence/rpf9-toc-transform.md`). An id becomes a row, and the
-row's fields are measured. That is exactly what level 5 asks for and no more.
+row's fields are measured.
 
-**Level 6 — Decrypts. Blocked, and honestly located.**
+**Level 6 of 10 — Decrypts. Reached.**
 
-Payloads are encrypted, not merely deflated: the stored bytes of an entry do not
-inflate on their own, and the bytes at an entry's offset look random. The crypto
-record names a key id and a 16-byte IV per file. Those ids — `0x10000021` through
-`0x10000028` — are live in the image's 24-record key list, but they are a
-different white-box family (magic `0x2718ce5d`) from the TOC family
-(`0x4e3b9b8e`), and the TOC's table loader rejects them.
+The payload family is the white-box CTR at vtable `0xa397c20`:
+`+0x10 → 0x3985bc0` (init) and `+0x18 → 0x2ae0a50` (decrypt), which consumes the
+`0x1120`-byte state. Init takes a `0x2718ce5d` blob from the archive's own 24-record
+key list, a 16-byte seed written to `state+0x10f0`, and block size `0x10`; decrypt
+XORs against the keystream block at `state+0x1101`, regenerating it and advancing
+the seed as a big-endian counter. A fresh state is required per payload because
+the counter is stateful. `0x43697c0` is not a gate — it is a lazy table loader
+that returns the fixed success token `0x24a187b9`, and short-circuiting its
+readiness byte `0xac6e511` is all the cipher needs outside the game.
 
-That family's initialiser is located: `0x39ce1c0`, which checks the magic, sizes
-its state at `0x1120` bytes, bounds one argument to `1..16`, and returns
-`0x72788da6` on a magic mismatch — the same code the TOC loader reports. What is
-not yet established is the argument order the initialiser expects and where the
-IV is placed in the resulting state, so the decryptor is not yet wired to it.
-Level 6 is therefore not claimed.
+Demonstrated in `tools/rpf9payload.py` with no game object: `appdata0` 2/2 rows
+decrypted and inflated to their exact recorded sizes (976 and 25264 bytes), with
+readable `PSIN`/`SUB_STORY` content.
 
-Everything above 6 depends on it: 7 decompresses what 6 produces, 8 and 9 need
-7, and 10 needs all of them.
+**Level 7 of 10 — Decompresses. Reached, with an open class of entries.**
+
+Decrypted payloads are raw deflate (`wbits=-15`) and are handed back at the
+recorded unpacked size, entry by entry: `common` 123 encrypted rows plus 269
+stored rows, `data` 109 plus 384, `shaders` 2 stored. What is *not* yet covered is
+entries whose crypto record carries a non-zero pattern — `(0x400, 0x400, 0x1c00,
+0, 4)` versus `(0, 0x1000, 0, 0, 4)` — three known cases (`common` 410/416,
+`data` 656). They do not yield to the recorded seed, a body-carried seed, a
+keystream block shift, or an offset-derived counter base, so the pattern selects
+a chunked framing that is still undecoded (`docs/evidence/rpf9-toc-transform.md`).
+
+**Level 8 — Extracts. Blocked on that framing.**
+
+A whole-archive extract writes every entry and verifies every size; it needs the
+patterned entries to decode, so it is not claimed. Levels 9 and 10 depend on it.
+The name heap is also still encrypted, so entries are addressed by id rather than
+by path.
 
 ## What the levels are not
 

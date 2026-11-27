@@ -1092,37 +1092,107 @@ Disassembling the raw file at offset addresses produced a convincing but
 misplaced reading, and every direct call to the offset address faulted for that
 reason alone. `ps5elf.resolve` does the conversion; use it, not `data[addr]`.
 
-Its call shape, from `procedure_pseudo_code` at `0x3985bf0`:
+**The vtable pair.** The family is registered in `.data.rel.ro` at `0xa397c20`:
+`+0x10 → 0x3985bc0` (init), `+0x18 → 0x2ae0a50` (decrypt). The init thunk
+tail-calls `0x3985bf0`; the decrypt thunk tail-calls `0x2ae0a70`. Both were
+confirmed from `procedure_pseudo_code`, not from call-site inference.
+
+**Init call shape** — corrected against the decompiler:
 
 ```c
-int fiCrypt9_Init(const void *blob, void *ctx, unsigned mode, void **out);
+int fiCrypt9_Init(const void *blob, const void *seed16, unsigned block, void **out);
 ```
 
 - `rdi` (blob) — first dword must be `0x2718ce5d`, else `0x72788da6`.
-- `rsi` (ctx) — must be non-null, else `0xc30d2e1`. Only null-checked; not a
-  length, and not the IV.
-- `rdx` (mode) — `1..16`, else `0x565e3271`. Stored as a byte at state `+0x1100`,
-  so it is the family/mode selector.
+- `rsi` (seed) — a **16-byte seed**, copied to `state+0x10f0`. Not a dummy ctx.
+- `rdx` (block) — the block size, `0x10`, stored at `state+0x1100`.
 - `rcx` (out) — must be non-null, else `0x299b836`.
 
-It allocates `0x1120` bytes, sums the blob's 60 big-endian dwords into
-`state[0x000..0x0F0)`, and copies the sixteen 256-byte tables into
-`state[0x0F0..0x10F0)`. The tail is the per-message material:
+The state is `0x1120` bytes: the blob's 60 big-endian dwords summed into
+`state[0x000..0x0F0)`, the sixteen 256-byte S-boxes at
+`state[0x0F0..0x10F0)`, then the per-message material:
 
 | Offset | Size | Meaning |
 |---|---|---|
-| `0x10F0` | `0x10` | zeroed at init |
-| `0x1100` | 1 | the selector |
-| `0x1101` | `0x10` | **IV slot**, zeroed at init |
-| `0x1118` | 8 | zeroed at init |
+| `0x10F0` | `0x10` | **seed / counter**, loaded from `rsi` and advanced |
+| `0x1100` | 1 | block size (`0x10`) |
+| `0x1101` | `0x10` | **keystream block**, zeroed by `memset` at init |
+| `0x1118` | 8 | keystream bytes remaining |
 
-So this family's IV goes at **`+0x1101`**, not `+0x10f0` (the TOC family's
-offset). That is the piece the decryptor needs, and it is now measured rather
-than guessed.
+The 16 bytes at `+0x1101` are the *output* buffer, not the IV. The seed at
+`+0x10f0` is the CTR counter.
 
-**Still open.** Driving `0x3985bf0` directly still faults, at the correct VA and
-with `rsi` given a real buffer. The body's first act is a no-argument call to
-`0x43697c0`, and both the entry gate and the tail re-check compare its result to
-`0x24a187b9`; outside the game's own initialisation that call does not return
-usefully. The family's decrypt entry is also unidentified — `0x2ae0890` belongs
-to the TOC path. Level 6 is therefore unblocked on paper and not yet in code.
+**Decrypt entry** — `0x2ae0a50(this, state, src, len, dst)` tail-calls
+`0x2ae0a70(state, src, len, dst)`: plain CTR, byte-wise XOR against
+`state+0x1101`. When `+0x1118` reaches zero it copies `state+0x10f0` to a temp,
+encrypts it with the white-box block (14 rounds over the global T-tables at
+`0x9b3dd80..0x9b42980` plus the blob's S-boxes), writes the 16-byte result to
+`+0x1101`, **increments `+0x10f0` as a big-endian counter** (carry propagates
+downward from `0x10ff`), and sets `+0x1118 = 16`. The state is therefore stateful
+across calls: a payload needs a freshly initialised state, and one state can
+decrypt one stream.
+
+**What `0x43697c0` is.** Not a family gate: a lazy global-table initialiser.
+
+```c
+if (DAT_0ac6e511 == 0) {
+    if (DAT_0abde500 == 0)       /* checksum 0x20000 dwords at 0x9ac3ed0 */
+    if (DAT_0ac6e510 == 0) {
+        buf = alloc(0x90000);
+        if (!buf) return 0x1f6f4a79;
+        /* decompress global tables into 0xabde4a0.. */
+        DAT_0ac6e510 = 1;
+    }
+    DAT_0ac6e511 = 1;
+}
+return 0x24a187b9;   /* the success token the callers compare against */
+```
+
+`0x24a187b9` is a fixed success token, returned on every path that does not
+fail the `0x90000`-byte allocation (`0x1f6f4a79` is that one failure). Its ten
+call sites (`0x1b358b3, 0x1b359ed, 0x255a3c4, 0x255c0ce, 0x2ae08b0, 0x2ae0a91,
+0x3985c0a, 0x398792e, 0x436a230, 0x436bf6e`) all just check the token. Setting
+`DAT_0ac6e511 = 1` short-circuits it to success; that is the whole initialisation
+the cipher needs outside the game, because the tables it builds are only needed
+by the game's own white-box setup paths, not by init/decrypt with a blob from
+the key list.
+
+**The real fault was an unpatched import.** The init tail calls `memset` through
+the PLT slot at `0x84783b0` (`memset(state+0x1101, 0, 16)`). The earlier harness
+patched the other imports but not this one, so the call jumped through a zero
+slot — which is why every direct init appeared to fault at the correct VA with a
+real `rsi`. `tools/rpf9wb.py` now maps `MEMSET_IMPORT = 0x84783B0` to a host
+`host_memset` stub, and init/decrypt run natively.
+
+**Measured.** `tools/rpf9payload.py` drives the whole chain — TOC decrypt,
+column walk, fresh `init_state` per entry, `stream_decrypt`, raw deflate
+(`wbits=-15`) — with no game object:
+
+| archive | decrypted rows | stored rows | result |
+|---|---|---|---|
+| `appdata0` | 2/2 | 0 | exact 976 and 25264 bytes; row 0 starts `PSIN` |
+| `common` | 123/149 | 269 | decrypted rows inflate to the recorded size |
+| `data` | 109/275 | 384 | decrypted rows inflate to the recorded size |
+| `shaders` | — | 2 | stored rows come back as raw XML |
+
+`appdata0` row 0 yields readable content (`SUB_STORY`, `sub_story`, `verified`,
+`930.048.020`, `LSCH`), so the plaintext is real, not a lucky inflate.
+
+**Still open: non-zero crypto patterns.** Every failure is an entry whose crypto
+record has a non-zero pattern — `(0x400, 0x400, 0x1c00, 0, 4)`, against
+`(0, 0x1000, 0, 0, 4)` for the entries that work — and the three known cases are
+`common` rows 410 (2064 B) and 416 (2096 B) and `data` row 656 (11584 B). None of
+them inflates under: the recorded IV, the first 16 body bytes as a seed, that
+seed with a 16-byte skip, a keystream block offset of 0..255, or counter bases
+derived from the entry offset (`offset/16`, `offset/0x400`, `offset/0x20b0`). So
+the pattern selects a chunked framing that is not yet decoded, not a different
+key or offset. The game's own payload path is located for that follow-up:
+vtable `0xa396ad8` (`+0x00 0x840b5a0`, `+0x08 0x18e9810`, `+0x10 0x1cc2f20`,
+`+0x18 0x840b5e0`), whose `+0x18` slot builds a descriptor and hands it to the
+generic decode driver `0x2122360(mode 6, algo 3, dst, dstlen, src, srclen,
+handle, 0x20b0)`.
+
+A separate payload-side key record exists at `0x9ed4890` (`id 1`, flags `5`, blob
+`0x9e7ef90`, 294 bytes); the blob is an RSA-2048 SubjectPublicKeyInfo, so that
+record is a signature key, not the payload cipher — the payload cipher is the
+`0x2718ce5d` blob named by the entry's crypto record.
