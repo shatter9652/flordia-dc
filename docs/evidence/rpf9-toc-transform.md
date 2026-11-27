@@ -236,6 +236,91 @@ not a solved one.
 
 ### Tooling note
 
-`tools/ps5elf.py` window conversions truncate near 1 MiB (`0x1000B8` bytes), so a
-window that looks large silently covers only its first megabyte; size windows
-accordingly. Addresses are 32-bit image VAs — `0xb08740`, not `0x0b08740`.
+**Correction to an earlier claim in this file:** `tools/ps5elf.py` does not
+truncate. A 1 MiB output simply meant the requested window *was* 1 MiB
+(`0xb00000:0xc00000`); windows are honoured exactly. What is real: these are
+32-bit image VAs, so the crypto module is `0xb08740`, not `0x0b08740`, and
+`0x9c4cfc0`, not `0x09c4cfc0`.
+
+## The AES core: located, and it is AES-256 in CBC
+
+Scanning the whole image for RIP-relative references to the four T-tables and
+the S-box gives ten sites, all inside one module:
+
+```
+0x438806e  Te0      0x438b95b  Te0
+0x438816c  Te0      0x438c639  Td0
+0x4388516  Te0      0x438d237  inverse S-box
+0x43888ea  Te0      0x438d3d6  (16-table S-box set)
+0x4388a66  Te0/0x4388a6d Td0
+```
+
+That module runs `0x4388xxx`–`0x438dxxx` and contains `0x438b830` — the exact
+function `0xb08740`'s cases call. So the chain is confirmed end to end:
+`0x8400600` → `0xb08740` (factory) → `0x438b830`/AES module at `0x4388xxx`.
+
+Decompiling the routine at `0x438806e` gives the **key expansion**, and the loop
+bound is the key length:
+
+```c
+uVar4 = *(uint *)(in_RBX + 0x1c + lVar5 * 8);
+in_R8D = *(byte *)((uVar4 >> 0x18) * 4 + 0x9c4d3c0)
+       ^ *(byte *)((uVar4 & 0xff) * 4 + 0x9c4cfc1) << 8
+       ^ *(byte *)(((uVar4 >> 8) & 0xff) * 4 + 0x9c4dbc2) << 0x10
+       ^ *(byte *)(...) * 4 + 0x9c4d7c3) << 0x18
+       ^ in_R8D ^ *(uint *)(lVar5 + 0x9c4dfc0);
+...
+if (lVar5 == 0x18) break;
+lVar5 = lVar5 + 4;
+```
+
+Eight words per iteration, seven iterations, `0x18` terminal index →
+**4 + 56 = 60 round-key words = 240 bytes = AES-256**, 14 rounds. The S-box
+lookups read one *byte* at a time out of each rotated table (`+1`, `+0`, `+2`,
+`+3` of `0x9c4cfc0`, `0x9c4d3c0`, `0x9c4dbc0`, `0x9c4d7c0`), which is how this
+build gets 16 per-position S-boxes out of four T-tables.
+
+### Mode
+
+`0x8e1100` stores a 16-byte value into the context, and the reference
+implementation in `6RE/tools/rpf9` runs CBC with a fixed 16-byte IV over exactly
+`[0x40, payload_start)`. **AES-256-CBC, 16-byte IV, whole table region in one
+chain** is the consistent reading.
+
+## 6RE/tools/rpf9 is a working implementation — read it before re-deriving anything
+
+`src/crypto.rs` + `src/keyring.rs` implement the same cipher and explain why
+vanilla AES attempts fail:
+
+| item | meaning |
+|---|---|
+| `data/tables.bin` (0x5000) | 16 S-boxes × 0x100, then 16 T-tables × 0x400 |
+| `data/keys.bin` | 9 key blobs of `0x10f4` each, magic `8e9b3b4e` |
+| blob layout | `+0x004` 60 words (240 B) round keys, `+0x0f4` 0x1000 B **key-dependent S-box set** |
+| rounds | `round == 0x0c` → 7 double-rounds → **14** |
+| mode | CBC, `TAG_IV = c17aad4c53d60efad601d6aeba5fc60e` |
+| key choice | try all 9, keep the one producing the longest valid 24-byte record run |
+
+The S-boxes are **keyed** (per-blob, 0x1000 bytes each), not the standard
+Rijndael ones. That is precisely why my earlier AES-128 ECB/CBC test against
+`shaders.rpf` could not work: wrong key length, wrong S-boxes, wrong mode.
+
+Record format that tool recovers (24 bytes, `entry.rs`):
+
+```
++0x00 u32 size_hint    +0x04 u32 must be 0    +0x08 u32 offset/16
++0x0C u32 flags        +0x10 u32 aux          +0x14 u32 must be 0
+```
+
+with a fixed 16-byte graph-header magic
+`40000000000000008909c5f2fa0df733` somewhere in the decrypted region.
+
+### Status of the key for this dump (honest)
+
+I ported that exact algorithm to Python and ran all nine blobs against
+`shaders.rpf` (A=0x280) and `common.rpf` (A=0x6260): **no graph magic, zero
+valid records, for every key.** So either the embedded set does not cover this
+build or the port has a defect. `cargo test` plus
+`cargo run --example cli -- ../../DUMPS/PS5Dump/common.rpf --list` would settle
+it in one step, but that run was interrupted before producing output — this is
+an open check, not a negative result.
