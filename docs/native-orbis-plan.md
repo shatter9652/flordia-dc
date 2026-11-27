@@ -46,6 +46,32 @@ handles the `*obj < 2` case with `hdr+4 - hdr+8` bytes from `obj+0x38`.
 That is enough to write a reader, and it is portable C++ — no console APIs in
 it. **This is the one feature that transfers for free.**
 
+## M1 status: the reader exists, listing needs the key
+
+`src/file/packfile_rpf9.{h,cpp}` implements the header, the geometry and the
+entry parser; `src/file/rpf9_list.cpp` is the test tool (`make -C src/file`,
+then `./rpf9_list --selftest --file …`). The self-test builds a plaintext
+archive to this layout and checks 28 assertions: header fields, alignment
+selection (4 plain / 16 encrypted), table geometry, entry parse, unknown-type
+rejection, and the decryptor hook (ciphertext refused without it, parsed with it).
+
+On the retail archives the header parses and the geometry is consistent:
+
+```
+shaders.rpf      file=246563760  entries=4 keyId=1 flags=0x0f mode=7
+                 entries@0x40 payload@0x1b0 data@0x1e0 decryptSpan=0x90  toc=ciphertext
+common.rpf       file=58591712   entries=4 keyId=2 stride=418   decryptSpan=0x5030
+levels_concat    file=202542676032 entries=4 keyId=2 stride=2049 decryptSpan=0x12050
+appdata0.rpf     file=7232       entries=4 keyId=1 stride=2     decryptSpan=0x130
+```
+
+**All twenty retail archives are TOC-encrypted** (`flags` is `0x0f` in every
+one), so `readEntries()` correctly refuses them and no key ships here. Listing
+real entries therefore needs the decryptor on the other side of that hook — the
+helper at `0x8400600` that `0x8e1100` calls with `{data, span}` — or an
+unencrypted archive built by the same tool chain. The header, geometry and
+type/offset model are settled; only the transform is missing.
+
 ## Feature portability
 
 | feature | transfers? | why |
@@ -93,10 +119,11 @@ inside Orbis legally**, and the only one where every line is ours.
 The mistake to avoid is starting at gameplay. Start at the pipeline that proves
 the console can show the world:
 
-1. **M1 — RPF9 mount and listing, on console.** Port the reader from the
-   decompilation into `src/file/packfile_rpf9.cpp` (plain C++, no Orbis calls),
-   then wrap it with an OpenOrbis file device. Exit criterion: the console lists
-   the entries of `shaders.rpf` and `common.rpf` and prints a CRC32 per entry.
+1. **M1 — RPF9 mount and listing, on console.** Reader written
+   (`src/file/packfile_rpf9.cpp`, plain C++, no Orbis calls); the remaining work
+   is the TOC decryptor (see the M1 status above) and an OpenOrbis file device.
+   Exit criterion: the console lists the entries of `shaders.rpf` and
+   `common.rpf` and prints a CRC32 per entry.
 2. **M2 — ttdb parse.** Walk `data/ttdb/*` and dump table names, row counts and
    field types. Exit criterion: a text dump of every ttdb table on the console.
 3. **M3 — one cell on screen.** Stream one `levels_concat.rpf` cell, build a draw
