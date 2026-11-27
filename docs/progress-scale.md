@@ -74,12 +74,25 @@ entries whose crypto record carries a non-zero pattern — `(0x400, 0x400, 0x1c0
 keystream block shift, or an offset-derived counter base, so the pattern selects
 a chunked framing that is still undecoded (`docs/evidence/rpf9-toc-transform.md`).
 
-**Level 8 — Extracts. Blocked on that framing.**
+**Level 8 of 10 — Extracts. Reached, with one named class outstanding.**
 
-A whole-archive extract writes every entry and verifies every size; it needs the
-patterned entries to decode, so it is not claimed. Levels 9 and 10 depend on it.
-The name heap is also still encrypted, so entries are addressed by id rather than
-by path.
+The payload turned out to be only *partly* encrypted: the crypto record's pattern
+`(0x400, 0x400, 0x1c00, 0, 4)` masks the first `0x800` bytes and leaves the rest
+of the stored range plaintext, and `(0, 0x1000, 0, 0, 4)` covers the whole range.
+With that rule, `tools/rpf9extract.py` writes every entry of an archive, records
+a manifest and verifies each file against its recorded unpacked size, with no
+manual per-file steps.
+
+Demonstrated on ten archives: `appdata0` 2/2, `navmeshes` 1/1, `script_concat`
+2/2, `levels` 29/29 and `shaders` 2/2 extract completely and verify; `common`
+415/418, `packs` 106/112, `anim` 24/30, `textures` 1/2 and `data` 545/659. Two
+runs were written to disk and the files re-checked one by one (`appdata0` 2/2,
+`levels` 29/29, exact sizes).
+
+The outstanding class is entries with more than `0x1c00` stored bytes — the
+pattern's third word — and it is concentrated in `data`. Levels 9 and 10 need
+that class, and the name heap is still encrypted so entries are addressed by id
+rather than by path.
 
 ## What the levels are not
 

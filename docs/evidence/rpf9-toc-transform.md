@@ -1178,19 +1178,62 @@ column walk, fresh `init_state` per entry, `stream_decrypt`, raw deflate
 `appdata0` row 0 yields readable content (`SUB_STORY`, `sub_story`, `verified`,
 `930.048.020`, `LSCH`), so the plaintext is real, not a lucky inflate.
 
-**Still open: non-zero crypto patterns.** Every failure is an entry whose crypto
-record has a non-zero pattern — `(0x400, 0x400, 0x1c00, 0, 4)`, against
-`(0, 0x1000, 0, 0, 4)` for the entries that work — and the three known cases are
-`common` rows 410 (2064 B) and 416 (2096 B) and `data` row 656 (11584 B). None of
-them inflates under: the recorded IV, the first 16 body bytes as a seed, that
-seed with a 16-byte skip, a keystream block offset of 0..255, or counter bases
-derived from the entry offset (`offset/16`, `offset/0x400`, `offset/0x20b0`). So
-the pattern selects a chunked framing that is not yet decoded, not a different
-key or offset. The game's own payload path is located for that follow-up:
-vtable `0xa396ad8` (`+0x00 0x840b5a0`, `+0x08 0x18e9810`, `+0x10 0x1cc2f20`,
-`+0x18 0x840b5e0`), whose `+0x18` slot builds a descriptor and hands it to the
-generic decode driver `0x2122360(mode 6, algo 3, dst, dstlen, src, srclen,
-handle, 0x20b0)`.
+**The payload is only partly encrypted.** The crypto record's five-word pattern
+decides how much of the stored range the cipher covers:
+
+| archive | pattern `(p0, p1, p2, p3, p4)` | covered |
+|---|---|---|
+| `appdata0` | `(0, 0x1000, 0, 0, 4)` | the whole stored range |
+| `common`, `data`, `packs`, `anim`, `textures` | `(0x400, 0x400, 0x1c00, 0, 4)` | the first `p0 + p1` = `0x800` bytes |
+
+Measured, not inferred: for a patterned entry, decrypting only the first
+`0x800` bytes and leaving the rest of the stored range alone yields a clean raw
+deflate stream. A cut scan on `common` rows 410 (2064 B) and 416 (2096 B) finds
+the transition at exactly byte `2048`, and every patterned entry whose stored
+size is at most `0x1c00` then verifies against its recorded unpacked size. So
+the pattern is an encryption *mask*, not a chunked stream: the rest of the
+payload is plaintext, which is why treating it as ciphertext produced garbage
+without ever failing a key check.
+
+The rule `covered = len(stored)` when `p2 == 0`, else `p0 + p1` is what
+`tools/rpf9extract.py` implements. The state is still fresh per entry.
+
+**Whole-archive extraction.** `tools/rpf9extract.py --archive A.rpf --out DIR`
+writes every entry, records a manifest, and verifies each written file against
+the file entry's unpacked size. Measured across the ten archives small enough
+to walk here:
+
+| archive | rows | verified | of which stored | failed |
+|---|---|---|---|---|
+| `appdata0` | 2 | 2 | 0 | 0 |
+| `navmeshes` | 1 | 1 | 1 | 0 |
+| `script_concat` | 2 | 2 | 2 | 0 |
+| `levels` | 29 | 29 | 28 | 0 |
+| `shaders` | 2 | 2 | 2 | 0 |
+| `common` | 418 | 415 | 269 | 3 |
+| `packs` | 112 | 106 | 102 | 6 |
+| `anim` | 30 | 24 | 14 | 6 |
+| `textures` | 2 | 1 | 1 | 1 |
+| `data` | 659 | 545 | 384 | 114 |
+
+`appdata0` and `levels` were also written to disk and re-checked file by file:
+2/2 and 29/29 files present with exactly the recorded sizes, and `appdata0`
+row 0 starts `PSIN`.
+
+**Still open: entries larger than `0x1c00` stored bytes.** Every failure is in
+that class, and `0x1c00` is literally the pattern's third word. None of the
+candidate framings reproduces the recorded size: a periodic mask with period
+`0x1c00` or `0x2400` and an `0x800` (or `0x400`, `0xc00`) prefix, with the
+keystream either absolute, cumulative or restarted per period; suffix masks;
+a masked head plus masked tail; per-16-byte-block toggles. The size oracle is
+weak for large payloads — several different corrupt tails land on the recorded
+length with `eof` set — so these need the game's own chunk reader rather than
+more guessing: vtable `0xa396ad8` (`+0x00 0x840b5a0`, `+0x08 0x18e9810`,
+`+0x10 0x1cc2f20`, `+0x18 0x840b5e0`), whose `+0x18` slot builds a descriptor and
+hands it to the generic decode driver
+`0x2122360(mode 6, algo 3, dst, dstlen, src, srclen, handle, 0x20b0)`.
+`0x20b0` is an output-buffer size, so that driver streams; the pattern is very
+likely applied per block there.
 
 A separate payload-side key record exists at `0x9ed4890` (`id 1`, flags `5`, blob
 `0x9e7ef90`, 294 bytes); the blob is an RSA-2048 SubjectPublicKeyInfo, so that

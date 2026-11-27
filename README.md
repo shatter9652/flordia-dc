@@ -25,12 +25,13 @@ starts**, because there is no source to compare against — it is coverage, not 
 
 ## Current objective
 
-**Objective 1 — RPF loading / extracting / streaming — level 7 of 10 ("Decompresses").**
-Under the working scale in `docs/progress-scale.md`, levels 5–7 are met: the table
+**Objective 1 — RPF loading / extracting / streaming — level 8 of 10 ("Extracts").**
+Under the working scale in `docs/progress-scale.md`, levels 5–8 are met: the table
 of contents decrypts on all 18 retail archives, the column store parses into real
 entries (offset, stored and unpacked size, flags, crypto record, 64-bit file id,
-32-bit key), and entry payloads now decrypt and inflate at their recorded sizes.
-The C++ parse agrees with an independent one on 1,081 entries.
+32-bit key), entry payloads decrypt and inflate at their recorded sizes, and
+`tools/rpf9extract.py` writes a whole archive out and verifies every file. The
+C++ parse agrees with an independent one on 1,081 entries.
 
 The payload cipher is the white-box CTR registered at vtable `0xa397c20`:
 `+0x10 → 0x3985bc0` initialises a `0x1120`-byte state from a `0x2718ce5d` key blob
@@ -42,13 +43,18 @@ gate: it is a lazy global-table loader that returns the fixed success token
 outside the game. The fault that blocked it was an unpatched `memset` import at
 `0x84783b0`.
 
-`tools/rpf9payload.py` runs the chain natively: `appdata0` decrypts and inflates
-2/2 rows to their exact sizes with readable `PSIN`/`SUB_STORY` content; `common`
-returns 123 encrypted plus 269 stored rows and `data` 109 plus 384. Level 8
-("Extracts") is what remains: entries whose crypto record carries a non-zero
-pattern (`0x400, 0x400, 0x1c00, 0, 4`) — three known cases — use a chunked framing
-that is still undecoded. The name heap is still encrypted, so entries are
-addressed by id rather than by path.
+The last piece was that the payload is only *partly* encrypted: the crypto
+record's pattern `(0x400, 0x400, 0x1c00, 0, 4)` masks the first `0x800` bytes and
+leaves the rest of the stored range plaintext, while `(0, 0x1000, 0, 0, 4)`
+covers the whole range. With that rule, `tools/rpf9extract.py` extracts whole
+archives and verifies every size: `appdata0` 2/2, `navmeshes` 1/1,
+`script_concat` 2/2, `levels` 29/29 and `shaders` 2/2 complete, `common` 415/418,
+`packs` 106/112, `anim` 24/30, `textures` 1/2 and `data` 545/659. Runs were
+written to disk and re-checked file by file (`appdata0` 2/2, `levels` 29/29).
+
+What remains for level 9 is one named class — entries over `0x1c00` stored bytes,
+mostly in `data` — plus the encrypted name heap, so entries are still addressed
+by id rather than by path.
 
 `docs/evidence/rpf9-toc-transform.md` has the addresses, the state layout and the
 measurements.
@@ -70,7 +76,7 @@ measurements.
 
 | # | Objective | Level | Name |
 |---|---|---|---|
-| 1 | RPF loading / extracting / streaming | **7** | Decompresses |
+| 1 | RPF loading / extracting / streaming | **8** | Extracts |
 | 2 | Fuel | 2 | Anchors |
 | 3 | Police & wanted | 2 | Anchors |
 | 4 | Taunt / aggravate / diffuse / threaten | 1 | Nothing |
@@ -156,8 +162,9 @@ permutations.
 
 No key is committed. `tools/rpf9key.py` resolves ids and verifies the tables,
 `tools/rpf9wb.py` runs the game's own decryptor natively, `tools/rpf9cols.py`
-dumps the decrypted table of contents, and `tools/rpf9payload.py` runs the payload
-cipher (init plus CTR decrypt) and inflates entries; the same file holds the full
+dumps the decrypted table of contents, `tools/rpf9payload.py` runs the payload
+cipher (init plus CTR decrypt) and inflates entries, and `tools/rpf9extract.py`
+extracts a whole archive; `docs/evidence/rpf9-toc-transform.md` is the full
 record.
 
 What the plaintext buys is the store behind it. The table of contents is not an
