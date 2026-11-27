@@ -139,3 +139,103 @@ enum rather than a byte length.
   reappear across files with the same selector.
 * The vtable at `0xa3b1e58` — its `Encrypt`/`Decrypt`/`SetKey` slots are the
   actual primitives.
+
+## Jump table 0x9d4d350 enumerated — it is a switch, not a table of algorithms
+
+All 23 entries resolve inside `0x00b08790`–`0x00b08c9b`, i.e. *within the body of
+`0xb08740` itself*. So `0xb08740` is one hand-written MSVC switch that jumps to
+local blocks, not a registry of separate algorithm constructors. Offsets are
+signed 32-bit displacements from `0x9d4d350`:
+
+| index | target | note |
+|---|---|---|
+| 0 | 0xb08b41 | |
+| 1 | 0xb08921 | used by retail selector 1 |
+| 2 | 0xb08ab5 | used by retail selector 2 |
+| 3 | 0xb08853 | allocates only `0x40` |
+| 4–15 | 0xb08790 | begins `INT 0x41` — unsupported-selector assert |
+| 16 | 0xb08c9b | |
+| 17 | 0xb088c8 | |
+| 18 | 0xb08a5c | |
+| 19 | 0xb08c42 | |
+| 20 | 0xb089aa | |
+| 21 | 0xb08a03 | |
+| 22 | 0xb08bcf | |
+
+Selector values 4–15 abort, so the reachable set from the `0x9e607e0` table
+(`1, 2, 13…18`) is exactly `{1, 2, 13→assert, 14→assert, 15→assert, 16, 17, 18}`.
+Retail archives only ever ask for 1 or 2.
+
+### Cases 1 and 2
+
+Both allocate the same `0x1a0` (416-byte) object and differ only in one mode
+byte, so they are two variants of one construction, not two ciphers:
+
+```
+case 1 (0xb08921)                case 2 (0xb08ab5)
+MOV [RAX+8], 0x2                 MOV [RAX+8], 0x1
+VXORPS/VMOVUPS [RAX+0x10]        same zeroing of 0x10..0x30
+LEA RAX,[0xa3b1f18]              same
+LEA RAX,[0xa3b1eb8]              same (sub-object at +0x40)
+CALL 0x438b830(sub, 0, -2)       same
+```
+
+`0x438b830` is a reset: it zeroes the sub-object through `[+0x50]` and stores the
+second argument. Case 3 allocates only `0x40`, a smaller object entirely.
+
+The three vtables (`0xa3b1e58`, `0xa3b1eb8`, `0xa3b1f18`) read as **zero bytes in
+the file image**. PS5 keeps relocations and patches them at load, so method
+pointers cannot be recovered statically — vtable-driven identification is a dead
+end on this artifact.
+
+## The cipher is software AES, and it is in the image
+
+Scanning the data segment for canonical Rijndael constants found a complete
+table-driven implementation:
+
+| object | VA | first word |
+|---|---|---|
+| Te0 | 0x9c4cfc0 | `0xc66363a5` |
+| Te1 | 0x9c4d3c0 | `0xa5c66363` |
+| Td0 | 0x9c4dff0 | `0x51f4a750` |
+| Td1 | 0x9c4e3f0 | standard |
+| inverse S-box | 0x9c4eff0 | `0x52 09 6a d5 …`, one copy |
+
+That is the textbook OpenSSL/Rijndael layout (four 256-dword T-tables plus
+S-boxes). `0xb08740` contains **no** `AESENC`, `AESKEYGENASSIST`, `PCLMUL` or
+`PSHUFB`, so the transform is the software path. A 416-byte context is the
+expected size for round keys plus IV and counters.
+
+Conclusion: **the RPF9 TOC transform is AES** — a per-entry 16-byte material
+block and a selector choosing among two AES constructions in the same factory.
+This matches RAGE's RPF7 design rather than being a bespoke cipher.
+
+## Key material carried in the eboot
+
+`0x8e1100` copies two 16-byte constants into its context templates, both looking
+like key/IV material rather than configuration:
+
+```
+0x9ab0a20  27 b3 a6 d5 3f 7d d6 b1 55 24 d8 31 8a 33 75 82
+0x9ac0a80  7d 27 cb 09 4c a6 46 c0 da 72 c9 50 de 05 4c 5f
+```
+
+(the `0x9ac0a80` block is followed by structured values `0x260, 0x1000000,
+0xe0, 0xe0`, so the 16 bytes are embedded in a config record.)
+
+### Negative test, recorded deliberately
+
+AES-128 ECB and CBC were tried against the first 20 bytes of the `shaders.rpf`
+TOC region (`file 0x40`) with: both eboot constants, and the archive nonce at
+`file 0x10` (`ea1541a407fe53e10070040050010000`), with zero and nonce IVs.
+**No combination produced a plausible first entry type (1, 2 or 6).** So the
+working key is not one of these 16-byte constants used directly at `0x40`; it is
+more likely a 32-byte AES-256 key elsewhere in the image, a CTR-style mode, or
+the encrypted region does not begin at `0x40`. This is a ruled-out hypothesis,
+not a solved one.
+
+### Tooling note
+
+`tools/ps5elf.py` window conversions truncate near 1 MiB (`0x1000B8` bytes), so a
+window that looks large silently covers only its first megabyte; size windows
+accordingly. Addresses are 32-bit image VAs — `0xb08740`, not `0x0b08740`.
