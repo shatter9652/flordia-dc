@@ -945,9 +945,119 @@ Two things this establishes beyond the cipher itself:
 python3 tools/rpf9wb.py --archive ../6RE/DUMPS/PS5Dump/appdata0.rpf
 ```
 
-### What is left for objective 1
+## The column store
 
 The cipher is done: key, key chain, blob decode and the two-stage CBC order all
-reproduce against the shipped archives. What remains is the column store —
-parsing `C`, the row index `D` and the column data `T` — which is a data-layout
-problem, not a cryptographic one.
+reproduce against the shipped archives. The table of contents behind it is a
+column store, and it is now parsed in two places from the same reconstruction:
+`src/file/packfile_rpf9.cpp` (`Rpf9Toc`) and `linux-rpf9-ro/toc.c`.
+
+```
+A = 0x40              nsec x { u16 id, u16, u32 offset from B }
+B = A + r16(nsec*8)     bsz bytes of section payload
+C = r16(B + bsz)        ncol x 24-byte column records
+D = C + ncol*24         rows x indexed x w bytes of row index
+T = align8(D + ...)     column data
+```
+
+A column record is `{ u64 hash; u32 count; u32 offset; u16 elem_size; u16 flags }`
+and only the first `0x14` bytes are read. `flags == 0` marks an indexed column,
+whose elements start at `T + offset` and are found through the row index at `D`;
+any other value marks a direct column, one element per row, addressed at
+`idx_end + row * elem_size` with no index. The count of direct columns is the
+header's `n22`, so `indexed + n22 == ncol` is a usable consistency check, and a
+mismatch is rejected rather than guessed at.
+
+The row index is `rows x indexed x w` bytes of little-endian element numbers.
+An all-ones entry means the row has no value in that column, which is how
+resource-only rows appear in a column they do not fill.
+
+### The six columns
+
+| hash                 | size | kind    | count == rows | first values (`appdata0`)            |
+| -------------------- | ---- | ------- | ------------- | ------------------------------------ |
+| `286030a358a789fb`   | 64   | indexed | yes           | crypto record                        |
+| `33f70dfaf2c50989`   | 24   | indexed | yes           | file entry                           |
+| `73bcb72dce74f11f`   | 8    | indexed | yes           | `092df78629f7833a`                   |
+| `ba180afb232d1b4b`   | 20   | indexed | yes           | resource entry (`data` only)         |
+| `b7076b6245d35fb5`   | 4    | indexed | yes           | `12fd3d26`, `820d8108`               |
+| `b6f5bdb2c66da2e9`   | 8    | direct  | yes           | `cd6c2b96643450bd`, `712b3a7ee90acc5f` |
+
+### `b7076b6245d35fb5` is the equality-searched key
+
+Every column hash appears as a `movabs rsi, <imm64>` in the image except one, so
+the code names what it looks up. `0x1cc1900` is the lookup, and it is the only
+routine that names this hash:
+
+```
+1cc1a8d: movabs rsi,0xb7076b6245d35fb5
+1cc1a97: or     r13d,eax                  ; r13d = element index
+1cc1a9a: mov    rax,QWORD PTR [r15]
+1cc1a9d: mov    edx,r13d
+1cc1aa0: call   QWORD PTR [rax+0x400]     ; cell(this, hash, element)
+1cc1ab0: mov    ecx,DWORD PTR [rax]       ; 4-byte element
+1cc1ab2: cmp    ecx,DWORD PTR [rbp-0x2c]  ; against the caller's key
+1cc1ab5: jne    0x1cc1ac7                 ; next element
+1cc1abd: call   0x84012a0                 ; resolve the row, then check a type byte
+```
+
+So the column holds one `u32` per row, is scanned for equality against a
+caller-supplied value, and a hit yields a row whose entry is then checked against
+a type byte. That is an archive key: a 32-bit name hash used to find a row.
+
+Two details worth recording, because they contradict the obvious guess:
+
+- **It is not stored sorted.** `0x1cc1900` has a binary-search branch behind
+  `test BYTE PTR [rax+9], 1`, but the values are not ascending in any retail
+  archive with more than two rows, so the linear branch is the one that runs.
+- **It is not derivable from the other columns.** For `appdata0`, neither the low
+  nor the high half of the file id, and neither half of the direct column, equals
+  `0x12fd3d26`, so this is an independent hash rather than a truncation.
+
+### `b6f5bdb2c66da2e9` is the direct column, addressed by row
+
+The 64-bit value `0xb6f5bdb2c66da2e9` occurs **nowhere in the image**: not as an
+8-byte immediate, not as a `movabs`, and not as either 32-bit half (`e9a26dc6`
+and `b2bdf5b6` both return zero hits across every `PT_LOAD` segment). The game
+therefore never looks this column up by hash.
+
+It is the archive's only direct column — `n22 == 1` in every archive and exactly
+one column carries a non-zero `flags` — so it is reached positionally, at
+`idx_end + row * 8`, one `u64` per row. Its record layout is a bare `u64` with no
+index and no companion table.
+
+What it holds is not settled by the evidence here. The reading that fits is the
+companion half of a 128-bit asset id, since the file-id column is documented as
+the first half of MurmurHash3 x64 128 and this is the only other 8-byte per-row
+value in the archive. That is a hypothesis: confirming it needs a name to hash,
+and the name heap is still encrypted.
+
+### Verification
+
+`src/file/rpf9_list.cpp` builds a table of contents to this layout and checks the
+geometry, the row index, cell addressing and `files()` (46 assertions, all
+passing). Against the real archives, the C++ reader and an independent Python
+parse of the same decrypted table agree on every entry:
+
+```
+appdata0   py=2   cpp=2   MATCH
+common     py=418 cpp=418 MATCH
+data       py=659 cpp=659 MATCH
+shaders    py=2   cpp=2   MATCH
+```
+
+`rpf9_list --toc <decrypted.bin>` reads a table of contents that is already
+plaintext, so a decrypted dump can be inspected without a key being present.
+
+## linux-rpf9-ro
+
+`linux-rpf9-ro/` is a DKMS module that mounts an RPF9 archive read-only. It is
+original code; `linux-apfs-rw/` was read for module structure only. It keeps a
+`struct file` open on the archive, parses the column store with the same
+reconstruction as the C++ reader, and serves entries named by their 64-bit file
+id, decrypting AES-256-CBC payloads on the way out per each entry's crypto record
+and block pattern.
+
+No key ships. The table of contents is handed in already decrypted (`toc_path=`)
+because its first stage uses the image's white-box block cipher, and payload keys
+come from a decoded key table (`key_path=`). See `linux-rpf9-ro/README.md`.
