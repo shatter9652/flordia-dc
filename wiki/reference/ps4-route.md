@@ -23,6 +23,17 @@ Reasoning and numbers in `docs/ps4-downport.md`. The short version:
   homebrew), Jaguar 1.6 GHz, HDD, no mesh/primitive shaders, no FSR2 library**
   (the game imports `libScePsml_mfsr2` 9 functions).
 
+## Porting into GTAVSRC?
+
+The engine half works and the game half does not. `MiscRef/GTAVSRC` already has
+the PS4 GNM device (`grcore/device_gnm.cpp`, 3,573 lines), `fiPackfile` with a
+16-byte RPF7 header and AES/TransformIT decryption, and the entry/name-shift
+layout. RPF9 is a version switch plus the TOC geometry recovered at `0x8e0990` —
+days, not a project. GTA VI's *gameplay* cannot be dropped in: it needs RAGE 9
+types and the `ttdb` schemas, which GTAVSRC does not have.
+
+Policy: GTAVSRC is read-only here; reuse by copying into `gta6decomp/`.
+
 ## Answer
 
 **HLE first (EmuFive/KytyPS5 stack), native recomp/downport second, decompilation

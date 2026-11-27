@@ -92,6 +92,44 @@ AGC at all, and it is what makes the RPF9 layer reusable by both routes above.
 Reimplementation from the pseudocode is the same cost as decompilation with the
 fidelity thrown away, so it is never the fast option.
 
+## Could the recovered functions just go into `MiscRef/GTAVSRC`?
+
+That question splits in two, and the halves have opposite answers.
+
+**The engine/IO layer: yes, and cheaply.** GTAVSRC is the same RAGE lineage, and
+its packfile code is already shaped for this:
+
+* `rage/base/src/file/packfile.h` declares `fiPackHeader` as 16 bytes —
+  `m_Magic`, `m_EntryCount`, `m_NameHeapSize`, `m_Encrypted` (the AES key id) —
+  and `fiPackEntry` as the 64-bit RPF7 entry with a 16-bit name offset and a
+  per-archive name shift. RPF9 keeps the same idea and grows the header instead:
+  the game's `shaders.rpf` carries `9FPR` plus `0x280, 0x260, 0x70`, a 16-byte
+  field, counts at `+0x20`/`+0x22`, a stride at `+0x24`, a key id at `+0x2C` and
+  flags at `+0x2D` — the fields the recovered open path at `0x8e0990` reads.
+* `fiPackfile::Init` (`packfile.cpp:430`) already reads 16 bytes, byte-swaps for
+  foreign archives, and decrypts the entry table with `AES::Decrypt(keyId,
+  transformitSelector, …)` or `TransformITDecrypt`.
+* `rage/base/src/grcore/device_gnm.cpp` is a **3,573-line PS4 GNM renderer**, so
+  the tree already targets the console the question is about.
+
+So an RPF9 variant in `fiPackfile` is a version switch plus the TOC geometry
+from `0x8e0990` — days of work, not a project, and it is exactly what objective 1
+produces anyway. That would let a RAGE-shaped host read GTA VI's archives.
+
+**The gameplay layer: no.** GTA VI's mission, AI, camera and streaming code is
+written against RAGE 9 types and the `ttdb` data schemas in
+`6RE/DUMPS/PS5Dump/data/ttdb`, none of which exist in GTAVSRC, whose `game/`
+layer is GTA V's. A copied function would call into structures that are not
+present; satisfying them means porting the game class by class — decompilation
+cost, paid again inside a second engine, for a result that is neither GTA V nor
+GTA VI.
+
+Two practical notes: `MiscRef/GTAVSRC` is read-only reference material here (not
+to be modified), so anything reused has to be copied into `gta6decomp/`; and the
+tree builds through `script/dev_ng/GTA5_SP.sln` (MSVC), while `device_gnm.cpp`
+calls `sceGnm*`, which needs SDK headers — OpenOrbis can supply those, but
+linking this tree against it is a separate project.
+
 ## Recommendation
 
 **Use the HLE stack first.** Boot the eboot under KytyPS5 on this PC (AVX2 is
@@ -103,5 +141,10 @@ shader/CPU translators are already written.
 Only then decide whether a native downport is worth it: it needs AGC Gen5 → Gen4
 command translation plus a memory plan, and no amount of decompilation makes
 that cheaper.
+
+If a native PS4 build is the goal, the cheapest long-term shape is **GTAVSRC as
+the host**: it already has the PS4 GNM device, the packfile/streaming layer and
+the engine plumbing, and RPF9 support is the one part it lacks that this
+repository is already producing.
 
 Related: [[port-paths]], [[shader-compilers]], [[objective-1-rpf]]
