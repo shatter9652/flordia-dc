@@ -25,6 +25,7 @@ deliverables; these pages are the index into them and the trail of decisions.
 - [[rpf9-open-path]] — the RPF9 open path recovered at 0x8e0990.
 - [[shader-compilers]] — the SDK's psslc binaries, decompiled into
   `ps_shader_dc/`.
+- [[port-paths]] — recomp vs HLE vs decomp, with the measured import counts.
 - [[ps5-toolchain]] — which tools work on this machine and which do not.
 - [[2026-11-25]] — session log for this pass.
 
