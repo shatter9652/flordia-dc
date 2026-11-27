@@ -453,3 +453,90 @@ For the downport, none of this needs reproducing: the reader only needs
 `(key blob, IV) → CBC block decrypt`, and the blob layout above is the contract.
 `0x438b830` is the same reset that lives in the AES module at `0x4388xxx`, which
 is why the factory call and the primitive line up.
+
+## Selector 3 → key id 0x10000005 (read out of `0x8e1100`)
+
+The code that consumes `header[0x2E]` is `FUN_008e1100` itself, and it follows
+SixNG's rule exactly:
+
+```c
+bVar6 = *(byte *)(*(long *)(param_1 + 2) + 0x2e) >> 1;      /* key selector */
+if (bVar6 == 3) {
+    _DAT_0e060f58 = 0x10000005;                              /* key id        */
+    _DAT_0e060f5c = 0x10;                                    /* 16-byte IV    */
+    _DAT_0e060f5e = _DAT_09ac0a80;                           /* IV bytes      */
+    uRam000000000e060f66 = uRam0000000009ac0a88;
+} else if (bVar6 == 1) {
+    _DAT_0e060f38 = 1;
+    _DAT_0e060f3c = 3;
+    _DAT_0e060f3e = _DAT_09ab0a20;                           /* other key     */
+}
+cVar11 = (*(byte *)(lVar3 + 0x2e) & 1) + 1;                  /* mode          */
+if (cVar11 == '\x02') {                                      /* CBC           */
+    local_50 = r16(nsec * 8);            /* span 1 length  [A, B)     */
+    local_40 = bsz - tail;               /* span 2 length  [B, B+bsz-tail) */
+    uVar12 = 2;
+}
+cVar11 = func_0x08400600(&local_58, uVar12);
+```
+
+That is the whole first stage in one call: two spans, one chained run, the
+built-in key. Both prior 16-byte constants are accounted for — `0x9ac0a80` is
+the selector-3 IV, `0x9ab0a20` the selector-1 IV.
+
+**Summary: PS5 header key = id `0x10000005`, IV `7d27cb09 4ca646c0 da72c950
+de054c5f`, CBC.**
+
+## The key list, and why the blob pointer is zero
+
+A 24-byte record list exists at `0x9ed45f0`-ish with ids and `0x10f4` lengths:
+
+```
+id 01000080 ... 10000008 1000000f 10000010 10000011 10000012 10000013
+   10000014 10000005 10000006 10000021 ... 10000028
+```
+
+`0x10000005` is present, so this is SixNG's `KEY_LIST` shape
+(`{ u64 id<<32|flag<<24, u64 address, u64 length }`). The address fields read
+as **zero in the file** because PS5 keeps relocations and patches them at load.
+Mapping a key id to its blob therefore needs the `PT_SCE_RELA` entries for that
+range, not a scan of the file image.
+
+## The S-box sets are per-key: this is white-box, not keyed AES
+
+Comparing the `0x1000`-byte S-box region across the blobs:
+
+| blob | rk[0] | rk[1] | S-box set sha8 |
+|---|---|---|---|
+| 0x9e67670 | 3a42e942 | efb7d3da | 9244264f |
+| 0x9e69890 | 34112d98 | 14f894cd | f35f29af |
+| 0x9e6a990 | ca3d3285 | c7f21fb4 | 69dc0830 |
+| 0x9e6ba90 | 3cda2540 | b8ae6ae3 | ce3760aa |
+| 0x9e6cb90 | 2280e98a | 8c68e1e6 | f95c7ddf |
+| 0x9e6dc90 | cde18d60 | bccee862 | d6375997 |
+| 0x9e6ed90 | 04ed81cd | 806e0a9c | 646d7b22 |
+| 0x9e6fe90 | c2795db5 | bb4ef90e | 68e78e38 |
+| 0x9e70f90 | b52f0e98 | d80f98a6 | 168697c1 |
+
+Eleven of eleven sampled sets are distinct. Each first S-box is a permutation of
+0..255, but the sixteen S-boxes *within* one blob are **not** identical. So the
+transform is keyed at the S-box level: a white-box construction, not AES with a
+different key. This is why round-key-only decryption cannot work.
+
+## Decrypt attempts, and the result
+
+With the header key id known and its IV in hand, I tried 72 hypotheses: the nine
+blobs × four S-box placements (`std`, per-byte-position, per-round,
+round+position) × both IVs, each decrypting `[A, B)` (32 bytes for `nsec=4`) as
+CBC and scoring the section table (ids in `1..nsec`, offsets `< bsz`).
+
+**Every one scored 0** — no id was in range and no offset was below `bsz`. So
+none of the straightforward AES-256 placements is the real round structure. The
+oracle itself is sound and cheap (8 possible points per attempt), so the next
+step is to read the actual decrypt loop at `0x438c639` (`Td0` reference) and
+`0x438d237` (inverse S-box reference) and transcribe its table indices, rather
+than guessing at them.
+
+What is now settled: selector → key id `0x10000005`, IV, CBC mode, span layout,
+key blob layout, and that the S-boxes are per-key. What is open: the round
+function's exact use of those tables.
