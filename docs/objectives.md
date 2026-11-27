@@ -11,7 +11,7 @@ objectives to exist first.
 
 | # | Objective | State | First evidence |
 |---|---|---|---|
-| 1 | **RPF loading / extracting** (archives, packfile index, streaming) | started — **level 5/10 "Index"** (`docs/progress-scale.md`) | `RPF9` magic `0x52504639` in `.text` → `FUN_00fc21c0`, `FUN_01fb2600` |
+| 1 | **RPF loading / extracting** (archives, packfile index, streaming) | level 5 **complete** — **5/10 "Index"** (`docs/progress-scale.md`) | `RPF9` magic `0x52504639` in `.text` → `FUN_00fc21c0`, `FUN_01fb2600` |
 | 2 | **Fuel** (tank, consumption, low-fuel dash state) | anchors only | literal `LOW_FUELH` |
 | 3 | **Police & wanted** (crime tracking, wanted level, dispatch) | anchors only | literals `Wanted Tuning`, `Crime Tuning`, `CrimeReport`, `CrimeChainId`, `CrimeStgEndRsn`, `CrimeCurr`, `CrimeTgt` |
 | 4 | **Taunt / aggravate / diffuse / threaten** (ped interaction set) | unanchored | see note below |
@@ -87,10 +87,12 @@ reconstructs both functions with names, and syntax-checks clean under
 | key source | `rage::cryKeyRing`, supplied at run time | the retail arrays are data, not source: `unique_key_gta5_xboxone` is still at RVA `0x65b5758` |
 
 The encryption half of the objective is written up separately in
-`docs/rpf-crypto.md`: the block, the measured header, the two gaps (the RPF9 key
-is not in the image's GTA V arrays, and the entry records are variable-length, so
-their fields cannot be placed without it), and the measured negative result of
-trying all four GTA V keys on a 1.0.2.1 archive.
+`docs/rpf-crypto.md`. Both gaps it recorded are now closed: the PS5 build's
+own keyed cipher decrypts the TOC on all 18 retail archives (white-box, not
+the RAGE AES block), and the entry records are a column store whose fields are
+placed and verified. `docs/evidence/rpf9-toc-transform.md` has the record; the
+remaining gap to level 6 is the decompression hand-off, and entries are
+addressed by id because the name heap is still encrypted.
 
 Work order inside the objective:
 

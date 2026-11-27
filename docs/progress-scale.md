@@ -43,7 +43,16 @@ recovered from the PS5 build as a keyed index — `fiPackEntry_Offset`,
 `fiPackEntry_Handle`, `fiPackEntry_IsCompressed`, `fiPackEntry_MakeId` — and the
 directory scan that fills the handle array is transcribed (`fiFile_ScanDirectory`).
 
-Level 6 needs the TOC contents and the decompression hand-off. The TOC is still
-opaque (`docs/rpf-crypto.md`) and `fiPackEntry_Read` keeps only the arithmetic
-that decides which bytes are read, not the full diagnostic path. So the level is
-5, and the gap to 6 is named rather than papered over.
+Level 5 is now complete rather than inferred. The table of contents decrypts on
+all 18 retail archives, and the store behind it parses into real records in
+`src/file/packfile_rpf9.cpp`: an id or a 32-bit name hash becomes a row, and
+every field of that row is measured — offset, stored and unpacked size, flags,
+crypto record, file id. The archive's own lookup body (`0x1cc1900`) is what names
+the searched column, and the six column hashes are identified from the code that
+loads them. `docs/evidence/rpf9-toc-transform.md` has the evidence.
+
+Level 6 asks for reading, decompressing and handing bytes back. The bytes are
+locatable and their sizes and compression flag are known, but the decompression
+hand-off itself is not written out, so the rung is not claimed. The name heap is a
+second open item: it is encrypted with a key the image does not expose here. So
+the level is 5, complete, and the gap to 6 is named rather than papered over.

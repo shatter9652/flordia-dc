@@ -171,23 +171,23 @@ the algorithm is source, the key is project data.
 
 VI ships for PS5 as well, and its `eboot.bin` is a SELF container around a
 plaintext Prospero ELF, so the same layer decompiles a second time from a
-different compiler (`docs/ps5-build.md`, `tools/ps5elf.py`). It does not change
-the conclusion, but it removes two of the open edges:
+different compiler (`docs/ps5-build.md`, `tools/ps5elf.py`). It changes the conclusion, and it removes two of the open edges:
 
 | Question | Xbox Series X | PlayStation 5 |
 |---|---|---|
 | RPF magics in `.text` | `RPF9` only | `RPF9` only — `0x8e0ac2`, `0x8e0d28`, `0x2844e6c`, plus 2 table slots |
 | Header read on the open path | `[device+0x60]` | `[device+0x68]`, 16 bytes at a time |
-| A cipher on the open path | none | none |
+| A cipher on the open path | none | yes — through a vtable, behind the readiness flag `0xac6e511` |
 | AES in the image | table-driven `FUN_0215f06c` | AES-NI: `aesenc` 559, `aesdec` 43, `aeskeygenassist` 31, all at `0x443d…` |
 | `TE0`/`TD0` users | 3 bodies | **no code reference at all** (`0x9c96370` is a data copy) |
 
-The last row is the one worth having. The PS5 build carries the RAGE AES tables
-and nothing loads them, and its own crypto is hardware AES — so the table code in
-`data/aes.cpp` is not what this build would reach for even if the RPF path called
-a cipher, and the RPF path is verifiably not calling one. That makes "the
-decryption, if any, sits below the packfile layer" a cross-build result rather
-than a single-image reading.
+The last row is the one worth having, but not for the reason first written
+here. The PS5 build carries the RAGE AES tables and nothing loads them, so the
+table code in `data/aes.cpp` is not what this build reaches for: the cipher on
+the RPF path is the white-box scheme in `docs/evidence/rpf9-toc-transform.md`.
+What the measurement still establishes is that on Xbox the decryption sits
+below the packfile layer, and that it is not the RAGE AES block on either
+build.
 
 The header is corroborated too. The PS5 open body consumes the same 64-byte
 header at the same offsets — `+0x1A` (u16, the high half of `field18`), `+0x1C`,
@@ -373,32 +373,29 @@ A keyring is text, one key per line, `#` comments allowed:
 The tool prints the header, the cipher length and the shape of the region before
 and after, so a wrong key is visible immediately instead of silent.
 
-## Still blocked
+## What resolved
 
-1. **The key, and whether one is needed.** All 7,210,119 aligned 32-byte
-   windows of this image fail the padding test, and the packfile open path never
-   calls the AES block, so the key is not a constant in this build's `.text`,
-   `.rdata` or `.data`. Either the decryption belongs to the device layer (see
-   `FUN_140968480` and the `fiDevice` vtable) or the TOC is not AES-encrypted    at all (a packed table of 64-bit hashes has exactly the entropy and the absence
-   of duplicates measured above). The PS5 build agrees from the other side: no
-   cipher on its open path either, and its RAGE AES tables have no code
-   reference. Nothing in `6RE/new` or `6RE/docs` supplies a key: those projects
-   carve payloads and explicitly do not decode the TOC.
-2. **The entry records.** The name records are settled — `entryCount` records of
-   `8 + mode` bytes, hash plus flags — but the entry records that precede them,
-   `[0x40, namesOffset)`, are *not* a fixed stride:
+Both open items on this page are closed by the PS5 build.
 
-   | Archive | entry bytes | / `entryCount` |
-   |---|---|---|
-   | `appdata0` | `0x300` = 768 | 384 |
-   | `common` | `0x84E0` = 34016 | 81.4 |
-   | `script` | `0x200` = 512 | 256 |
-   | `data` | `0xF4D0` = 62672 | 89.7 |
+**The key and the cipher.** The open path does call a cipher, through a vtable and
+behind a readiness flag at `0xac6e511`; until that flag is set the path
+decompresses a `0x4feac`-byte global block instead, which is why every earlier
+sweep saw no caller. Driven with the flag set, the game's own routine decrypts
+the table of contents of all 18 retail archives. It is not AES: a key id resolves
+to a `0x10f4`-byte white-box blob (magic `0x4e3b9b8e`) that decodes to 60
+big-endian dwords and 16 S-box tables, and all ten blobs decode to 16/16
+bijective permutations. So the AES hypothesis above is superseded; `data/aes.cpp`
+stays in the tree as the engine's own block, not as RPF9's cipher.
 
-   Three of the four are not even divisible by the count, so the region holds
-   variable-length records (offset lists, or a directory table plus records) and
-   the fields inside them cannot be placed without the decrypted bytes.
+**The entry records.** On the PS5 archives `[A, idx_end)` is not a variable-length
+record run; it is a column store — a section table, a column table, a row index
+and the column data — which is why the span divides by no useful stride. Its
+fields are placed and verified now that the bytes decrypt, and the six column
+hashes are identified from the code that loads them.
 
-Payload extraction does not need either: file bodies are plain zlib streams on
-16-byte boundaries, which is what `6RE/new/G6Recomp` and `6RE/docs/RPF9-tools`
-carve. This page is about the part they cannot do.
+Full record: `docs/evidence/rpf9-toc-transform.md`.
+
+Payload extraction still does not need any of this: file bodies are plain deflate
+streams on 16-byte boundaries, which is what `6RE/new/G6Recomp` and
+`6RE/docs/RPF9-tools` carve. What the column store adds is the entry list those
+tools cannot produce.

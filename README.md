@@ -26,11 +26,16 @@ starts**, because there is no source to compare against — it is coverage, not 
 ## Current objective
 
 **Objective 1 — RPF loading / extracting / streaming — level 5 of 10 ("Index").**
-The open path is readable C on both builds and the entry index is now recovered
-from the PS5 build as a keyed store (`fiPackEntry_Offset`, `fiPackEntry_Handle`,
+The open path is readable C on both builds and the entry index is recovered from
+the PS5 build as a keyed store (`fiPackEntry_Offset`, `fiPackEntry_Handle`,
 `fiPackEntry_IsCompressed`, `fiPackEntry_Read`) together with the directory scan
-that fills its handle array (`fiFile_ScanDirectory`). Level 6 needs the TOC
-contents and the decompression hand-off, which are still open.
+that fills its handle array (`fiFile_ScanDirectory`). Level 5 is now **complete**
+rather than inferred: the table of contents decrypts on all 18 retail archives,
+and the store behind it parses into real records — offset, stored and unpacked
+size, flags, crypto record, 64-bit file id, and the 32-bit key the archive
+searches on. An id provably becomes a row, and every field of that row is
+measured. Level 6 still needs the decompression hand-off, and the name heap is
+still encrypted, so entries are addressed by id rather than by path.
 
 `docs/progress-scale.md` defines the scale. Levels, in one list:
 
@@ -103,23 +108,53 @@ and `tools/organize.py` files any body an anchor proves into its GTAVSRC directo
 
 ### Archive encryption
 
-An RPF's payload is plain zlib, but its table of contents is opaque, and without
-the TOC there are no names or entry boundaries. The block that would cipher it
-is RAGE's own, not CNG: the image imports `BCryptOpenAlgorithmProvider` and
-`BCryptGenRandom` and **no** `BCryptEncrypt`/`BCryptDecrypt`. The cipher core is
-`FUN_0215f06c`, the only code that loads `TE0`/`TD0`/`rcon`; `FUN_021a8e3d` is
-the `AES::Decrypt(keyId, selector, data, size)` dispatcher.
+An RPF's payload is plain deflate, but its table of contents is encrypted, and
+without the TOC there are no names or entry boundaries. On the Xbox Series X
+build the recovered open path (`FUN_140fc2540 → FUN_141fb2600 → FUN_141fb2780 →
+FUN_1408ec200 → FUN_14087aec0`) reads the table as opaque bytes, and the RAGE AES
+block that would cipher it (`FUN_0215f06c`, the only code loading `TE0`/`TD0`/
+`rcon`; dispatcher `FUN_021a8e3d`) has only HTTP callers there
+(`FUN_0218809a` builds `CLNT`/`SRVR`). It is not CNG: the image imports
+`BCryptOpenAlgorithmProvider` and `BCryptGenRandom` and **no**
+`BCryptEncrypt`/`BCryptDecrypt`.
 
-Two measurements keep the reconstruction honest. The recovered open path
-(`FUN_140fc2540 → FUN_141fb2600 → FUN_141fb2780 → FUN_1408ec200 →
-FUN_14087aec0`) never calls that block — on this build the packfile layer reads
-the TOC as opaque bytes — and the block's only callers in the image are the HTTP
-stack (`FUN_0218809a` builds `CLNT`/`SRVR`). So `[0x40, tocEnd)` is recorded as
-the hypothesised cipher range, not a proven one.
+The PS5 build settles it. Its open path (`0x8e0990`) and TOC init (`0x8e1100`)
+reach a keyed cipher through a vtable instead of by direct call, which is why
+earlier sweeps found no caller: the cipher only runs once a readiness flag at
+`0xac6e511` is set, and until then the path decompresses a `0x4feac`-byte global
+block instead. Driven with that flag set, the game's own routine decrypts the
+table of contents of every retail archive, in two stages:
 
-The PS5 release was read the same way and agrees: `RPF9` only, no cipher on the
-open path, and its RAGE AES tables have no code reference at all — the PS5 build
-uses AES-NI instead. Its open body is also inlined enough to show the header
+| Stage | Range | Key | Result |
+|---|---|---|---|
+| 1 | `[A, B + bsz)` | header selector `+0x2E >> 1` | `[A, B)` then `[B, B+bsz-tail)` pass on all 18 archives |
+| 2 | `[B+bsz-tail, idx_end)` | the key and IV named by section 1 | recovers three exact column hashes on all 18 |
+
+The keys come from the 24-record list at `0x9ed4620`, reached from `0xb08740`;
+its pointers are filled by the ordinary `DT_RELA` table (`0xe7d14c8`, 621,619
+entries), not `PT_SCE_RELA`. Six are live — section 1 names `0x1000000f` through
+`0x10000014`, one per archive. The cipher is white-box rather than AES: a key id
+resolves to a `0x10f4`-byte blob with magic `0x4e3b9b8e`, holding 60 big-endian
+dwords and 16 S-box tables, and all ten blobs decode to 16/16 bijective
+permutations.
+
+No key is committed. `tools/rpf9key.py` resolves ids and verifies the tables,
+`tools/rpf9wb.py` runs the game's own decryptor natively, and `tools/rpf9cols.py`
+dumps the decrypted table of contents; `docs/evidence/rpf9-toc-transform.md` is
+the full record.
+
+What the plaintext buys is the store behind it. The table of contents is not an
+entry array but a **column store**: a section table, a column table, a row index
+and the column data, with rows as files and columns as one attribute each.
+`src/file/packfile_rpf9.cpp` (`Rpf9Toc`) parses it, and the six column hashes —
+file entry, resource entry, crypto record, file id, the 4-byte equality-searched
+key, and one direct 8-byte column — are identified from the code that names them.
+Every archive's rows now resolve to real records, and the parse agrees with an
+independent one on 1,081 entries across four archives.
+
+The PS5 build is `RPF9` only like the Xbox one, its own AES is AES-NI rather than
+the RAGE table block (which nothing loads there), and its open body is inlined
+enough to show the header
 layout arithmetic in full, which is now `fiPack_ComputeLayout` in `packfile.cpp`.
 `docs/ps5-build.md` has the container, the loader and the recovered addresses;
 `tools/ps5elf.py` is the loader. Its `p_offset` values are image offsets and the
@@ -130,12 +165,13 @@ three measurements behind it, and what the image keeps symbolically — the
 46-library import manifest (`tools/ps5imports.py`), the AGC and shader names, and
 the encrypted state of every firmware module.
 
-`docs/rpf-crypto.md` has the evidence and the gaps. The header is 64 bytes, not
-16, and the name region is `align16(entryCount * (8 + mode))` bytes -- exact on
-all four archives in the dump, which is what `rpf9crypt info` checks without a
-key. The reconstructed block is `src/sub_story/rage/base/data/aes.{h,cpp}` plus
-`fiPackCrypt` in `packfile_crypt.h`; `tools/rpf9crypt.cpp` is the same block as a
-command with a self-test.
+`docs/rpf-crypto.md` keeps the header evidence and records the AES hypothesis
+that this work superseded. The header is 64 bytes, not 16, and the name region is
+`align16(entryCount * (8 + mode))` bytes — exact on every archive in the dump,
+which is what `rpf9crypt info` checks without a key. The AES block
+(`src/sub_story/rage/base/data/aes.{h,cpp}`, `fiPackCrypt` in
+`packfile_crypt.h`, `tools/rpf9crypt.cpp`) stays in the tree as the engine's own
+block; it is not what RPF9's table of contents uses.
 
 Keys are never in the repo (`keys/*` and `*.keyring` are ignored; `keys/README.md`
 is tracked). `tools/rpf9keyhunt.cpp` scans an image for a key by decrypting an
@@ -190,7 +226,7 @@ evidence tiers are in `docs/layout.md`.
 | GTA V PS4 native hashes found in the image | **0 of 6,691** (`docs/objectives.md`) |
 | Exported bodies | **4,626** (one folder per function) under the recovered `src/sub_story` tree |
 | Hand-written readable code | **4 files** — `src/sub_story/rage/base/file/packfile.cpp` (RPF9 file + packfile objects, whole open path), `packfile_crypt.h` (64-byte header + TOC cipher + geometry), `src/sub_story/rage/base/data/aes.cpp` (the AES block), `src/sub_story/game/Core/FUN_14087b0f0/FUN_14087b0f0.cpp` (the TOC geometry walk, hand-disassembled), syntax-clean under `g++ -Wall -Wextra` |
-| Archive TOC encryption | cipher block located at `FUN_0215f06c` (tables `TE0 0x5fc1b20`, `TD0 0x5fc2b50`, `rcon 0x5fc2b20`) and reconstructed over `[0x40, tocEnd)`; header geometry matches byte-exactly on all 4 archives; the packfile open path never calls it, its only callers are the HTTP stack, and 7,210,119 aligned key windows find no key (`docs/rpf-crypto.md`) |
+| Archive TOC encryption | **decrypted**: the PS5 build's own keyed cipher reproduces the TOC on **all 18 retail archives** (two stages, six live key ids, white-box blobs rather than AES); the column store behind it parses into real file records and the six column hashes are identified (`docs/evidence/rpf9-toc-transform.md`) |
 | objdiff units | **4,626**, of which 3 have built clang-cl base objects (`packfile.obj`, `aes.obj`, `FUN_14087b0f0.obj`) and **0** have a retail target object |
 | Byte-identical functions | **0** (no rebuild to diff yet) |
 | PS5 symbol pass | `REFS` line produced with `-noanalysis`: **46** libraries, **7** RAGE structs, **43** fields, **27,903** GTA V classes; `renamed_total=0` because no match file exists yet (`docs/ps5-build.md`) |
@@ -324,11 +360,13 @@ g++ -std=c++17 -O2 -o gta6decomp/build/rpf9keyhunt gta6decomp/tools/rpf9keyhunt.
   symbol table, no MSVC RTTI and no Itanium vtable names.
 - Coverage is partial: 4,626 of 299,257 starts are written out. The machinery to export more is the same
   command with a longer address list.
-- The RPF9 TOC is opaque and the packfile open path never calls the AES block, so
-  the decryption is either below it (a `fiDevice` class) or there is none; all
-  7,210,119 aligned key windows of this image fail the padding test, and the one
+- The RPF9 TOC is decrypted on the PS5 build, but its key is not a constant in
+  the Xbox image: all 7,210,119 aligned key windows fail the padding test, the one
   RAGE key array left in 1.0.2.1 (the GTA V Durango key at RVA `0x65b5758`) does
-  not open an archive. `tools/rpf9keyhunt.cpp` re-runs that experiment. The name
-  records are settled; the entry records are variable-length and unplaced.
+  not open an archive, and the cipher is white-box, not AES.
+  `tools/rpf9keyhunt.cpp` re-runs that experiment.
+- Entries are addressed by id, not by path: the name heap is encrypted with a key
+  the image does not expose here, so `common.rpf` lists 418 rows and none of them
+  has a recovered name.
 - Decompiled C is not original source. Locals keep Ghidra's `param_1` / `local_XX`; struct layouts are only
   known where a body reads a fixed offset.
