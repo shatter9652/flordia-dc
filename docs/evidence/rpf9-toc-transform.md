@@ -1085,12 +1085,44 @@ through ordinary `DT_RELA`. They are *not* the TOC family: their blobs carry mag
 decrypt the TOC. Handing one of these blobs to the TOC table loader is rejected
 with `0x72788da6`.
 
-**The family's initialiser.** `0x39ce1c0` takes the blob and, before doing any
-work, compares the first dword to `0x2718ce5d` and returns `0x72788da6` when it
-does not match — the same code the TOC loader reports, which is what identifies
-it. It bounds one argument to `1..16` (returning `0x565e3271` when out of range),
-sizes its state at `0x1120` bytes (the TOC family's is `0x1100`), and zeroes the
-allocation before use. Its argument order and the offset at which the IV is
-stored in the state are not yet established, so the payload decryptor is not yet
-wired to it. `tools/rpf9wb.py` currently drives `0x255a3b0`/`0x2ae0890`, which is
-the TOC path only.
+**The family's initialiser.** The function is at **`0x3985bf0`** — not
+`0x39ce1c0`, which is where its bytes sit as a *file offset*. The SELF's first
+`PT_LOAD` maps `p_offset 0x4000` to `p_vaddr 0`, so `VA = offset - 0x4000`.
+Disassembling the raw file at offset addresses produced a convincing but
+misplaced reading, and every direct call to the offset address faulted for that
+reason alone. `ps5elf.resolve` does the conversion; use it, not `data[addr]`.
+
+Its call shape, from `procedure_pseudo_code` at `0x3985bf0`:
+
+```c
+int fiCrypt9_Init(const void *blob, void *ctx, unsigned mode, void **out);
+```
+
+- `rdi` (blob) — first dword must be `0x2718ce5d`, else `0x72788da6`.
+- `rsi` (ctx) — must be non-null, else `0xc30d2e1`. Only null-checked; not a
+  length, and not the IV.
+- `rdx` (mode) — `1..16`, else `0x565e3271`. Stored as a byte at state `+0x1100`,
+  so it is the family/mode selector.
+- `rcx` (out) — must be non-null, else `0x299b836`.
+
+It allocates `0x1120` bytes, sums the blob's 60 big-endian dwords into
+`state[0x000..0x0F0)`, and copies the sixteen 256-byte tables into
+`state[0x0F0..0x10F0)`. The tail is the per-message material:
+
+| Offset | Size | Meaning |
+|---|---|---|
+| `0x10F0` | `0x10` | zeroed at init |
+| `0x1100` | 1 | the selector |
+| `0x1101` | `0x10` | **IV slot**, zeroed at init |
+| `0x1118` | 8 | zeroed at init |
+
+So this family's IV goes at **`+0x1101`**, not `+0x10f0` (the TOC family's
+offset). That is the piece the decryptor needs, and it is now measured rather
+than guessed.
+
+**Still open.** Driving `0x3985bf0` directly still faults, at the correct VA and
+with `rsi` given a real buffer. The body's first act is a no-argument call to
+`0x43697c0`, and both the entry gate and the tail re-check compare its result to
+`0x24a187b9`; outside the game's own initialisation that call does not return
+usefully. The family's decrypt entry is also unidentified — `0x2ae0890` belongs
+to the TOC path. Level 6 is therefore unblocked on paper and not yet in code.

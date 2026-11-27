@@ -37,8 +37,9 @@ Level 6 ("Decrypts") is blocked and located. Entry payloads are encrypted as wel
 as deflated: stored bytes do not inflate, and the crypto record names a key id and
 a per-file IV. Those ids are live in the image's key list but belong to a
 different white-box family (`0x2718ce5d`) than the TOC (`0x4e3b9b8e`), whose table
-loader rejects them. That family's initialiser is `0x39ce1c0`; its argument order
-and IV placement are not yet established, so 6 is not claimed — and 7 through 10
+loader rejects them. That family's initialiser is `0x3985bf0`; its call shape and its IV slot
+(`state+0x1101`) are now measured from the decompiler, but it faults when driven
+outside the game's own initialisation, so 6 is not claimed — and 7 through 10
 depend on it. The name heap is still encrypted, so entries are addressed by id
 rather than by path.
 

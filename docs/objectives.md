@@ -95,8 +95,9 @@ remaining gap to level 6 is the decompression hand-off, and entries are
 addressed by id because the name heap is still encrypted.
 
 The working scale (`docs/progress-scale.md`) now measures capability rather than byte
-matching. Next rung is 6, "Decrypts": the payload cipher family is located at
-`0x39ce1c0` but its call shape is not yet established.
+matching. Next rung is 6, "Decrypts": the payload cipher family is located at `0x3985bf0` with its call shape and
+IV slot recovered from the decompiler, but it faults outside the game's own
+initialisation.
 
 Work order inside the objective:
 
