@@ -26,6 +26,8 @@ deliverables; these pages are the index into them and the trail of decisions.
 - [[shader-compilers]] — the SDK's psslc binaries, decompiled into
   `ps_shader_dc/`.
 - [[port-paths]] — recomp vs HLE vs decomp, with the measured import counts.
+- [[ps4-route]] — the same question for PS4 specifically, and why HLE is first
+  there.
 - [[ps5-toolchain]] — which tools work on this machine and which do not.
 - [[2026-11-25]] — session log for this pass.
 
