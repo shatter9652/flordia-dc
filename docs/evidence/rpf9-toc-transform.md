@@ -1061,3 +1061,36 @@ and block pattern.
 No key ships. The table of contents is handed in already decrypted (`toc_path=`)
 because its first stage uses the image's white-box block cipher, and payload keys
 come from a decoded key table (`key_path=`). See `linux-rpf9-ro/README.md`.
+
+## Payload encryption
+
+The table of contents is not the only encrypted part. Entry payloads are
+encrypted as well as deflated, and the two layers are independent.
+
+**Measured.** Taking every entry's `[offset, offset + stored)` range straight out
+of the archive and running raw deflate on it fails on every entry tried —
+`appdata0` 0/2, `shaders` 0/2, `common` 0/418 — and the bytes at those offsets
+have no deflate header structure. So the payload is not "deflate with a key
+slot that happens to be unused".
+
+**What the entry carries.** The crypto record column gives, per file, a 32-bit
+key id, a kind byte (`0x11` on `appdata0`), a 16-byte IV, and a five-word pattern
+`(0, 4096, 0, 0, 4)` — first block 0, block size 4096, no gaps, so the whole
+stored range is covered.
+
+**Where the keys are.** The ids `0x10000021`..`0x10000028` are live records in the
+same 24-record key list used for the TOC (`0x9ed4620` via `0xb08740`), resolving
+through ordinary `DT_RELA`. They are *not* the TOC family: their blobs carry magic
+`0x2718ce5d`, a distinct white-box family from the `0x4e3b9b8e` tables that
+decrypt the TOC. Handing one of these blobs to the TOC table loader is rejected
+with `0x72788da6`.
+
+**The family's initialiser.** `0x39ce1c0` takes the blob and, before doing any
+work, compares the first dword to `0x2718ce5d` and returns `0x72788da6` when it
+does not match — the same code the TOC loader reports, which is what identifies
+it. It bounds one argument to `1..16` (returning `0x565e3271` when out of range),
+sizes its state at `0x1120` bytes (the TOC family's is `0x1100`), and zeroes the
+allocation before use. Its argument order and the offset at which the IV is
+stored in the state are not yet established, so the payload decryptor is not yet
+wired to it. `tools/rpf9wb.py` currently drives `0x255a3b0`/`0x2ae0890`, which is
+the TOC path only.

@@ -25,17 +25,22 @@ starts**, because there is no source to compare against — it is coverage, not 
 
 ## Current objective
 
-**Objective 1 — RPF loading / extracting / streaming — level 5 of 10 ("Index").**
-The open path is readable C on both builds and the entry index is recovered from
-the PS5 build as a keyed store (`fiPackEntry_Offset`, `fiPackEntry_Handle`,
-`fiPackEntry_IsCompressed`, `fiPackEntry_Read`) together with the directory scan
-that fills its handle array (`fiFile_ScanDirectory`). Level 5 is now **complete**
-rather than inferred: the table of contents decrypts on all 18 retail archives,
-and the store behind it parses into real records — offset, stored and unpacked
-size, flags, crypto record, 64-bit file id, and the 32-bit key the archive
-searches on. An id provably becomes a row, and every field of that row is
-measured. Level 6 still needs the decompression hand-off, and the name heap is
-still encrypted, so entries are addressed by id rather than by path.
+**Objective 1 — RPF loading / extracting / streaming — level 5 of 10 ("Indexes").**
+Under the working scale in `docs/progress-scale.md`, level 5 means real archives
+list their real entries and every field of an entry is measured. That is met: the
+table of contents decrypts on all 18 retail archives, and the column store behind
+it parses into entries — offset, stored and unpacked size, flags, crypto record,
+64-bit file id, and the 32-bit key the archive searches on. The C++ parse agrees
+with an independent one on 1,081 entries.
+
+Level 6 ("Decrypts") is blocked and located. Entry payloads are encrypted as well
+as deflated: stored bytes do not inflate, and the crypto record names a key id and
+a per-file IV. Those ids are live in the image's key list but belong to a
+different white-box family (`0x2718ce5d`) than the TOC (`0x4e3b9b8e`), whose table
+loader rejects them. That family's initialiser is `0x39ce1c0`; its argument order
+and IV placement are not yet established, so 6 is not claimed — and 7 through 10
+depend on it. The name heap is still encrypted, so entries are addressed by id
+rather than by path.
 
 `docs/progress-scale.md` defines the scale. Levels, in one list:
 

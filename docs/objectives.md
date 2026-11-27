@@ -11,7 +11,7 @@ objectives to exist first.
 
 | # | Objective | State | First evidence |
 |---|---|---|---|
-| 1 | **RPF loading / extracting** (archives, packfile index, streaming) | level 5 **complete** — **5/10 "Index"** (`docs/progress-scale.md`) | `RPF9` magic `0x52504639` in `.text` → `FUN_00fc21c0`, `FUN_01fb2600` |
+| 1 | **RPF loading / extracting** (archives, packfile index, streaming) | level 5 **complete** — **5/10 "Indexes"**; level 6 blocked on the payload cipher (`docs/progress-scale.md`) | `RPF9` magic `0x52504639` in `.text` → `FUN_00fc21c0`, `FUN_01fb2600` |
 | 2 | **Fuel** (tank, consumption, low-fuel dash state) | anchors only | literal `LOW_FUELH` |
 | 3 | **Police & wanted** (crime tracking, wanted level, dispatch) | anchors only | literals `Wanted Tuning`, `Crime Tuning`, `CrimeReport`, `CrimeChainId`, `CrimeStgEndRsn`, `CrimeCurr`, `CrimeTgt` |
 | 4 | **Taunt / aggravate / diffuse / threaten** (ped interaction set) | unanchored | see note below |
@@ -93,6 +93,10 @@ the RAGE AES block), and the entry records are a column store whose fields are
 placed and verified. `docs/evidence/rpf9-toc-transform.md` has the record; the
 remaining gap to level 6 is the decompression hand-off, and entries are
 addressed by id because the name heap is still encrypted.
+
+The working scale (`docs/progress-scale.md`) now measures capability rather than byte
+matching. Next rung is 6, "Decrypts": the payload cipher family is located at
+`0x39ce1c0` but its call shape is not yet established.
 
 Work order inside the objective:
 

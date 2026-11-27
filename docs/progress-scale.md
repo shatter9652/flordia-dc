@@ -1,58 +1,76 @@
 # Progress scale
 
-The 1–10 scale this project uses for an objective. It measures **one objective**,
-not the whole game, and it is a scale of *evidence*, not of effort: a level is
-reached only when the code that level names exists as readable C in the tree and
-every name in it is backed by a recorded address or measurement.
+Ten levels, ordered by **what the recovered code can actually do**, not by how
+close it reads to the retail image. Level 10 is a working subsystem: something a
+person can run against the shipped files and get correct output from. Byte
+matching is a separate axis (`docs/objdiff.md`) and is not required at any level
+here — a body only has to be correct and attributable.
+
+The rule that keeps the number honest: **a level is reached when the claim is
+demonstrated on real archives, not when the code looks right.** Each rung names
+the evidence that proves it, and an unmet rung is reported as unmet.
 
 | Level | Name | What has to be true |
 |---|---|---|
-| 1 | Nothing | No code. Strings or constants may have been noticed, nothing recovered. |
-| 2 | Anchors | The subsystem's literals, magics and entry-point candidates are located and recorded with addresses. No body is explained. |
-| 3 | Layout | The on-disk/in-memory structures are proven field by field (sizes, offsets, `static_assert`s), from at least one build. |
-| 4 | Open path | The construction path — open, header read, object graph — is readable C with every call named by address. |
-| 5 | Index | The subsystem's lookup layer is readable C: how an id/name becomes a record, and what the record's fields mean. |
-| 6 | Read path | The data path is readable C: reading, decompressing and handing bytes back, including the error/clamp arithmetic. |
-| 7 | Write path | The inverse path exists: creating, packing, rewriting, with the same evidence standard. |
-| 8 | Streaming | Asynchronous and dependent behaviour is reconstructed: streaming, prefetch, dependent archives, lifetimes. |
-| 9 | Integration | The subsystem is wired into the rest of the engine the way the build wires it: device manager, mounts, consumers. |
-| 10 | Finished | Human-readable, evidence-backed, and it **rebuilds byte-identically** against the retail image. |
+| 1 | **Not even close** | Nothing identified. Magic numbers and strings maybe found, no structure. |
+| 2 | **Located** | The subsystem is found in the image: its entry points, literals and data are anchored to addresses. Nothing is understood yet. |
+| 3 | **Layout** | The on-disk structures are proven field by field against real files — offsets, widths, and the arithmetic that turns them into byte ranges. |
+| 4 | **Opens** | The open path runs: a real archive's header is read and its geometry resolved, with the error/edge cases handled instead of assumed. |
+| 5 | **Indexes** | Real archives list their real entries. Every field of an entry is measured, not inferred, and an id or key provably resolves to a row. |
+| 6 | **Decrypts** | Entry payloads come back decrypted. The cipher is the one the shipped build uses, driven by the archive's own key material. |
+| 7 | **Decompresses** | Decrypted entries are decompressed and handed back at their recorded unpacked size, checked entry by entry. |
+| 8 | **Extracts** | A whole archive extracts: every entry written out, sizes verified, no manual per-file steps. |
+| 9 | **Streams** | Partial and seekable reads work — read a range of an entry without materialising it — and dependent archives resolve. |
+| 10 | **Works** | End to end on the shipped data: list, extract and verify across every retail archive, with failures reported rather than crashed on. Names resolve where the archive carries them. |
 
-Level 10 is the only level that proves the C is *correct*; levels 2–9 prove it is
-*plausible and traceable*. Byte matching is objective 7 of the build order for
-exactly that reason.
+## Why this replaces the old scale
 
-## Where each objective stands
+The previous scale topped out at "byte-identical against the retail image". That
+is a real and interesting goal, but it is not a measure of whether the recovered
+subsystem *works*: it is gated on a matching PS5 toolchain and per-translation-unit
+objects that the dump does not contain, and this project's honest baseline there
+is 0 matched functions (`docs/objdiff.md`). Under it, a fully working RPF9 reader
+would still have scored 9.
 
-| # | Objective | Level | Name |
-|---|---|---|---|
-| 1 | RPF loading / extracting / streaming | **5** | Index |
-| 2 | Fuel | 2 | Anchors |
-| 3 | Police & wanted | 2 | Anchors |
-| 4 | Taunt / aggravate / diffuse / threaten | 1 | Nothing |
-| 5 | Cameras (incl. vehicle slow-mo injury camera) | 2 | Anchors |
-| 6 | Remaining subsystems | 1 | Nothing |
-| 7 | Byte matching | 2 | Anchors (tooling built, 0 matched) |
+So the working scale measures capability, and `docs/objdiff.md` keeps the
+byte-match number as its own axis. Neither number is allowed to stand in for the
+other.
 
-## Why objective 1 is a 5 and not a 6
+## Objective 1 — RPF loading / extracting / streaming
 
-The open path (level 4) is complete on both builds: `fiFile`, `fiPackfile`, the
-header read and the derived layout are readable C in
-`src/sub_story/rage/base/file/packfile.cpp`. The lookup layer (level 5) is now
-recovered from the PS5 build as a keyed index — `fiPackEntry_Offset`,
-`fiPackEntry_Handle`, `fiPackEntry_IsCompressed`, `fiPackEntry_MakeId` — and the
-directory scan that fills the handle array is transcribed (`fiFile_ScanDirectory`).
+**Level 5 of 10 — Indexes. Complete.**
 
-Level 5 is now complete rather than inferred. The table of contents decrypts on
-all 18 retail archives, and the store behind it parses into real records in
-`src/file/packfile_rpf9.cpp`: an id or a 32-bit name hash becomes a row, and
-every field of that row is measured — offset, stored and unpacked size, flags,
-crypto record, file id. The archive's own lookup body (`0x1cc1900`) is what names
-the searched column, and the six column hashes are identified from the code that
-loads them. `docs/evidence/rpf9-toc-transform.md` has the evidence.
+Proven: the table of contents decrypts on all 18 retail archives, and the column
+store behind it parses into real entries. Offset, stored and unpacked size,
+flags, crypto record, 64-bit file id and the 32-bit search key all resolve, and
+the C++ parse agrees with an independent one on 1,081 entries across four
+archives (`docs/evidence/rpf9-toc-transform.md`). An id becomes a row, and the
+row's fields are measured. That is exactly what level 5 asks for and no more.
 
-Level 6 asks for reading, decompressing and handing bytes back. The bytes are
-locatable and their sizes and compression flag are known, but the decompression
-hand-off itself is not written out, so the rung is not claimed. The name heap is a
-second open item: it is encrypted with a key the image does not expose here. So
-the level is 5, complete, and the gap to 6 is named rather than papered over.
+**Level 6 — Decrypts. Blocked, and honestly located.**
+
+Payloads are encrypted, not merely deflated: the stored bytes of an entry do not
+inflate on their own, and the bytes at an entry's offset look random. The crypto
+record names a key id and a 16-byte IV per file. Those ids — `0x10000021` through
+`0x10000028` — are live in the image's 24-record key list, but they are a
+different white-box family (magic `0x2718ce5d`) from the TOC family
+(`0x4e3b9b8e`), and the TOC's table loader rejects them.
+
+That family's initialiser is located: `0x39ce1c0`, which checks the magic, sizes
+its state at `0x1120` bytes, bounds one argument to `1..16`, and returns
+`0x72788da6` on a magic mismatch — the same code the TOC loader reports. What is
+not yet established is the argument order the initialiser expects and where the
+IV is placed in the resulting state, so the decryptor is not yet wired to it.
+Level 6 is therefore not claimed.
+
+Everything above 6 depends on it: 7 decompresses what 6 produces, 8 and 9 need
+7, and 10 needs all of them.
+
+## What the levels are not
+
+- Not a schedule. A rung can stay blocked for a long time and that is the point
+  of naming the blocker.
+- Not a proxy for code volume. Ten thousand identified functions with no working
+  path is still level 2.
+- Not comparable across objectives. Objective 7's rungs are about matching;
+  objective 1's are about behaviour.
