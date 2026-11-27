@@ -66,11 +66,19 @@ appdata0.rpf     file=7232       entries=4 keyId=1 stride=2     decryptSpan=0x13
 ```
 
 **All twenty retail archives are TOC-encrypted** (`flags` is `0x0f` in every
-one), so `readEntries()` correctly refuses them and no key ships here. Listing
-real entries therefore needs the decryptor on the other side of that hook — the
-helper at `0x8400600` that `0x8e1100` calls with `{data, span}` — or an
-unencrypted archive built by the same tool chain. The header, geometry and
-type/offset model are settled; only the transform is missing.
+one), so `readEntries()` correctly refuses them and no key ships here. The
+decrypt chain is now mapped (`docs/evidence/rpf9-toc-transform.md`):
+`0x8400600` reads a **per-entry header inside the archive** — `u32` at `+0`,
+`u16` selector at `+4`, 16 bytes at `+6` — maps the selector through an
+18-entry table at `0x9e607e0` (`1, 2, 16, 16, 16, 18, 18, 18, 0, 16…18`), and
+calls `0xb08740`, which is a **cipher factory**: `param_1 < 0x17` (23 cases)
+indexes a jump table at `0x9d4d350` and allocates a `0x40`-byte context with
+vtable `0xa3b1e58`.
+
+So the transform is not a missing hardcoded key: the selector and the 16-byte
+material are in the file. What remains is which algorithm each case builds (the
+retail archives only use selectors 1 and 2) and the `0xa3b1e58` vtable's
+`SetKey`/`Decrypt` slots.
 
 ## Feature portability
 
