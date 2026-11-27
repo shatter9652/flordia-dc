@@ -853,3 +853,101 @@ ebefa94f 0627b8ea 0a69d82a a5e23ef1 55fa8e9e de97e002 a43f4295 b9767d40
 
 That is a 4-byte magic followed by 28 bytes, not a clean 32-byte key, but it is
 the only candidate in the list for the plain-AES path at `0x43879d0`.
+
+## The TOC decrypts: `tools/rpf9wb.py`
+
+The chain above is no longer inferred. `tools/rpf9wb.py` maps the eboot's
+`PT_LOAD` segments plus the BSS hole, patches the allocator (`0x36696a0`) and
+both memcpy entry points (`0x1a1d5f0`, `0x8f67840`) with host implementations,
+and calls the game's own two routines:
+
+```
+0x255a3b0(blob, ctx, &out)          -> 0x1100 table set
+0x2ae0890(tables, src, len, dst)    -> CBC decrypt over that table set
+```
+
+Two inputs had to be supplied that the blob does not carry:
+
+- **the chaining state.** `tables+0x10f0` is zero after the init; the caller
+  writes the 16-byte IV there. That is consistent with the factory holding the
+  IV separately from the key material.
+- **the module ready flag.** `0x43697c0` is a guard that, when the byte at
+  `0xac6e511` is zero, decompresses a 0x4feac-byte global table block. The
+  white-box path never reads those tables — its tables come from the blob — so
+  the flag is set and the guard returns `0x24a187b9` immediately.
+
+### Stage 1 — `[A, B + bsz - tail)` with key `0x10000005`
+
+For `appdata0.rpf` (`toc_end 0x320`, `idx_end 0x300`, `nsec 4`, `bsz 0x150`,
+`ncol 5`, `tail 0x10`) the 0x160-byte span decrypts to
+
+```
+0x00  01 00 00 00 00 00 00 00   id 1, offset 0x00
+0x08  05 00 00 00 18 00 00 00   id 5, offset 0x18
+0x10  06 00 00 00 30 00 00 00   id 6, offset 0x30
+0x18  09 00 01 00 40 01 00 00   id 9, offset 0x140
+0x20  11 00 00 10 10 00 <16B IV>   section 1: key 0x10000011, type 0x10
+0x38  07 00 00 10 10 00 <16B IV>   section 2: key 0x10000007, type 0x10
+```
+
+Ascending ids, ascending offsets all below `bsz`, and zero padding to the end of
+the span. **All 18 retail archives pass**, and every one yields the same shape:
+ids 1, 5, 6, 9 at offsets `0`, `0x18`, `0x30`, `0x140`.
+
+### Stage 2 — `[B + bsz - tail, idx_end)` with section 1's key
+
+Section 1's crypto record names the key and IV for the second span. Re-running
+with that key, the column table at `C` begins, for `appdata0.rpf`:
+
+```
+286030a358a789fb   crypto record
+33f70dfaf2c50989   file entry
+73bcb72dce74f11f   file id
+b7076b6245d35fb5   (not in the documented set)
+b6f5bdb2c66da2e9   (not in the documented set)
+```
+
+Three exact 64-bit constants from the column-store spec land at the right
+offsets. Across the retail set:
+
+| archive | section-1 key | ncol | recognised |
+| --- | --- | --- | --- |
+| `anim_concat` | `0x10000006` | 3 | 2/3 |
+| `anim` | `0x10000014` | 5 | 3/5 |
+| `appdata0` | `0x10000011` | 5 | 3/5 |
+| `audio_concat` | `0x10000012` | 3 | 2/3 |
+| `common` | `0x10000014` | 5 | 3/5 |
+| `data_concat` | `0x10000013` | 3 | 2/3 |
+| `data` | `0x10000012` | 6 | 4/6 |
+| `levels_concat` | `0x10000013` | 3 | 2/3 |
+| `levels` | `0x1000000f` | 5 | 3/5 |
+| `movies` | `0x10000013` | 4 | 2/4 |
+| `navmeshes_concat` | `0x10000011` | 3 | 2/3 |
+| `navmeshes` | `0x10000012` | 4 | 2/4 |
+| `packs_concat` | `0x10000011` | 3 | 2/3 |
+| `packs` | `0x1000000f` | 5 | 3/5 |
+| `script_concat` | `0x10000011` | 3 | 2/3 |
+| `shaders` | `0x10000012` | 4 | 2/4 |
+| `textures_concat` | `0x10000012` | 3 | 2/3 |
+| `textures` | `0x10000013` | 5 | 3/5 |
+
+Two things this establishes beyond the cipher itself:
+
+- **The documented column set is partial.** Every archive carries at least one
+  column hash that is not in the four-value list, and the shortfall tracks
+  `ncol`: 3-column archives recognise 2, 5-column archives recognise 3. So the
+  missing hashes are additional column types, not decryption errors.
+- **Six keys are in real use, not spares.** Section 1 names `0x1000000f` through
+  `0x10000014`, and each archive names a different one. All six blobs decode to
+  valid table sets, which is why they are in the key list.
+
+```
+python3 tools/rpf9wb.py --archive ../6RE/DUMPS/PS5Dump/appdata0.rpf
+```
+
+### What is left for objective 1
+
+The cipher is done: key, key chain, blob decode and the two-stage CBC order all
+reproduce against the shipped archives. What remains is the column store —
+parsing `C`, the row index `D` and the column data `T` — which is a data-layout
+problem, not a cryptographic one.
