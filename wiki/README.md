@@ -28,6 +28,8 @@ deliverables; these pages are the index into them and the trail of decisions.
 - [[port-paths]] — recomp vs HLE vs decomp, with the measured import counts.
 - [[ps4-route]] — the same question for PS4 specifically, and why HLE is first
   there.
+- [[native-orbis-plan]] — the no-emulation plan: RPF9 → ttdb → one cell on GNM,
+  and why GTAVSRC cannot be the base.
 - [[ps5-toolchain]] — which tools work on this machine and which do not.
 - [[2026-11-25]] — session log for this pass.
 
