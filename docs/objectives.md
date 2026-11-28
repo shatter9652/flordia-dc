@@ -256,21 +256,72 @@ result is the *used* fraction — the mean is fill, so the return is `1 - fill`.
 The two clamp constants are `1.0` (`0x9c7a2dc`) and a `-0.001` (`0x9c7a9a4`)
 that both callers apply as `1 - 0.001 * used`.
 
-**5. The field tables, proven.** The tuning lookups are compiled binary searches
-over *sorted* joaat constants whose leaves are `mov eax, <offset>`, so
-`tools/ps5fields.py` (new) recovers them outright:
+**5. The field tables are the aircraft-warning settings.** The two resolvers are
+`AircraftWarningSettings::GetFieldPtr`, the function GTA V generates as a switch
+over joaat field names; their leaves are byte offsets into that settings struct.
+`FUN_044bad90` carries GTA V's layout unchanged, all 19 fields at the offsets
+`src/dev_ng/game/audio/gameobjects.h` gives them:
 
-| resolver | fields | offsets | `lowFuel` |
-|---|---|---|---|
-| `FUN_044bad90` | 14 | `0x20`…`0xe0` | **`+0xe0`** |
-| `FUN_044b5d10` | 26 | `0x10`…`0x128` | **`+0x108`** |
+```
++0x004 MinTimeBetweenDamageReports   +0x078 Engine_2_Fire
++0x008 TargetedLock                  +0x084 Engine_3_Fire
++0x014 MissleFired                   +0x090 Engine_4_Fire
++0x020 AcquiringTarget               +0x09c DamagedSerious
++0x02c TargetAcquired                +0x0a8 DamagedCritical
++0x038 AllClear                      +0x0b4 Overspeed
++0x044 PlaneWarningStall             +0x0c0 Terrain
++0x050 AltitudeWarningLow            +0x0d0 PullUp
++0x060 AltitudeWarningHigh           +0x0e0 LowFuel
+```
 
-Two records, two offsets, both from the same hash. Only four of the candidate
-names exist in the image at all — `fuel` (`0x4652da40`), `fuelTank`, `fuelLevel`
-and `lowFuel` (`0x8420c727`). `fuelConsumption`, `fuelRate`, `fuelCapacity`,
-`tankSize`, `lowFuelWarning` and 35 other spellings have **no** immediate, so
-the consumption rate is either one of the unnamed offsets above or a global, not
-a hashed field name.
+`FUN_044b5d10` is the expanded VI variant: 35 hashes over `0x8`…`0x128`. From
+`PlaneWarningStall` on, every shared warning sits exactly `+0x28` later than in
+the GTA V class, `MinTimeBetweenDamageReports` moved from `+0x4` to `+0x68`, and
+a run of six new 4-byte fields follows `LowFuel` at `0x114`…`0x128`. Seventeen of
+the 35 hashes resolve against GTA V's vocabulary:
+
+```
++0x008 modulesettings                +0x094 Engine_1_Fire
++0x01c StallWarning                  +0x0a0 Engine_2_Fire
++0x024 AltitudeWarning               +0x0ac Engine_3_Fire
++0x068 MinTimeBetweenDamageReports   +0x0b8 Engine_4_Fire
++0x06c PlaneWarningStall             +0x0c4 DamagedSerious
++0x078 AltitudeWarningLow            +0x0d0 DamagedCritical
++0x088 AltitudeWarningHigh           +0x0dc Overspeed
++0x0e8 Terrain                       +0x0f8 PullUp
++0x108 LowFuel
+```
+
+The other eighteen have no `case <hash>U:` anywhere in GTA V's game source, so
+they are fields VI added and no local vocabulary can name them:
+
+```
++0x00c 8e9705ff    +0x034 3f08820c    +0x054 c6e784ba    +0x118 8a53ff14
++0x010 60029f78    +0x03c fc61b68e    +0x05c 43f21933    +0x11c 0387f83d
++0x014 aa086792    +0x044 710a319a    +0x064 11e5e05b    +0x120 7d3e6a58
++0x018 3d6910c7    +0x04c 4f24c8ba    +0x114 ddf78c74    +0x124 981dc547
++0x02c 92954320                                        +0x128 17787303
+```
+
+That sweep is what `tools/ps5fields.py --vocab` exists for: every identifier in
+`game/*.h` (711k) and `game/*.cpp` (465k), every token in the 131 GTA V `.meta`
+files on hand (77k), and every pooled string in the eboot itself. No RDR2 source
+is available locally, but RDR2 has no aircraft warnings and its `handling.meta`
+keys are GTA V's, which the `.meta` sweep already hashed.
+
+Two extractor bugs had inflated the tables these numbers come from. The binary
+search emits `cmp esi, K-1 ; jle left` before `cmp esi, K ; je leaf`, and pairing
+every `cmp` with the next `je` maps each bound onto the *following* field; other
+leaves are reached by `cmp ; jne default` and have no `je` at all. Fixing both
+turned 14/26 fields into 19/35 and deleted every `K-1` phantom — the "38 unnamed
+hashes" were mostly those bounds.
+
+**What this means for the fuel model.** `LowFuel` at `+0xe0`/`+0x108` is the
+aircraft **audio warning** block (three `s32`: `MinTimeInStateToTrigger`,
+`MaxTimeBetweenTriggerAndPlay`, `MinTimeBetweenPlay`), not the tank gauge and not
+the dashboard threshold. The earlier revision of this section read those offsets
+as fuel-struct fields; that reading is withdrawn. The tank array, tank record and
+fill/used formula stand on the decompiled reader (`FUN_0027d050`) alone.
 
 **6. The 5% gate.** `FUN_00baed50` caches `*(float *)(entity + 0x70)` into its own
 `+0x168` (`0xbaee6f`), then after the tank block compares it against a literal at
@@ -308,14 +359,14 @@ entries are `PSIN` fragment lists ending in `chassis`, `bodyshell`, `wheel_lf`,
 …), so they are geometry, not the model. The tuning values themselves are not
 stored as text — they are the hashed field table the lookup above walks.
 
-**Where this stands: rung 3 ("Layout").** The offset structure is proven — tank
-array, tank record, both `lowFuel` offsets, the fill/used formula and its
-constants — by decompiled reader code and compiled resolvers, not by inference.
-What is *not* done: the consumption rate has no name and no location yet, and
-the `0.05` gate is not proven to be what sets the HUD state. Both need the
-vtable route, because these resolvers are reached through constructor-registered
-function pointers (`FUN_049af7d0` is a static-initialiser loop), so a caller
-scan legitimately finds none.
+**Where this stands: rung 3 ("Layout").** The tank structure is proven — array,
+record, fill/used formula and its constants — by decompiled reader code. What is
+*not* done: the consumption rate has no name and no location yet, the settings
+resolvers above turned out to be audio warnings rather than fuel, and the `0.05`
+gate is not proven to be what sets the HUD state. Reaching the consumers of the
+gate needs the vtable route, because the settings resolvers are reached through
+constructor-registered function pointers (`FUN_049af7d0` is a static-initialiser
+loop), so a plain caller scan legitimately finds none.
 
 ## Objective 3 — Police and wanted
 

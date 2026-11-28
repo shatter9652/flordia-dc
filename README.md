@@ -127,7 +127,7 @@ subsystem; byte matching is last because it is the only step that proves the C i
 | # | Objective | State |
 |---|---|---|
 | 1 | **RPF loading / extracting / streaming** | **10/10 "Works"** — all ten on-disk archives extract with every size verified; ranges served without materialising an entry; nested archives open and verify |
-| 2 | **Fuel** (tank, consumption, low-fuel state) | **3/10 "Layout"** — tank array, tank record and both `lowFuel` field offsets proven; consumption rate not yet located |
+| 2 | **Fuel** (tank, consumption, low-fuel state) | **3/10 "Layout"** — tank array, tank record and the fill/used formula proven; the `lowFuel` hashes resolve to the aircraft-warning settings, so the consumption rate and dash threshold are still open |
 | 3 | **Police & wanted** (crime tracking, wanted level, dispatch) | anchors only (`Crime*`, `Wanted Tuning`) |
 | 4 | **Taunt / aggravate / diffuse / threaten** | no string anchor; reached through the task tree |
 | 5 | **Cameras**, including the vehicle slow-motion injury camera | anchor (`Camera_Move` → `FUN_03301850`) |
@@ -151,11 +151,14 @@ between two tables (`0xd6fff80` for class 2, `0xae8ef00` for class 3). Note that
 a constant delta silently mislabels every hit.
 
 `tools/ps5callers.py` then turns an address into its function, and
-`tools/ps5fields.py` recovers the compiled tuning resolvers as hash-to-offset
-tables. Between them the fuel model is readable without a Ghidra pass: the tank
-array at `+0x1c`/`+0x20`, its `{ptr, float *capacity, float level}` records, the
-mean-of-clamped-ratios formula, and `lowFuel` at `+0xe0` and `+0x108` in the two
-record classes.
+`tools/ps5fields.py` recovers the compiled settings resolvers as hash-to-offset
+tables, naming them against a vocabulary it hashes itself (`--vocab`). Between
+them the fuel model is readable without a Ghidra pass: the tank array at
+`+0x1c`/`+0x20`, its `{ptr, float *capacity, float level}` records and the
+mean-of-clamped-ratios formula. The two resolvers it first turned up are
+`AircraftWarningSettings::GetFieldPtr` — all 19 base fields and 17 of the 35
+expanded-VI fields named, with the remainder proven absent from GTA V's source
+(`docs/objectives.md`, objective 2 §5).
 
 Structure comes from constants instead. `0x52504639` is `"RPF9"`, and it appears three times in `.text`,
 in two functions:
