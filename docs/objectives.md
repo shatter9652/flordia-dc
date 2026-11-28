@@ -182,6 +182,69 @@ fuel model that produces it. GTA V has no fuel simulation; RDR2 does
 GTA VI logic is new. Expect to derive the tank/consumption fields from float
 offsets, then name the struct in `include/gta6decomp/`.
 
+### Started: anchors, now that objective 1 can read the archives
+
+`tools/anchors.py` cannot run here — it walks the Xbox image's `.pdata`, and
+`6RE/DUMP/game_scarlett_master.exe` is not on this machine. Two replacements
+work on the PS5 eboot instead.
+
+**1. `joaat` hash immediates.** RAGE's tuning system finds a field by hash, so
+the field name appears in code as a 32-bit immediate, never as a string. Two
+names resolve that way, and both are real code sites (`ps5elf.resolve`, i.e. the
+SELF block map — a constant `offset - 0x4000` delta is wrong for this container):
+
+| name | `joaat` | code VAs |
+|---|---|---|
+| `fuelTank` | `0xd95d39a4` | `0x27d089`, `0x27d0d4`, `0x27d46f`, `0x27d4b2`, `0x545133`, `0x54517a`, `0x546739`, `0x546780` |
+| `fuelLevel` | `0xf24a9f14` | `0x15a99be`, `0x15b1099` |
+
+`LOW_FUELH` itself (`0x7861cc7a`) is **not** present as an immediate — it is HUD
+state data, consistent with the earlier finding that these literals are
+hash-keyed lookup data and never instructions.
+
+**2. The tuning-field lookup shape.** At `0x27d089` the code selects a table by
+the entity's class byte at `(entity + 8 & ~0xF) + 0x30` — `0xd6fff80` for class 2,
+`0xae8ef00` for class 3 — and then calls
+
+```
+FUN_0027d5e0(0, *(u32 *)(table + 8), *(u64 *)(table + 0x10), 0xd95d39a4)
+```
+
+i.e. `lookup(mode, fieldArray, fieldCount, joaat("fuelTank"))`, and reads the hit
+as a float. The eight `fuelTank` sites form two clusters of four — the same two
+paths over both tables — which is what a two-table accessor looks like.
+
+**3. The tank array, as read.** In the same region the level is a *mean of
+per-tank fill ratios*: a count at `+0x1c`, a pointer to an array of 8-byte
+tank pointers at `+0x20`, and per tank `{ptr, float *capacity, float level}`
+with each ratio `level / *capacity` clamped to `[0,1]` before the mean.
+
+Caveat, stated plainly: those expressions were read from a Ghidra **window
+fragment** (each window is imported as its own ELF, so Ghidra decompiles from
+the window base and the locals are artefacts). The immediates, the table
+selection and the call shape are unambiguous; the tank-array layout is a
+hypothesis until a function-level pass on the eboot confirms it, so the rung
+stays at 2.
+
+**4. What the data says.** `tools/rpf9grep.py` (new) searches entry contents
+without extracting:
+
+```
+python3 tools/rpf9grep.py --archive common.rpf --pattern fuel
+python3 tools/rpf9grep.py --archive data.rpf --pattern fuel --context 0x80
+```
+
+`common.rpf` row 86 carries `Vehicle_FuelBoost` / `Vehicle_FuelBoostIntro`
+dispatch names and row 1 registers `TrailerFuel` as a vehicle model; `data.rpf`
+hits on `fuel_tank` and `fuel_cap` are vehicle **fragment bone names** (the
+entries are `PSIN` fragment lists ending in `chassis`, `bodyshell`, `wheel_lf`,
+…), so they are geometry, not the model. The tuning values themselves are not
+stored as text — they are the hashed field table the lookup above walks.
+
+Next rung (3, "Layout") needs one function-level pass on the eboot — a full
+Ghidra import rather than windows — to promote `FUN_0027d5e0` and the tank
+consumer to dossiers and prove the offsets.
+
 ## Objective 3 — Police and wanted
 
 The `Crime*` set is the most useful name block found in the whole image:

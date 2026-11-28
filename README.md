@@ -127,7 +127,7 @@ subsystem; byte matching is last because it is the only step that proves the C i
 | # | Objective | State |
 |---|---|---|
 | 1 | **RPF loading / extracting / streaming** | **10/10 "Works"** — all ten on-disk archives extract with every size verified; ranges served without materialising an entry; nested archives open and verify |
-| 2 | **Fuel** (tank, consumption, low-fuel state) | anchor only (`LOW_FUELH`) |
+| 2 | **Fuel** (tank, consumption, low-fuel state) | code anchors via `joaat("fuelTank")` / `joaat("fuelLevel")`, and the tuning-field lookup shape |
 | 3 | **Police & wanted** (crime tracking, wanted level, dispatch) | anchors only (`Crime*`, `Wanted Tuning`) |
 | 4 | **Taunt / aggravate / diffuse / threaten** | no string anchor; reached through the task tree |
 | 5 | **Cameras**, including the vehicle slow-motion injury camera | anchor (`Camera_Move` → `FUN_03301850`) |
@@ -140,6 +140,15 @@ subsystem; byte matching is last because it is the only step that proves the C i
 in the image and have **zero** code references, direct or through a pointer slot. They are hash-keyed
 lookup data: names for a tuning/settings system, never instructions. Only `Camera_Move` is addressed by
 code. So names tell us what data is called, never where a function is.
+
+The hash route works instead, and it is how objective 2 started. A tuning field
+is found by `joaat`, so the name is a 32-bit immediate in code:
+`joaat("fuelTank") = 0xd95d39a4` occurs at eight sites in two clusters, and
+`joaat("fuelLevel") = 0xf24a9f14` at two. Each feeds
+`FUN_0027d5e0(mode, fieldArray, fieldCount, hash)` after a class-byte choice
+between two tables (`0xd6fff80` for class 2, `0xae8ef00` for class 3). Note that
+`ps5elf.resolve` is the only correct offset-to-address map for this container —
+a constant delta silently mislabels every hit.
 
 Structure comes from constants instead. `0x52504639` is `"RPF9"`, and it appears three times in `.text`,
 in two functions:
@@ -193,8 +202,9 @@ No key is committed. `tools/rpf9key.py` resolves ids and verifies the tables,
 `tools/rpf9wb.py` runs the game's own decryptor natively, `tools/rpf9cols.py`
 dumps the decrypted table of contents, `tools/rpf9payload.py` runs the payload
 cipher (init plus CTR decrypt) and inflates entries, `tools/rpf9extract.py`
-extracts a whole archive, and `tools/rpf9stream.py` serves ranges and opens the
-archives stored inside entries; `docs/evidence/rpf9-toc-transform.md` is the full
+extracts a whole archive, `tools/rpf9stream.py` serves ranges and opens the
+archives stored inside entries, and `tools/rpf9grep.py` searches entry contents
+by row without extracting; `docs/evidence/rpf9-toc-transform.md` is the full
 record.
 
 What the plaintext buys is the store behind it. The table of contents is not an
