@@ -127,7 +127,7 @@ subsystem; byte matching is last because it is the only step that proves the C i
 | # | Objective | State |
 |---|---|---|
 | 1 | **RPF loading / extracting / streaming** | **10/10 "Works"** — all ten on-disk archives extract with every size verified; ranges served without materialising an entry; nested archives open and verify |
-| 2 | **Fuel** (tank, consumption, low-fuel state) | code anchors via `joaat("fuelTank")` / `joaat("fuelLevel")`, and the tuning-field lookup shape |
+| 2 | **Fuel** (tank, consumption, low-fuel state) | **3/10 "Layout"** — tank array, tank record and both `lowFuel` field offsets proven; consumption rate not yet located |
 | 3 | **Police & wanted** (crime tracking, wanted level, dispatch) | anchors only (`Crime*`, `Wanted Tuning`) |
 | 4 | **Taunt / aggravate / diffuse / threaten** | no string anchor; reached through the task tree |
 | 5 | **Cameras**, including the vehicle slow-motion injury camera | anchor (`Camera_Move` → `FUN_03301850`) |
@@ -149,6 +149,13 @@ is found by `joaat`, so the name is a 32-bit immediate in code:
 between two tables (`0xd6fff80` for class 2, `0xae8ef00` for class 3). Note that
 `ps5elf.resolve` is the only correct offset-to-address map for this container —
 a constant delta silently mislabels every hit.
+
+`tools/ps5callers.py` then turns an address into its function, and
+`tools/ps5fields.py` recovers the compiled tuning resolvers as hash-to-offset
+tables. Between them the fuel model is readable without a Ghidra pass: the tank
+array at `+0x1c`/`+0x20`, its `{ptr, float *capacity, float level}` records, the
+mean-of-clamped-ratios formula, and `lowFuel` at `+0xe0` and `+0x108` in the two
+record classes.
 
 Structure comes from constants instead. `0x52504639` is `"RPF9"`, and it appears three times in `.text`,
 in two functions:

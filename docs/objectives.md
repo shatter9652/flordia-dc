@@ -214,17 +214,84 @@ i.e. `lookup(mode, fieldArray, fieldCount, joaat("fuelTank"))`, and reads the hi
 as a float. The eight `fuelTank` sites form two clusters of four — the same two
 paths over both tables — which is what a two-table accessor looks like.
 
-**3. The tank array, as read.** In the same region the level is a *mean of
-per-tank fill ratios*: a count at `+0x1c`, a pointer to an array of 8-byte
-tank pointers at `+0x20`, and per tank `{ptr, float *capacity, float level}`
-with each ratio `level / *capacity` clamped to `[0,1]` before the mean.
+**3. Function boundaries without Ghidra.** The windowed-ELF route imported each
+window as its own program, so a window's base was decompiled as one function and
+the locals were artefacts. The eboot has no `.pdata`, but `PT_GNU_EH_FRAME` is
+the same information: a sorted table of function starts. `tools/ps5callers.py`
+(new) parses it, so `--addr` gives a containing function, `--imm` attributes an
+immediate to one, `--refs` finds rip-relative readers of a data address, and
+`--target` walks callers — none of which needs a Ghidra pass.
 
-Caveat, stated plainly: those expressions were read from a Ghidra **window
-fragment** (each window is imported as its own ELF, so Ghidra decompiles from
-the window base and the locals are artefacts). The immediates, the table
-selection and the call shape are unambiguous; the tank-array layout is a
-hypothesis until a function-level pass on the eboot confirms it, so the rung
-stays at 2.
+Two traps, both of which produced plausible-looking wrong answers first:
+
+* the `datarel` base is the header's **virtual** address. Using the file offset
+  instead still yields a sorted, monotone table (275,856 entries) and every
+  lookup looks reasonable; only the `--check` cross-validation caught it, going
+  from 2% to 29.7% of sampled starts being direct call targets, and 221/400
+  opening with a prologue.
+* a `jmp`/`je` target in a resolver is a leaf `mov eax, <offset>`, not a whole
+  function — the leaf has to be followed before it means anything.
+
+**4. The tank array, proven.** `FUN_0027d050` (320 bytes, one `push rbp` /
+`ret`) is the whole model:
+
+```
+call 0x2864e0                       ; the vehicle entity
+edx = [rax+0x15c]; rsi = [rax+0x160]   ; runtime field-override list
+for (i = 0; i != edx*8; i += 8)
+    if ([ [rsi+i] + 8 ] == 0xd95d39a4) goto hit    ; joaat("fuelTank")
+class = [[[rax+8] & ~0xf] + 0x30]   ; 2 -> 0xd6fff80, 3 -> the other table
+hit: count = [rcx+0x1c]; array = [rcx+0x20]
+     for each of count:
+         tank   = [array + i*8]
+         cap    = [tank+8] or [[ [tank] + 0x10] + 8]
+         ratio  = [tank+0x10] / *cap
+         sum   += (ratio < 0) ? 0 : min(1.0, ratio)
+     return min(1.0, 1.0 - sum/count)
+```
+
+So the fuel object is `{ +0x1c u32 tankCount, +0x20 tank*[] }`, the tank is
+`{ +0x00 ptr, +0x08 float *capacity, +0x10 float level }`, stride 8, and the
+result is the *used* fraction — the mean is fill, so the return is `1 - fill`.
+The two clamp constants are `1.0` (`0x9c7a2dc`) and a `-0.001` (`0x9c7a9a4`)
+that both callers apply as `1 - 0.001 * used`.
+
+**5. The field tables, proven.** The tuning lookups are compiled binary searches
+over *sorted* joaat constants whose leaves are `mov eax, <offset>`, so
+`tools/ps5fields.py` (new) recovers them outright:
+
+| resolver | fields | offsets | `lowFuel` |
+|---|---|---|---|
+| `FUN_044bad90` | 14 | `0x20`…`0xe0` | **`+0xe0`** |
+| `FUN_044b5d10` | 26 | `0x10`…`0x128` | **`+0x108`** |
+
+Two records, two offsets, both from the same hash. Only four of the candidate
+names exist in the image at all — `fuel` (`0x4652da40`), `fuelTank`, `fuelLevel`
+and `lowFuel` (`0x8420c727`). `fuelConsumption`, `fuelRate`, `fuelCapacity`,
+`tankSize`, `lowFuelWarning` and 35 other spellings have **no** immediate, so
+the consumption rate is either one of the unnamed offsets above or a global, not
+a hashed field name.
+
+**6. The 5% gate.** `FUN_00baed50` caches `*(float *)(entity + 0x70)` into its own
+`+0x168` (`0xbaee6f`), then after the tank block compares it against a literal at
+`0x9c7c28c` and skips the block when it is *above*:
+
+```
+0xbaf00c  vmovss xmm0, [rbx+0x168]
+0xbaf014  vucomiss xmm0, [rip+0x90cd270]   ; = 0.05
+0xbaf01c  ja 0xbb033c                      ; > 5% -> skip
+```
+
+`0.05` on a value derived from the entity is the right shape for the low-fuel
+warning, and the block it guards rebuilds a float trio and calls `0xd1ebe0`
+twice — but nothing yet ties `entity + 0x70` to the tank mean, so this is the
+threshold *candidate*, not a proven driver of `LOW_FUELH`.
+
+**7. A string that isn't.** `LOW_FUEL` does appear in the eboot, at
+`0x2f1c780` — but the bytes are `4c 4f 57 5f 46 55 45 4c 88 87 8f 73 c5 f8 11 87`,
+i.e. instruction bytes that happen to spell it, followed by a `vmovss`. It has
+zero rip-relative references, which is the tell. A plain `grep` for the HUD name
+would have taken it as the state name; it is still hash-keyed data.
 
 **4. What the data says.** `tools/rpf9grep.py` (new) searches entry contents
 without extracting:
@@ -241,9 +308,14 @@ entries are `PSIN` fragment lists ending in `chassis`, `bodyshell`, `wheel_lf`,
 …), so they are geometry, not the model. The tuning values themselves are not
 stored as text — they are the hashed field table the lookup above walks.
 
-Next rung (3, "Layout") needs one function-level pass on the eboot — a full
-Ghidra import rather than windows — to promote `FUN_0027d5e0` and the tank
-consumer to dossiers and prove the offsets.
+**Where this stands: rung 3 ("Layout").** The offset structure is proven — tank
+array, tank record, both `lowFuel` offsets, the fill/used formula and its
+constants — by decompiled reader code and compiled resolvers, not by inference.
+What is *not* done: the consumption rate has no name and no location yet, and
+the `0.05` gate is not proven to be what sets the HUD state. Both need the
+vtable route, because these resolvers are reached through constructor-registered
+function pointers (`FUN_049af7d0` is a static-initialiser loop), so a caller
+scan legitimately finds none.
 
 ## Objective 3 — Police and wanted
 
