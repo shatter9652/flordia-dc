@@ -19,7 +19,9 @@ In both cases the cipher state is fresh per entry: the counter lives in the
 state, so a state decrypts exactly one stream.
 
 Entries whose stored size is not smaller than their unpacked size are stored
-uncompressed and are copied as-is.
+uncompressed and are copied as-is. A row that is smaller than its unpacked size
+but carries no crypto record is plain deflate: the nested archives stored inside
+entries (`data.rpf` row 0 has 156 such rows) are written that way.
 
 Rows are addressed by index, not by name: the name heap is still encrypted.
 The manifest written next to the entries records what each row is.
@@ -118,7 +120,11 @@ def main(argv):
             data, ok, how = body[:unpacked], True, "stored"
             stored_rows += 1
         elif rec is None:
-            data, ok, how = None, False, "no-crypto-record"
+            # Compressed with no crypto record: the row is plain deflate. Every
+            # row of the nested archive inside `data.rpf` is this shape.
+            out, complete = inflate(body)
+            data, ok, how = out, bool(out is not None and complete
+                                      and len(out) == unpacked), "deflate-plain"
         else:
             key_id = P.u32(rec, 0)
             blob = blobs.get(key_id)

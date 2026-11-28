@@ -1239,3 +1239,98 @@ A separate payload-side key record exists at `0x9ed4890` (`id 1`, flags `5`, blo
 `0x9e7ef90`, 294 bytes); the blob is an RSA-2048 SubjectPublicKeyInfo, so that
 record is a signature key, not the payload cipher — the payload cipher is the
 `0x2718ce5d` blob named by the entry's crypto record.
+
+## Level 9 — ranges, seeks and the archives inside entries
+
+`tools/rpf9stream.py` is the streaming driver. It exposes one operation,
+`read_range(entry, offset, length)`, and two storage shapes take two paths:
+
+| shape | path | cost |
+|---|---|---|
+| `stored >= unpacked` | `seek(entry.offset + offset)`, read `length` | O(1) in the entry's size |
+| `stored < unpacked` | chunked read → decrypt → incremental inflate → discard | one chunk of memory, stops at the range end |
+
+The deflated path needs one cipher state per entry, because the payload cipher is
+CTR and its counter lives in the state (`state+0x10f0` seed, `state+0x1118`
+remaining keystream). Chunks are decrypted in order through that one state, so a
+range read and a whole-entry read produce identical plaintext.
+
+### Measured seek cost
+
+| archive | row | entry | range | stored bytes read |
+|---|---|---|---|---|
+| `common` | 314 | 14,262,160 stored | 64 B @ 4096 | 64 |
+| `data` | 104 | 17,406,784 stored | 64 B @ 4096 | 64 |
+| `data` | 573 | 335,136 stored → 9,905,576 unpacked | last 64 B | 196,608 (59%) |
+| `common` | 371 | 14,368 stored → 395,211 unpacked | last 64 B | 14,368 (100%, entry < one chunk) |
+| `levels_concat` | 874 | 3,512,489,616 stored | 4,096 B @ 3,000,000,000 | 4,096 |
+
+The `levels_concat` row is inside a 202 GB archive; the range was compared with a
+direct `pread` at the same file offset and matched. Nothing was written to disk
+and no entry was materialised.
+
+### Verification
+
+Each archive's rows were read whole *and* through random windows, and both were
+compared against the level-8 decode (`rpf9extract.decrypt_payload` + raw inflate)
+— an independent path, so the check is not self-referential.
+
+| archive | entries verified | windows | skipped (residual class) | mismatches |
+|---|---|---|---|---|
+| `appdata0` | 2 | 8 | 0 | 0 |
+| `navmeshes` | 1 | 4 | 0 | 0 |
+| `shaders` | 2 | 8 | 0 | 0 |
+| `textures` | 1 | 4 | 1 | 0 |
+| `levels` | 29 | 116 | 0 | 0 |
+| `script_concat` | 2 | 8 | 0 | 0 |
+| `anim` | 24 | 96 | 6 | 0 |
+| `packs` | 106 | 424 | 6 | 0 |
+| `common` | 415 | 1,245 | 3 | 0 |
+| `data` | 546 | 1,638 | 114 | 0 |
+| **total** | **1,128** | **3,551** | **130** | **0** |
+
+`--verify` reports a row as skipped exactly when the level-8 decode cannot reach
+the recorded unpacked size, so the skipped column is the residual class above and
+nothing else.
+
+### Dependent archives: entries whose payload is an RPF9
+
+Scanning every entry's first four *unpacked* bytes for the `9FPR` magic finds four
+nested archives in three archives:
+
+| archive | row | payload | nested rows | toc_end |
+|---|---|---|---|---|
+| `levels` | 0 | 819,120 B (stored) | 1 | 0x250 |
+| `data` | 0 | 701,744 B (stored) | 156 | 0x1f60 |
+| `script_concat` | 0 | 3,488,880 B | 2 | 0x300 |
+| `script_concat` | 1 | 4,107,904 B | 1,012 | 0xd7b0 |
+
+The nested image is decrypted by the same two-stage TOC path
+(`rpf9cols.decrypt_toc_buffer`, which takes a buffer instead of a path), and its
+entries' offsets are relative to the nested image. A stored nested archive is a
+`memoryview` of the parent — zero copy — so opening it costs no more than the
+parent read.
+
+Their rows verify against the same oracle: 1/1, 156/156 and 1,012/1,012. Two
+findings came out of this:
+
+* **A compressed row with no crypto record is plain deflate.** Every one of the
+  156 rows in `data.rpf[0]` is `stored < unpacked`, has no crypto column entry,
+  and inflates directly to its recorded size. The rule is now in both
+  `rpf9extract.py` (reason `deflate-plain`) and the stream reader. It does not
+  change the outer archives' coverage — none of their rows are this shape — but
+  it is the difference between 0/156 and 156/156 on the nested archive.
+* **The chain is two deep.** `levels.rpf[0]`'s single row is 2,314,640 bytes of
+  plain deflate, so a range read at offset 2,000,000 goes parent → nested archive
+  → nested entry and still streams.
+
+### What is deliberately not claimed
+
+The dump also holds sibling archives named `X.rpf`, `X_concat.rpf` and
+`X_script_concat.rpf` (`anim`, `audio`, `data`, `levels`, `navmeshes`, `packs`,
+`script`, `textures`, and `pack/story000/`). `packs.rpf` and `packs_concat.rpf` share 35 of
+their 64-bit file ids, but with different sizes and different bytes, so a row in
+one does not resolve to a row in the other. No code path that opens one from the
+other has been recovered, so the naming convention is recorded as an observation
+and not as a dependency. The dependency this rung demonstrates is the nested
+archive, where the child's bytes really are inside the parent's entry.

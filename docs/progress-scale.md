@@ -38,7 +38,7 @@ other.
 
 ## Objective 1 — RPF loading / extracting / streaming
 
-**Level 5 of 10 — Indexes. Complete.**
+**Level 9 of 10 — Streams. Reached.**
 
 Proven: the table of contents decrypts on all 18 retail archives, and the column
 store behind it parses into real entries. Offset, stored and unpacked size,
@@ -90,9 +90,58 @@ runs were written to disk and the files re-checked one by one (`appdata0` 2/2,
 `levels` 29/29, exact sizes).
 
 The outstanding class is entries with more than `0x1c00` stored bytes — the
-pattern's third word — and it is concentrated in `data`. Levels 9 and 10 need
-that class, and the name heap is still encrypted so entries are addressed by id
+pattern's third word — and it is concentrated in `data`. Level 10 needs that
+class, and the name heap is still encrypted so entries are addressed by id
 rather than by path.
+
+**Level 9 of 10 — Streams. Reached, with the same residual class.**
+
+`tools/rpf9stream.py` serves a byte range of one entry without materialising it.
+The two storage shapes get two different paths, and both are measured:
+
+* **stored** (`stored >= unpacked`): a seek and a read. `common` row 314 is
+  14,262,160 bytes and 64 bytes at offset 4096 cost **64 stored bytes**;
+  `levels_concat` row 874 is 3,512,489,616 bytes and 4,096 bytes at offset
+  3,000,000,000 cost **4,096 stored bytes**, equal to a direct `pread` into the
+  202 GB archive.
+* **deflated**: the stored bytes are streamed in chunks, decrypted chunk by
+  chunk with one persistent cipher state (the CTR counter is state), inflated
+  incrementally, and output before the requested offset is discarded. Reading
+  stops when the range is complete, so peak memory is one chunk. `data` row 573
+  (335,136 stored → 9,905,576 unpacked) serves its last 64 bytes for 196,608
+  stored bytes — 59% of the entry, not all of it.
+
+Demonstrated: **1,128 entries across ten archives and 3,551 random windows**,
+compared byte for byte against the level-8 decode
+(`rpf9extract.decrypt_payload` + raw inflate) with **0 mismatches** — the ranges
+are checked against an independent decode, not against themselves. The skipped
+rows are exactly level 8's residual class: `common` 3, `data` 114, `packs` 6,
+`anim` 6, `textures` 1. Per archive: `appdata0` 2, `navmeshes` 1, `shaders` 2,
+`textures` 1, `levels` 29, `script_concat` 2, `anim` 24, `packs` 106, `common`
+415, `data` 546.
+
+**Dependent archives resolve.** An entry's payload can itself be an RPF9.
+`--scan-nested` finds them by the magic on the entry's first four *unpacked*
+bytes, and `--nested ROW` opens one in place — a zero-copy view when the entry
+is stored. Found in three archives:
+
+| archive | row | payload | nested rows |
+|---|---|---|---|
+| `levels` | 0 | 819,120 B | 1 |
+| `data` | 0 | 701,744 B | 156 |
+| `script_concat` | 0 | 3,488,880 B | 2 |
+| `script_concat` | 1 | 4,107,904 B | 1,012 |
+
+Their rows are readable and verify against the same oracle: 1/1, 156/156 and
+1,012/1,012. That also turned up a rule the extractor was missing — a row that
+is compressed but carries **no crypto record is plain deflate**, which is every
+row of the `data` nested archive — and the chain is two deep, because the nested
+`levels.rpf[0]` row 0 is itself 2,314,640 bytes of plain deflate.
+
+Not claimed at this rung: the `X.rpf` / `X_concat.rpf` / `X_script_concat.rpf`
+naming convention is visible in the dump, but no code path that resolves one
+from the other has been recovered, so it is not called a dependency. Names still
+do not resolve; entries are addressed by row id.
 
 ## What the levels are not
 

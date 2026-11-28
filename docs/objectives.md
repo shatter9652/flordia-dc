@@ -11,7 +11,7 @@ objectives to exist first.
 
 | # | Objective | State | First evidence |
 |---|---|---|---|
-| 1 | **RPF loading / extracting** (archives, packfile index, streaming) | **8/10 "Extracts"** — whole archives extract and verify; one named class (entries over `0x1c00` stored bytes) and the encrypted name heap remain (`docs/progress-scale.md`) | `RPF9` magic `0x52504639` in `.text` → `FUN_00fc21c0`, `FUN_01fb2600` |
+| 1 | **RPF loading / extracting** (archives, packfile index, streaming) | **9/10 "Streams"** — a byte range of an entry is served without materialising it (1,128 entries, 3,551 windows, checked against an independent decode) and nested RPF9s open and verify; the over-`0x1c00` class and the encrypted name heap remain for level 10 (`docs/progress-scale.md`) | `RPF9` magic `0x52504639` in `.text` → `FUN_00fc21c0`, `FUN_01fb2600` |
 | 2 | **Fuel** (tank, consumption, low-fuel dash state) | anchors only | literal `LOW_FUELH` |
 | 3 | **Police & wanted** (crime tracking, wanted level, dispatch) | anchors only | literals `Wanted Tuning`, `Crime Tuning`, `CrimeReport`, `CrimeChainId`, `CrimeStgEndRsn`, `CrimeCurr`, `CrimeTgt` |
 | 4 | **Taunt / aggravate / diffuse / threaten** (ped interaction set) | unanchored | see note below |
@@ -95,9 +95,11 @@ remaining gap to level 6 is the decompression hand-off, and entries are
 addressed by id because the name heap is still encrypted.
 
 The working scale (`docs/progress-scale.md`) now measures capability rather than byte
-matching. Next rung is 6, "Decrypts": the payload cipher family is located at `0x3985bf0` with its call shape and
-IV slot recovered from the decompiler, but it faults outside the game's own
-initialisation.
+matching. Levels 6–9 are met: the payload cipher is driven natively, entries
+inflate to their recorded sizes, whole archives extract, and ranges are served
+without materialising an entry, including the archives stored inside entries.
+Next rung is 10, "Works": the residual class of entries over `0x1c00` stored
+bytes, and the name heap that would let entries be addressed by path.
 
 Work order inside the objective:
 

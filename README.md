@@ -25,13 +25,14 @@ starts**, because there is no source to compare against — it is coverage, not 
 
 ## Current objective
 
-**Objective 1 — RPF loading / extracting / streaming — level 8 of 10 ("Extracts").**
-Under the working scale in `docs/progress-scale.md`, levels 5–8 are met: the table
+**Objective 1 — RPF loading / extracting / streaming — level 9 of 10 ("Streams").**
+Under the working scale in `docs/progress-scale.md`, levels 5–9 are met: the table
 of contents decrypts on all 18 retail archives, the column store parses into real
 entries (offset, stored and unpacked size, flags, crypto record, 64-bit file id,
-32-bit key), entry payloads decrypt and inflate at their recorded sizes, and
-`tools/rpf9extract.py` writes a whole archive out and verifies every file. The
-C++ parse agrees with an independent one on 1,081 entries.
+32-bit key), entry payloads decrypt and inflate at their recorded sizes,
+`tools/rpf9extract.py` writes a whole archive out and verifies every file, and
+`tools/rpf9stream.py` serves a byte range of an entry without materialising it.
+The C++ parse agrees with an independent one on 1,081 entries.
 
 The payload cipher is the white-box CTR registered at vtable `0xa397c20`:
 `+0x10 → 0x3985bc0` initialises a `0x1120`-byte state from a `0x2718ce5d` key blob
@@ -52,7 +53,22 @@ archives and verifies every size: `appdata0` 2/2, `navmeshes` 1/1,
 `packs` 106/112, `anim` 24/30, `textures` 1/2 and `data` 545/659. Runs were
 written to disk and re-checked file by file (`appdata0` 2/2, `levels` 29/29).
 
-What remains for level 9 is one named class — entries over `0x1c00` stored bytes,
+Level 9 is the streaming rung, and it is measured. A **stored** entry is a seek
+and a read: 64 bytes at offset 4096 of a 14.2 MB `common` entry cost 64 stored
+bytes, and 4,096 bytes at offset 3,000,000,000 of a 3.5 GB `levels_concat` entry
+cost 4,096, equal to a direct `pread` into the 202 GB archive. A **deflated**
+entry is streamed in chunks, decrypted chunk by chunk with one persistent cipher
+state, inflated incrementally, and discarded up to the requested offset, so peak
+memory is one chunk. 1,128 entries across ten archives and 3,551 random windows
+were compared byte for byte against the level-8 decode with 0 mismatches.
+
+Archives stored inside entries resolve too: `levels` row 0 (1 row), `data` row 0
+(156 rows) and both `script_concat` rows (2 and 1,012 rows) are RPF9s, opened in
+place — zero-copy when the entry is stored — and verified against the same
+oracle. That also turned up a rule the extractor was missing: a row that is
+compressed but carries no crypto record is plain deflate.
+
+What remains for level 10 is one named class — entries over `0x1c00` stored bytes,
 mostly in `data` — plus the encrypted name heap, so entries are still addressed
 by id rather than by path.
 
@@ -76,7 +92,7 @@ measurements.
 
 | # | Objective | Level | Name |
 |---|---|---|---|
-| 1 | RPF loading / extracting / streaming | **8** | Extracts |
+| 1 | RPF loading / extracting / streaming | **9** | Streams |
 | 2 | Fuel | 2 | Anchors |
 | 3 | Police & wanted | 2 | Anchors |
 | 4 | Taunt / aggravate / diffuse / threaten | 1 | Nothing |
@@ -97,7 +113,7 @@ subsystem; byte matching is last because it is the only step that proves the C i
 
 | # | Objective | State |
 |---|---|---|
-| 1 | **RPF loading / extracting / streaming** | started — `RPF9` magic found in `.text`; PS5 entry index and directory scan recovered (level 5) |
+| 1 | **RPF loading / extracting / streaming** | **9/10 "Streams"** — ranges served without materialising an entry; nested archives open and verify |
 | 2 | **Fuel** (tank, consumption, low-fuel state) | anchor only (`LOW_FUELH`) |
 | 3 | **Police & wanted** (crime tracking, wanted level, dispatch) | anchors only (`Crime*`, `Wanted Tuning`) |
 | 4 | **Taunt / aggravate / diffuse / threaten** | no string anchor; reached through the task tree |
@@ -163,8 +179,9 @@ permutations.
 No key is committed. `tools/rpf9key.py` resolves ids and verifies the tables,
 `tools/rpf9wb.py` runs the game's own decryptor natively, `tools/rpf9cols.py`
 dumps the decrypted table of contents, `tools/rpf9payload.py` runs the payload
-cipher (init plus CTR decrypt) and inflates entries, and `tools/rpf9extract.py`
-extracts a whole archive; `docs/evidence/rpf9-toc-transform.md` is the full
+cipher (init plus CTR decrypt) and inflates entries, `tools/rpf9extract.py`
+extracts a whole archive, and `tools/rpf9stream.py` serves ranges and opens the
+archives stored inside entries; `docs/evidence/rpf9-toc-transform.md` is the full
 record.
 
 What the plaintext buys is the store behind it. The table of contents is not an

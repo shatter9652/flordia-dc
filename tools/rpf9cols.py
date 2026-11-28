@@ -47,7 +47,22 @@ def u64(b, o):
 
 
 def decrypt_toc(img, keyimg, path):
-    hdr = open(path, "rb").read(0x40)
+    with open(path, "rb") as f:
+        hdr = f.read(0x40)
+        toc_end = struct.unpack_from("<I", hdr, 0x04)[0]
+        f.seek(0)
+        raw = f.read(toc_end)
+    return decrypt_toc_buffer(img, keyimg, raw, os.path.basename(path))
+
+
+def decrypt_toc_buffer(img, keyimg, raw, name="archive"):
+    """Same as decrypt_toc, over an in-memory archive image.
+
+    `raw` is the front of the archive (at least `toc_end` bytes) and may be any
+    buffer type, which is what lets a nested archive -- an entry whose payload
+    is itself an RPF9 -- be decrypted without writing it to a file.
+    """
+    hdr = bytes(raw[:0x40])
     geo = rpf9wb.rpf9_geometry(hdr)
     nsec = u16(hdr, 0x1A)
     n22 = u16(hdr, 0x22)
@@ -58,7 +73,6 @@ def decrypt_toc(img, keyimg, path):
     a, b = geo["A"], geo["B"]
     bsz, idx_end, toc_end = geo["bsz"], geo["idx_end"], geo["toc_end"]
 
-    raw = open(path, "rb").read(toc_end)
     out = bytearray(raw[:toc_end])
 
     rec = rpf9key.find_key(keyimg, 0x10000005)
