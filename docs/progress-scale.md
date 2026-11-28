@@ -67,34 +67,26 @@ readable `PSIN`/`SUB_STORY` content.
 
 Decrypted payloads are raw deflate (`wbits=-15`) and are handed back at the
 recorded unpacked size, entry by entry: `common` 123 encrypted rows plus 269
-stored rows, `data` 109 plus 384, `shaders` 2 stored. What is *not* yet covered is
-entries whose crypto record carries a non-zero pattern — `(0x400, 0x400, 0x1c00,
-0, 4)` versus `(0, 0x1000, 0, 0, 4)` — three known cases (`common` 410/416,
-`data` 656). They do not yield to the recorded seed, a body-carried seed, a
-keystream block shift, or an offset-derived counter base, so the pattern selects
-a chunked framing that is still undecoded (`docs/evidence/rpf9-toc-transform.md`).
+stored rows, `data` 109 plus 384, `shaders` 2 stored. Entries whose crypto record
+carries a non-zero pattern — `(0x400, 0x400, 0x1c00, 0, 4)` versus
+`(0, 0x1000, 0, 0, 4)` — were an open class at this rung; level 10 explains them
+as encryption *windows*, not a different framing.
 
-**Level 8 of 10 — Extracts. Reached, with one named class outstanding.**
+**Level 8 of 10 — Extracts. Reached.**
 
-The payload turned out to be only *partly* encrypted: the crypto record's pattern
-`(0x400, 0x400, 0x1c00, 0, 4)` masks the first `0x800` bytes and leaves the rest
-of the stored range plaintext, and `(0, 0x1000, 0, 0, 4)` covers the whole range.
-With that rule, `tools/rpf9extract.py` writes every entry of an archive, records
-a manifest and verifies each file against its recorded unpacked size, with no
-manual per-file steps.
+The payload is only *partly* encrypted: the crypto record's pattern
+`(0x400, 0x400, 0x1c00, 0, 4)` encrypts the head and then one window per region,
+while `(0, 0x1000, 0, 0, 4)` covers the whole range. `tools/rpf9extract.py`
+writes every entry of an archive, records a manifest and verifies each file
+against its recorded unpacked size, with no manual per-file steps.
 
-Demonstrated on ten archives: `appdata0` 2/2, `navmeshes` 1/1, `script_concat`
-2/2, `levels` 29/29 and `shaders` 2/2 extract completely and verify; `common`
-415/418, `packs` 106/112, `anim` 24/30, `textures` 1/2 and `data` 545/659. Two
-runs were written to disk and the files re-checked one by one (`appdata0` 2/2,
-`levels` 29/29, exact sizes).
+As measured at this rung — the head-only reading of the pattern — ten archives
+extracted with the larger entries outstanding: `appdata0` 2/2, `navmeshes` 1/1,
+`script_concat` 2/2, `levels` 29/29 and `shaders` 2/2 complete, `common` 415/418,
+`packs` 106/112, `anim` 24/30, `textures` 1/2 and `data` 545/659. Level 10 shows
+those shortfalls were the missing windows, not undecodable entries.
 
-The outstanding class is entries with more than `0x1c00` stored bytes — the
-pattern's third word — and it is concentrated in `data`. Level 10 needs that
-class, and the name heap is still encrypted so entries are addressed by id
-rather than by path.
-
-**Level 9 of 10 — Streams. Reached, with the same residual class.**
+**Level 9 of 10 — Streams. Reached.**
 
 `tools/rpf9stream.py` serves a byte range of one entry without materialising it.
 The two storage shapes get two different paths, and both are measured:
@@ -111,14 +103,13 @@ The two storage shapes get two different paths, and both are measured:
   (335,136 stored → 9,905,576 unpacked) serves its last 64 bytes for 196,608
   stored bytes — 59% of the entry, not all of it.
 
-Demonstrated: **1,128 entries across ten archives and 3,551 random windows**,
-compared byte for byte against the level-8 decode
+Demonstrated as first measured: **1,128 entries across ten archives and 3,551
+random windows**, compared byte for byte against the level-8 decode
 (`rpf9extract.decrypt_payload` + raw inflate) with **0 mismatches** — the ranges
-are checked against an independent decode, not against themselves. The skipped
-rows are exactly level 8's residual class: `common` 3, `data` 114, `packs` 6,
-`anim` 6, `textures` 1. Per archive: `appdata0` 2, `navmeshes` 1, `shaders` 2,
-`textures` 1, `levels` 29, `script_concat` 2, `anim` 24, `packs` 106, `common`
-415, `data` 546.
+are checked against an independent decode, not against themselves — and 130
+rows skipped because the verifier shared the head-only mask. Level 10 closes
+that: re-run with the window rule, the same command reports **1,258 entries,
+5,032 windows, 0 skipped, 0 bad**.
 
 **Dependent archives resolve.** An entry's payload can itself be an RPF9.
 `--scan-nested` finds them by the magic on the entry's first four *unpacked*
@@ -142,6 +133,69 @@ Not claimed at this rung: the `X.rpf` / `X_concat.rpf` / `X_script_concat.rpf`
 naming convention is visible in the dump, but no code path that resolves one
 from the other has been recovered, so it is not called a dependency. Names still
 do not resolve; entries are addressed by row id.
+
+**Level 10 of 10 — Works. Reached on every archive that fits on this disk.**
+
+The residual class was a misreading of the crypto pattern, not a second codec.
+The pattern's five words are `(w0, w1, gap, 0, 4)`, and with `gap != 0` a payload
+is encrypted in **windows**, not over a prefix:
+
+* `[0, w0 + w1)` — the head, two windows, which is why `0x800` looked right;
+* then one `w0`-byte window every `w0 + gap` bytes, starting at `w0 + w1 + gap`.
+
+For `(0x400, 0x400, 0x1c00, 0, 4)` that is `[0, 0x800)`,
+`[0x2400, 0x2800)`, `[0x4400, 0x4800)`, … — one encrypted `0x400` block per
+`0x2000`-byte region, plus the extra head block. The counter is positional, so
+the keystream still has to be produced over the whole stored range; only the
+windows keep the decrypted bytes.
+
+The rule was found by treating deflate as an oracle: with the head decrypted the
+stream fails at a definite byte, and searching for the second window that makes
+the whole stream complete lands on `0x2400` every time. Checked over every
+compressed entry in the ten archives, the windowed rule reproduces the recorded
+unpacked size **454 of 454** times, with `eof` set on each stream; the head-only
+rule managed 330 of 454.
+
+With that one change (`rpf9payload.crypto_windows`, shared by both drivers),
+objective 1 runs end to end:
+
+| archive | rows | extract | stream verify |
+|---|---|---|---|
+| `appdata0` | 2 | 2/2 | 2 |
+| `navmeshes` | 1 | 1/1 | 1 |
+| `script_concat` | 2 | 2/2 | 2 |
+| `levels` | 29 | 29/29 | 29 |
+| `shaders` | 2 | 2/2 | 2 |
+| `common` | 418 | 418/418 | 418 |
+| `packs` | 112 | 112/112 | 112 |
+| `anim` | 30 | 30/30 | 30 |
+| `textures` | 2 | 2/2 | 2 |
+| `data` | 659 | 659/659 | 660 |
+
+`tools/rpf9extract.py` reports `0 failed` for all ten — **1,257 rows, every size
+verified** — and `tools/rpf9stream.py --verify` reports **1,258 entries, 5,032
+random windows, 0 skipped, 0 bad**. The nested archives improve the same way:
+`data.rpf[0]` 156/156, `script_concat.rpf[1]` 1,012/1,012, `levels.rpf[0]` 1/1.
+One nested row stays out of reach and is named: `script_concat.rpf[0]` row 0 is
+a *resource* entry (`resourceType 0x159`, 343,232 stored → 1,310,720 unpacked)
+whose payload is a GPU resource blob, not a deflate stream.
+
+Boundary of the claim: ten archives are on this machine and all ten are complete.
+The eight `*_concat` archives (202 GB alone) cannot be extracted here — the whole
+set is 278 GB and this disk has 158 GB free — but their tables decrypt and their
+stored entries stream, spot-checked against a direct `pread`.
+
+Not claimed: **path addressing.** The trailing name blob is real — the header's
+`+0x0C` word is its exact size, 64 B for `appdata0` up to 21,632 B for `data` —
+and it is encrypted; it does not inflate, and it is not decrypted by any of the
+22 key blobs in the eboot against 8 candidate seeds. Section 5's record names
+key id `0x10000007`, which the eboot's key list does not contain, and `0x10000007`
+appears nowhere in the key table. Section 6's 0x100-byte block is the path that
+does resolve it, and it is fully decoded in `docs/evidence/rpf9-toc-transform.md`:
+a gather list over archive bytes, SHA-256 to 32 bytes, then
+`0x2122360(6, 3, …)` through a factory-created block handle. Reproducing that
+needs the factory registration the offline harness does not run, which is why
+entries stay addressed by row id.
 
 ## What the levels are not
 

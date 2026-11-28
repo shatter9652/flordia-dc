@@ -11,9 +11,14 @@ Payload encryption is not uniform, and the difference is in the crypto record's
 five-word pattern (record + 0x18):
 
   * pattern[2] == 0   the whole stored range is one CTR stream;
-  * pattern[2] != 0   only the first pattern[0] + pattern[1] bytes are encrypted
-                      (`(0x400, 0x400, 0x1c00, 0, 4)` -> the first 0x800 bytes),
-                      and the rest of the stored range is plaintext.
+  * pattern[2] != 0   the payload is encrypted in windows: the first
+                      pattern[0] + pattern[1] bytes, then one pattern[0]-byte
+                      window per pattern[0] + pattern[2] bytes.
+
+`(0x400, 0x400, 0x1c00, 0, 4)` therefore encrypts [0, 0x800) and then
+[0x2400, 0x2800), [0x4400, 0x4800), ... -- one 0x400 block per 0x2000-byte
+region. Every window has to be decrypted, not only the head; treating the head
+as the whole mask is what made entries above 0x1c00 stored bytes undecodable.
 
 In both cases the cipher state is fresh per entry: the counter lives in the
 state, so a state decrypts exactly one stream.
@@ -51,16 +56,7 @@ def crypto_pattern(rec):
 
 def decrypt_payload(img, blob, rec, body):
     """Return the payload plaintext under the record's pattern rule."""
-    pattern = crypto_pattern(rec)
-    if pattern[2] == 0:
-        covered = len(body)
-    else:
-        covered = min(pattern[0] + pattern[1], len(body))
-    state = P.init_state(img, blob, rec[6:22])
-    if covered == 0:
-        return bytes(body)
-    head = P.stream_decrypt(img, state, bytes(body[:covered]))
-    return head + bytes(body[covered:])
+    return P.decrypt_regions(img, blob, rec, body)
 
 
 def inflate(plain):

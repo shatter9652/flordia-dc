@@ -1334,3 +1334,136 @@ one does not resolve to a row in the other. No code path that opens one from the
 other has been recovered, so the naming convention is recorded as an observation
 and not as a dependency. The dependency this rung demonstrates is the nested
 archive, where the child's bytes really are inside the parent's entry.
+
+## Level 10 — the crypto pattern is a window layout
+
+The class that blocked levels 8 and 9 — entries with more than `0x1c00` stored
+bytes, "undecodable" — was not a second compression scheme. It was the first
+reading of the crypto pattern: the head is not the whole mask.
+
+The record's five words (record `+0x18`) are `(w0, w1, gap, 0, 4)` in every
+compressed row. Reading them as `gap`-aware windows:
+
+```
+gap == 0        the whole stored range is one CTR stream      (0, 0x1000, 0, 0, 4)
+gap != 0        [0, w0 + w1)  then  [w0 + w1 + gap + k*(w0+gap),  + w0)  for k >= 0
+```
+
+`(0x400, 0x400, 0x1c00, 0, 4)` therefore encrypts `[0, 0x800)`, `[0x2400,
+0x2800)`, `[0x4400, 0x4800)`, … — two head blocks, then one `0x400` block per
+`0x2000`-byte region. The counter is positional, so the keystream must still be
+produced over the whole stored range; only the windows keep the decrypted bytes.
+That is one rule, in one place: `rpf9payload.crypto_windows`, used by
+`rpf9extract.decrypt_payload` and by `Archive.plain_chunks`.
+
+### How the second window was found
+
+Deflate is a strict oracle: one wrong byte and it raises. With the head
+decrypted, a large entry fails at a definite byte, so the search was over the
+next window: for `START` in steps of `0x10` past the head, decrypt
+`[START, START + L)` from the same keystream and see whether the *whole* stream
+then completes at the recorded unpacked size. On `data` row 3 the only hits were
+`START = 9216 = 0x2400` (blob 224 bytes to the end); on `common` row 208 and
+`packs` row 50 the only hit was `0x2400` with `L = 0x400`. `0x2400` is exactly
+`w0 + w1 + gap`, and `0x400` is `w0`.
+
+Checked over every compressed entry in the ten archives:
+
+| rule | exact size + `eof` |
+|---|---|
+| head only, `[0, 0x800)` | 330 / 454 |
+| `[0, 0x800)` plus `[0x2400 + 0x2000k, +0x400)` | **454 / 454** |
+| `[0, 0x800)` plus everything from `0x2400` | 330 / 454 |
+
+### Measurements after the rule
+
+`tools/rpf9extract.py` — every entry written and checked against its recorded
+unpacked size:
+
+```
+appdata0.rpf      2 rows     2 verified    0 stored    0 failed
+navmeshes.rpf     1 rows     1 verified    1 stored    0 failed
+script_concat.rpf 2 rows     2 verified    2 stored    0 failed
+levels.rpf       29 rows    29 verified   28 stored    0 failed
+shaders.rpf       2 rows     2 verified    2 stored    0 failed
+common.rpf      418 rows   418 verified  269 stored    0 failed
+packs.rpf       112 rows   112 verified  102 stored    0 failed
+anim.rpf         30 rows    30 verified   14 stored    0 failed
+textures.rpf      2 rows     2 verified    1 stored    0 failed
+data.rpf        659 rows   659 verified  384 stored    0 failed
+```
+
+`tools/rpf9stream.py --verify --windows 4` — served ranges against the
+independent decode: `appdata0` 2, `navmeshes` 1, `script_concat` 2, `levels` 29,
+`shaders` 2, `common` 418, `packs` 112, `anim` 30, `textures` 2, `data` 660 —
+**1,258 entries, 5,032 windows, 0 skipped, 0 bad**. Nested: `data.rpf[0]`
+156/156, `script_concat.rpf[1]` 1,012/1,012, `levels.rpf[0]` 1/1.
+
+One row is named rather than fixed: `script_concat.rpf[0]` row 0 is a resource
+entry (`resourceType 0x159`, `dataStart 0x10`, 343,232 stored → 1,310,720
+unpacked, crypto pattern `(0x2000, 0x2000, …)`), and its payload does not
+inflate under any window layout tried. It is a GPU resource blob, outside the
+deflate path, and it is the only skip left in the nested set.
+
+## The name heap: why entries are still addressed by row id
+
+The blob is real. `header + 0x0C` is its exact size and each archive ends with
+that many bytes of high-entropy data: `appdata0` 64 B, `navmeshes` 80 B,
+`levels` 1,312 B, `packs` 4,944 B, `common` 14,864 B, `data` 21,632 B — all
+16-byte aligned, entropy 7.85–7.99, and none of them inflate.
+
+It is not decryptable from the eboot:
+
+* Section 5's record (`B + 0x18`) names key id **`0x10000007`** with the constant
+  seed `18974a84150511700103c5608efbf5b8` on all three archives checked. That id
+  is **absent from the eboot's 24-record key list**, and the 4-byte value
+  `0x10000007` does not occur anywhere in the key table (`0x9ed4620`).
+* All 22 key blobs that do resolve, against 8 candidate seeds (section 5's, the
+  archive's section-1 seed, the header nonce and header words at `+0x08`,
+  `+0x18`, `+0x20`, all-zero and the default IV), produce only noise on
+  `appdata0`'s 64-byte and `navmeshes`' 80-byte heap — printable-ratio ≈ 0.47,
+  no `/`, no `.`, nothing shaped like a name.
+* The white-box CBC path (`0x2ae0890`) and the stream cipher (`0x2ae0a50`) both
+  fail the same way on the same inputs.
+
+### The section-6 path that does resolve it
+
+`0x8400df0` (called once, from `0x8e135a` inside `0x8e1100`) is the driver. It
+takes a 32-byte descriptor `{u32 0, u8 mode, u64 ptr, u64 len, u32 arg}` and
+picks an object by `mode`: `0 -> vtable 0xa396a20`, `1 -> 0xa396aa0`,
+otherwise `0xa396a60`. For section 6 the descriptor is `mode = 1`,
+`ptr = B + 0x34`, `len = 0x100`, `arg = u16 at B + 0x32` (=1), and the object it
+builds is vtable **`0xa396ad8`** — the handle the user asked about:
+
+| slot | target | what it does |
+|---|---|---|
+| `+0x00` | `0x840b5a0` | release `*(this+0x10)` |
+| `+0x08` | `0x18e9810` | — |
+| `+0x10` | `0x1cc2f20` | create the block handle: `(arg << 32) | 0x05000000` through the class factory (`0x396d390(0xe062dd0, 0x9ed4890, 1)` then `0x8477e00`), stored at `this+0x10` |
+| `+0x18` | `0x840b5e0` | `0x2122360(6, 3, src, srcLen, dst, dstLen, *(this+0x10), 0x20b0)` |
+
+`0x2122360(mode, algo, dst, dstLen, src, srcLen, handle, block)` is a thin
+adapter: `0x43a0140(mode)` gives a state size, `0x43a0650(mode, src, srcLen,
+state, size)` builds the decoder, and `0x43ab700(mode, algo, state, len, dst,
+dstLen, handle, block)` runs it — one `<= 0x200`-byte input block per call
+(`0x43a6610`), bounded by `0x20b0` output.
+
+The key material comes from `0x840c000` (`mode` object `+0x20`), which walks the
+gather list `{ptr, len}` that `0x2ae1cb0` built and runs it through
+`0x1cc1ea0` / `0x1cc2750` / `0x1cc2fb0` — SHA-256 init, update, final — so the
+32-byte value handed to the block decoder is a digest over archive bytes.
+
+Two negatives worth recording, because they were the leading guesses:
+
+* **`0x2122360` is not on the payload path.** It has exactly two direct callers
+  in the image: `0x2122342` (its own wrapper) and `0x840b622` (inside
+  `0x840b5e0`). Every payload read found so far goes through deflate, not this.
+* **The block handle cannot be hand-built offline.** It is created by the
+  RAGE class factory, and the factory's registration lives behind
+  `if (DAT_0e062df8 == 0)`, which the offline harness never runs. Reproducing
+  the section-6 decode needs that registration, or a reimplementation of the
+  `mode 6 / algo 3` block codec.
+
+So: the name heap's *reader* is fully mapped and the *key id it names is not in
+this build's key table*. Path addressing stays unclaimed, and entries stay
+addressed by row id.

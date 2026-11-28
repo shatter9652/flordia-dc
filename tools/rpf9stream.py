@@ -29,11 +29,14 @@ How a range is served:
     not the entry size, and reading stops as soon as `length` bytes exist --
     so the tail of a large entry is never touched.
 
-Payload decryption is the same rule as `tools/rpf9extract.py`: the crypto
-record's pattern masks the first `pattern[0] + pattern[1]` stored bytes
-(`(0x400, 0x400, 0x1c00, 0, 4)` -> `0x800`), or the whole range when
-`pattern[2]` is zero; the counter lives in the cipher state, so a state
-decrypts exactly one entry.
+Payload decryption is the same rule as `tools/rpf9extract.py`, shared through
+`rpf9payload.crypto_windows`: the whole range is encrypted when `pattern[2]`
+is zero, and otherwise the payload is encrypted in windows -- the first
+`pattern[0] + pattern[1]` bytes, then one `pattern[0]`-byte window per
+`pattern[0] + pattern[2]` bytes. `(0x400, 0x400, 0x1c00, 0, 4)` gives
+[0, 0x800), [0x2400, 0x2800), [0x4400, 0x4800), ... The counter lives in the
+cipher state, so a state decrypts exactly one entry, and the keystream is
+produced over every stored byte even though only the windows keep it.
 
 `--verify` compares every served range against the level-8 path
 (`rpf9extract.decrypt_payload` + raw inflate), so the streaming reader is
@@ -138,32 +141,32 @@ class Archive:
             self._blobs[key_id] = blob
         return blob
 
-    def covered(self, e):
-        """Stored bytes the crypto pattern encrypts."""
+    def windows(self, e):
+        """Stored byte ranges the crypto pattern encrypts (see P.crypto_windows)."""
         body = e["stored"] - e["dataStart"]
         if e["crypto"] is None:
-            return 0
-        pattern = struct.unpack_from("<5Q", e["crypto"], 0x18)
-        if pattern[2] == 0:
-            return body
-        return min(pattern[0] + pattern[1], body)
+            return []
+        return P.crypto_windows(e["crypto"], body)
 
     # -- the stream -------------------------------------------------------
 
     def plain_chunks(self, e, chunk=1 << 16):
-        """Yield the entry's stored bytes in order, decrypted where covered.
+        """Yield the entry's stored bytes in order, decrypted where encrypted.
 
         One cipher state lives for the whole generator, because the payload
         cipher is CTR and its counter is state. Abandoning the generator stops
         the reads, which is what makes a short range cheap.
+
+        The keystream is produced over every stored byte -- the counter is
+        positional -- but only the pattern's windows keep the decrypted bytes.
         """
         body = e["stored"] - e["dataStart"]
         if body <= 0:
             return
         start = e["offset"] + e["dataStart"]
-        covered = self.covered(e)
+        windows = self.windows(e)
         state = None
-        if covered:
+        if windows:
             rec = e["crypto"]
             state = P.init_state(self.img, self.key_blob(P.u32(rec, 0)), rec[6:22])
 
@@ -172,10 +175,15 @@ class Archive:
             n = min(chunk, body - pos)
             piece = bytes(self.buf[start + pos:start + pos + n])
             self.bytes_read += n
-            if state is not None and pos < covered:
-                take = min(n, covered - pos)
-                head = P.stream_decrypt(self.img, state, piece[:take])
-                piece = head + piece[take:]
+            if state is not None:
+                plain = P.stream_decrypt(self.img, state, piece)
+                if windows:
+                    out = bytearray(piece)
+                    for lo, hi in windows:
+                        a, b = max(lo, pos), min(hi, pos + n)
+                        if a < b:
+                            out[a - pos:b - pos] = plain[a - pos:b - pos]
+                    piece = bytes(out)
             pos += n
             yield piece
 

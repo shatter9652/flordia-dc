@@ -101,6 +101,60 @@ def ctypes_void(value=None):
     return ctypes.c_void_p(value)
 
 
+def crypto_pattern(rec):
+    """The crypto record's five-word payload pattern (record + 0x18)."""
+    return struct.unpack_from("<5Q", rec, 0x18)
+
+
+def crypto_windows(rec, body):
+    """Byte ranges of a stored payload that the cipher actually encrypts.
+
+    The pattern is (w0, w1, gap, _, _). `gap == 0` means the whole stored
+    range is one CTR stream. Otherwise the payload is encrypted in windows:
+    the first `w0 + w1` bytes, then one `w0`-byte window once per
+    `w0 + gap` bytes, starting where the head and one gap end.
+
+    For the pattern every compressed entry carries -- (0x400, 0x400, 0x1c00,
+    0, 4) -- that is [0, 0x800) plus [0x2400, 0x2800), [0x4400, 0x4800), ...
+    i.e. one encrypted 0x400 block per 0x2000-byte region, with an extra one
+    at the head. Reading only the head, as levels 8 and 9 did, leaves every
+    later window encrypted; that is what made entries above 0x1c00 stored
+    bytes undecodable, not a second compression scheme.
+    """
+    w0, w1, gap = crypto_pattern(rec)[:3]
+    if gap == 0:
+        return [(0, body)]
+    out = []
+    pre = w0 + w1
+    if pre:
+        out.append((0, min(pre, body)))
+    if w0 and pre + gap < body:
+        step = w0 + gap
+        start = pre + gap
+        while start < body:
+            out.append((start, min(start + w0, body)))
+            start += step
+    return out
+
+
+def decrypt_regions(img, blob, rec, body):
+    """The payload plaintext: ciphertext windows replaced by the CTR stream.
+
+    The counter is state, so the keystream has to be produced over the whole
+    stored range even though only the windows use it.
+    """
+    body = bytes(body)
+    windows = crypto_windows(rec, len(body))
+    if not windows:
+        return body
+    state = init_state(img, blob, rec[6:22])
+    plain = stream_decrypt(img, state, body)
+    out = bytearray(body)
+    for start, end in windows:
+        out[start:end] = plain[start:end]
+    return bytes(out)
+
+
 def u64(b, o):
     return struct.unpack_from("<Q", b, o)[0]
 

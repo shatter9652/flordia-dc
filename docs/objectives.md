@@ -95,11 +95,18 @@ remaining gap to level 6 is the decompression hand-off, and entries are
 addressed by id because the name heap is still encrypted.
 
 The working scale (`docs/progress-scale.md`) now measures capability rather than byte
-matching. Levels 6–9 are met: the payload cipher is driven natively, entries
-inflate to their recorded sizes, whole archives extract, and ranges are served
+matching. Levels 6–10 are met: the payload cipher is driven natively, entries
+inflate to their recorded sizes, whole archives extract with **0 failures on
+all ten archives that fit on this disk** (1,257 rows), and ranges are served
 without materialising an entry, including the archives stored inside entries.
-Next rung is 10, "Works": the residual class of entries over `0x1c00` stored
-bytes, and the name heap that would let entries be addressed by path.
+The class that blocked level 10 was not a second compression scheme: the crypto
+record's pattern declares *windows*, so a payload is encrypted at `[0, 0x400)`
+and then once per `0x2000` region, not just at the head.
+
+What is still open in objective 1 is the name heap: entries are addressed by id
+because the trailing name blob cannot be decrypted from the eboot. Its section-5
+record names key id `0x10000007`, which no record in the eboot's key list
+provides, and 22 key blobs x 8 candidate seeds reproduce nothing but noise.
 
 Work order inside the objective:
 

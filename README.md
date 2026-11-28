@@ -25,8 +25,8 @@ starts**, because there is no source to compare against — it is coverage, not 
 
 ## Current objective
 
-**Objective 1 — RPF loading / extracting / streaming — level 9 of 10 ("Streams").**
-Under the working scale in `docs/progress-scale.md`, levels 5–9 are met: the table
+**Objective 1 — RPF loading / extracting / streaming — level 10 of 10 ("Works").**
+Under the working scale in `docs/progress-scale.md`, levels 5–10 are met: the table
 of contents decrypts on all 18 retail archives, the column store parses into real
 entries (offset, stored and unpacked size, flags, crypto record, 64-bit file id,
 32-bit key), entry payloads decrypt and inflate at their recorded sizes,
@@ -44,14 +44,19 @@ gate: it is a lazy global-table loader that returns the fixed success token
 outside the game. The fault that blocked it was an unpatched `memset` import at
 `0x84783b0`.
 
-The last piece was that the payload is only *partly* encrypted: the crypto
-record's pattern `(0x400, 0x400, 0x1c00, 0, 4)` masks the first `0x800` bytes and
-leaves the rest of the stored range plaintext, while `(0, 0x1000, 0, 0, 4)`
-covers the whole range. With that rule, `tools/rpf9extract.py` extracts whole
-archives and verifies every size: `appdata0` 2/2, `navmeshes` 1/1,
-`script_concat` 2/2, `levels` 29/29 and `shaders` 2/2 complete, `common` 415/418,
-`packs` 106/112, `anim` 24/30, `textures` 1/2 and `data` 545/659. Runs were
-written to disk and re-checked file by file (`appdata0` 2/2, `levels` 29/29).
+The last piece was that the payload is only *partly* encrypted, and not over a
+prefix: the crypto record's pattern is a window layout. `(0x400, 0x400, 0x1c00,
+0, 4)` encrypts `[0, 0x800)` and then one `0x400` block per `0x2000`-byte region
+(`[0x2400, 0x2800)`, `[0x4400, 0x4800)`, …), while `(0, 0x1000, 0, 0, 4)` covers
+the whole range. Reading only the head left every later window as ciphertext,
+which is what made entries above `0x1c00` stored bytes look like a second codec.
+That rule (`rpf9payload.crypto_windows`) reproduces the recorded unpacked size on
+**454 of 454** compressed entries across the ten archives, and with it
+tools/rpf9extract.py reports **0 failed on all ten**: `appdata0` 2/2,
+`navmeshes` 1/1, `script_concat` 2/2, `levels` 29/29, `shaders` 2/2, `common`
+418/418, `packs` 112/112, `anim` 30/30, `textures` 2/2, `data` 659/659 — 1,257
+rows, every size verified. Runs were written to disk and re-checked file by file
+(`appdata0` 2/2, `levels` 29/29).
 
 Level 9 is the streaming rung, and it is measured. A **stored** entry is a seek
 and a read: 64 bytes at offset 4096 of a 14.2 MB `common` entry cost 64 stored
@@ -59,8 +64,9 @@ bytes, and 4,096 bytes at offset 3,000,000,000 of a 3.5 GB `levels_concat` entry
 cost 4,096, equal to a direct `pread` into the 202 GB archive. A **deflated**
 entry is streamed in chunks, decrypted chunk by chunk with one persistent cipher
 state, inflated incrementally, and discarded up to the requested offset, so peak
-memory is one chunk. 1,128 entries across ten archives and 3,551 random windows
-were compared byte for byte against the level-8 decode with 0 mismatches.
+memory is one chunk. `--verify` compares every served range byte for byte against
+the independent decode: **1,258 entries, 5,032 random windows, 0 skipped,
+0 bad** across the ten archives.
 
 Archives stored inside entries resolve too: `levels` row 0 (1 row), `data` row 0
 (156 rows) and both `script_concat` rows (2 and 1,012 rows) are RPF9s, opened in
@@ -68,9 +74,16 @@ place — zero-copy when the entry is stored — and verified against the same
 oracle. That also turned up a rule the extractor was missing: a row that is
 compressed but carries no crypto record is plain deflate.
 
-What remains for level 10 is one named class — entries over `0x1c00` stored bytes,
-mostly in `data` — plus the encrypted name heap, so entries are still addressed
-by id rather than by path.
+Level 10's boundary: the eight `*_concat` archives (202 GB alone, 278 GB for the
+set on a 158 GB disk) cannot be fully extracted here, but their tables decrypt and
+their stored entries stream, spot-checked against a direct `pread`.
+
+What is still open in objective 1 is the name heap, so entries are addressed by
+id rather than by path. The trailing blob (header `+0x0C` bytes) is encrypted and
+does not inflate; it resists all 22 key blobs in the eboot against 8 candidate
+seeds. Section 5's record names key id `0x10000007`, which the eboot's key list
+does not contain. `docs/evidence/rpf9-toc-transform.md` has the resolved section-6
+path and the evidence for that negative.
 
 `docs/evidence/rpf9-toc-transform.md` has the addresses, the state layout and the
 measurements.
@@ -92,7 +105,7 @@ measurements.
 
 | # | Objective | Level | Name |
 |---|---|---|---|
-| 1 | RPF loading / extracting / streaming | **9** | Streams |
+| 1 | RPF loading / extracting / streaming | **10** | Works |
 | 2 | Fuel | 2 | Anchors |
 | 3 | Police & wanted | 2 | Anchors |
 | 4 | Taunt / aggravate / diffuse / threaten | 1 | Nothing |
@@ -113,7 +126,7 @@ subsystem; byte matching is last because it is the only step that proves the C i
 
 | # | Objective | State |
 |---|---|---|
-| 1 | **RPF loading / extracting / streaming** | **9/10 "Streams"** — ranges served without materialising an entry; nested archives open and verify |
+| 1 | **RPF loading / extracting / streaming** | **10/10 "Works"** — all ten on-disk archives extract with every size verified; ranges served without materialising an entry; nested archives open and verify |
 | 2 | **Fuel** (tank, consumption, low-fuel state) | anchor only (`LOW_FUELH`) |
 | 3 | **Police & wanted** (crime tracking, wanted level, dispatch) | anchors only (`Crime*`, `Wanted Tuning`) |
 | 4 | **Taunt / aggravate / diffuse / threaten** | no string anchor; reached through the task tree |
